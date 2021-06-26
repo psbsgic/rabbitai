@@ -1,0 +1,74 @@
+x-rabbitai-image: &rabbitai-image apache/rabbitai:latest-dev
+x-rabbitai-depends-on: &rabbitai-depends-on
+  - db
+  - redis
+x-rabbitai-volumes: &rabbitai-volumes
+  # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
+  - ./docker:/app/docker
+  - rabbitai_home:/app/rabbitai_home
+
+version: "3.7"
+services:
+  redis:
+    image: redis:latest
+    container_name: rabbitai_cache
+    restart: unless-stopped
+    volumes:
+      - redis:/data
+
+  db:
+    env_file: docker/.env
+    image: postgres:10
+    container_name: rabbitai_db
+    restart: unless-stopped
+    volumes:
+      - db_home:/var/lib/postgresql/data
+
+  rabbitai:
+    env_file: docker/.env-non-dev
+    image: *rabbitai-image
+    container_name: rabbitai_app
+    command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
+    user: "root"
+    restart: unless-stopped
+    ports:
+      - 8088:8088
+    depends_on: *rabbitai-depends-on
+    volumes: *rabbitai-volumes
+
+  rabbitai-init:
+    image: *rabbitai-image
+    container_name: rabbitai_init
+    command: ["/app/docker/docker-init.sh"]
+    env_file: docker/.env-non-dev
+    depends_on: *rabbitai-depends-on
+    user: "root"
+    volumes: *rabbitai-volumes
+
+  rabbitai-worker:
+    image: *rabbitai-image
+    container_name: rabbitai_worker
+    command: ["/app/docker/docker-bootstrap.sh", "worker"]
+    env_file: docker/.env-non-dev
+    restart: unless-stopped
+    depends_on: *rabbitai-depends-on
+    user: "root"
+    volumes: *rabbitai-volumes
+
+  rabbitai-worker-beat:
+    image: *rabbitai-image
+    container_name: rabbitai_worker_beat
+    command: ["/app/docker/docker-bootstrap.sh", "beat"]
+    env_file: docker/.env-non-dev
+    restart: unless-stopped
+    depends_on: *rabbitai-depends-on
+    user: "root"
+    volumes: *rabbitai-volumes
+
+volumes:
+  rabbitai_home:
+    external: false
+  db_home:
+    external: false
+  redis:
+    external: false

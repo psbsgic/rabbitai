@@ -1,0 +1,69 @@
+
+.grid-row {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: 100%;
+  height: fit-content;
+}
+
+/* gutters between elements in a row */
+.grid-row > :not(:only-child):not(:last-child):not(.hover-menu) {
+  margin-right: 16px;
+}
+
+/* hover indicator */
+.dashboard--editing {
+  .grid-row:after,
+  .dashboard-component-tabs > .hover-menu:hover + div:after {
+    border: 1px dashed transparent;
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: @z-index-chart;
+    pointer-events: none;
+  }
+
+  .resizable-container.resizable-container--resizing:hover > .grid-row:after,
+  .hover-menu:hover + .grid-row:after,
+  .dashboard-component-tabs > .hover-menu:hover + div:after {
+    border: 1px dashed @indicator-color;
+    z-index: @z-index-chart--dragging;
+  }
+
+  .grid-row:after,
+  .dashboard-component-tabs > .hover-menu + div:after {
+    border: 1px dashed @gray-light;
+  }
+
+  /* provide hit area in case row contents is edge to edge */
+  .dashboard-component-tabs-content {
+    .dragdroppable-row {
+      padding-top: 16px;
+    }
+  }
+}
+
+.grid-row.grid-row--empty {
+  /* this centers the empty note content */
+  align-items: center;
+  height: 100px;
+
+  &:before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: 'Empty row';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: @gray;
+  }
+}

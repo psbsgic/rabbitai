@@ -1,0 +1,13 @@
+
+FROM python:3.7-buster
+ARG VERSION
+
+RUN git clone --depth 1 --branch ${VERSION} https://github.com/apache/rabbitai.git /rabbitai
+WORKDIR /rabbitai
+# install doc dependencies
+RUN pip install -r requirements/base.txt
+# build the docs
+RUN python setup.py build_sphinx
+
+COPY make_docs_entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

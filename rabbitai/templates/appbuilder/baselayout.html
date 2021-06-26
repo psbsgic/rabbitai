@@ -1,0 +1,38 @@
+{% extends 'appbuilder/init.html' %}
+{% import 'appbuilder/baselib.html' as baselib %}
+
+{% block body %}
+    {% include 'appbuilder/general/confirm.html' %}
+    {% include 'appbuilder/general/alert.html' %}
+
+    {% block navbar %}
+      {% include 'appbuilder/navbar.html' %}
+    {% endblock %}
+
+    {% block uncontained %}{% endblock %}
+
+    <div class="container">
+      <div class="row">
+          {% block messages %}
+            {% include 'rabbitai/flash_wrapper.html' %}
+          {% endblock %}
+          {% block content %}
+          {% endblock %}
+      </div>
+    </div>
+    <div class="container-fluid">
+        {% block content_fluid %}
+        {% endblock %}
+    </div>
+    <div id="app" data-bootstrap="{{ bootstrap_data() }}"></div>
+
+    {% block footer %}
+        <footer>
+          <div class="img-rounded nav-fixed-bottom">
+              <div class="container-fluid">
+                  {% include 'appbuilder/footer.html' %}
+              </div>
+          </div>
+        </footer>
+    {% endblock %}
+{% endblock %}

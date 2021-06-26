@@ -1,0 +1,107 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "rabbitai.fullname" . }}
+  labels:
+    app: {{ template "rabbitai.name" . }}
+    chart: {{ template "rabbitai.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.rabbitaiNode.deploymentAnnotations }}
+  annotations:
+    {{ toYaml .Values.rabbitaiNode.deploymentAnnotations | nindent 4 }}
+{{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "rabbitai.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        # Force reload on config changes
+        checksum/rabbitai_config.py: {{ include "rabbitai-config" . | sha256sum }}
+        checksum/rabbitai_init.sh: {{ tpl .Values.init.initscript . | sha256sum }}
+        checksum/rabbitai_bootstrap.sh: {{ tpl .Values.bootstrapScript . | sha256sum }}
+        checksum/connections: {{ .Values.rabbitaiNode.connections | toYaml | sha256sum }}
+        checksum/extraConfigs: {{ .Values.extraConfigs | toYaml | sha256sum }}
+        checksum/extraSecrets: {{ .Values.extraSecrets | toYaml | sha256sum }}
+        checksum/extraSecretEnv: {{ .Values.extraSecretEnv | toYaml | sha256sum }}
+        checksum/configOverrides: {{ .Values.configOverrides | toYaml | sha256sum }}
+        {{- if .Values.rabbitaiNode.forceReload }}
+        # Optionally force the thing to reload
+        force-reload: {{ randAlphaNum 5 | quote }}
+        {{- end }}
+      {{- if .Values.rabbitaiNode.podAnnotations }}
+        {{ toYaml .Values.rabbitaiNode.podAnnotations | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ template "rabbitai.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.runAsUser }}
+      {{- if .Values.rabbitaiNode.initContainers }}
+      initContainers:
+      {{-  tpl (toYaml .Values.rabbitaiNode.initContainers) . | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: {{  tpl (toJson .Values.rabbitaiNode.command) . }}
+          env:
+            - name: "RABBITAI_PORT"
+              value: {{ .Values.service.port | quote}}
+          {{ if .Values.extraEnv }}
+            {{- range $key, $value := .Values.extraEnv }}
+            - name: {{ $key | quote}}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ tpl .Values.envFromSecret . | quote }}
+          volumeMounts:
+            - name: rabbitai-config
+              mountPath: {{ .Values.configMountPath | quote }}
+              readOnly: true
+          {{- if .Values.extraConfigs }}
+            - name: rabbitai-extra-config
+              mountPath: {{ .Values.extraConfigMountPath | quote }}
+              readOnly: true
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+
+      volumes:
+        - name: rabbitai-config
+          secret:
+            secretName: {{ tpl .Values.configFromSecret . }}
+        {{- if .Values.extraConfigs }}
+        - name: rabbitai-extra-config
+          configMap:
+            name: {{ template "rabbitai.fullname" . }}-extra-config
+        {{- end }}

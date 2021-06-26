@@ -1,0 +1,26 @@
+
+@import '../../../stylesheets/less/variables.less';
+
+.icon-button {
+  color: @gray;
+  font-size: @font-size-l;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+
+  &:hover,
+  &:active,
+  &:focus {
+    color: @almost-black;
+    outline: none;
+    text-decoration: none;
+  }
+}
+
+.icon-button-label {
+  color: @gray-dark;
+  padding-left: 8px;
+  font-size: @font-size-m;
+}

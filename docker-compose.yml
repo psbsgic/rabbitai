@@ -1,0 +1,138 @@
+x-rabbitai-image: &rabbitai-image apache/rabbitai:latest-dev
+x-rabbitai-user: &rabbitai-user root
+x-rabbitai-depends-on: &rabbitai-depends-on
+  - db
+  - redis
+x-rabbitai-volumes: &rabbitai-volumes
+  # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
+  - ./docker:/app/docker
+  - ./rabbitai:/app/rabbitai
+  - ./rabbitai-frontend:/app/rabbitai-frontend
+  - rabbitai_home:/app/rabbitai_home
+  - ./tests:/app/tests
+
+version: "3.7"
+services:
+  redis:
+    image: redis:latest
+    container_name: rabbitai_cache
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis:/data
+
+  db:
+    env_file: docker/.env
+    image: postgres:10
+    container_name: rabbitai_db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db_home:/var/lib/postgresql/data
+
+  rabbitai:
+    env_file: docker/.env
+    image: *rabbitai-image
+    container_name: rabbitai_app
+    command: ["/app/docker/docker-bootstrap.sh", "app"]
+    restart: unless-stopped
+    ports:
+      - 8088:8088
+    user: *rabbitai-user
+    depends_on: *rabbitai-depends-on
+    volumes: *rabbitai-volumes
+    environment:
+      CYPRESS_CONFIG: "${CYPRESS_CONFIG}"
+
+  rabbitai-websocket:
+    container_name: rabbitai_websocket
+    build: ./rabbitai-websocket
+    image: rabbitai-websocket
+    ports:
+      - 8080:8080
+    depends_on:
+      - redis
+    # Mount everything in rabbitai-websocket into container and
+    # then exclude node_modules and dist with bogus volume mount.
+    # This is necessary because host and container need to have
+    # their own, separate versions of these files. .dockerignore
+    # does not seem to work when starting the service through
+    # docker-compose.
+    #
+    # For example, node_modules may contain libs with native bindings.
+    # Those bindings need to be compiled for each OS and the container
+    # OS is not necessarily the same as host OS.
+    volumes:
+      - ./rabbitai-websocket:/home/rabbitai-websocket
+      - /home/rabbitai-websocket/node_modules
+      - /home/rabbitai-websocket/dist
+    environment:
+      - PORT=8080
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_SSL=false
+
+  rabbitai-init:
+    image: *rabbitai-image
+    container_name: rabbitai_init
+    command: ["/app/docker/docker-init.sh"]
+    env_file: docker/.env
+    depends_on: *rabbitai-depends-on
+    user: *rabbitai-user
+    volumes: *rabbitai-volumes
+    environment:
+      CYPRESS_CONFIG: "${CYPRESS_CONFIG}"
+
+  rabbitai-node:
+    image: node:14
+    container_name: rabbitai_node
+    command: ["/app/docker/docker-frontend.sh"]
+    env_file: docker/.env
+    depends_on: *rabbitai-depends-on
+    volumes: *rabbitai-volumes
+
+  rabbitai-worker:
+    image: *rabbitai-image
+    container_name: rabbitai_worker
+    command: ["/app/docker/docker-bootstrap.sh", "worker"]
+    env_file: docker/.env
+    restart: unless-stopped
+    depends_on: *rabbitai-depends-on
+    user: *rabbitai-user
+    volumes: *rabbitai-volumes
+
+  rabbitai-worker-beat:
+    image: *rabbitai-image
+    container_name: rabbitai_worker_beat
+    command: ["/app/docker/docker-bootstrap.sh", "beat"]
+    env_file: docker/.env
+    restart: unless-stopped
+    depends_on: *rabbitai-depends-on
+    user: *rabbitai-user
+    volumes: *rabbitai-volumes
+
+  rabbitai-tests-worker:
+    image: *rabbitai-image
+    container_name: rabbitai_tests_worker
+    command: ["/app/docker/docker-bootstrap.sh", "worker"]
+    env_file: docker/.env
+    environment:
+      DATABASE_HOST: localhost
+      DATABASE_DB: test
+      REDIS_CELERY_DB: 2
+      REDIS_RESULTS_DB: 3
+      REDIS_HOST: localhost
+    network_mode: host
+    depends_on: *rabbitai-depends-on
+    user: *rabbitai-user
+    volumes: *rabbitai-volumes
+
+volumes:
+  rabbitai_home:
+    external: false
+  db_home:
+    external: false
+  redis:
+    external: false

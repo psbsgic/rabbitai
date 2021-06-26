@@ -1,0 +1,6 @@
+# Ignore everything
+*
+# DON'T ignore the .gitignore
+!.gitignore
+!rabbitai_config.py
+!rabbitai_config_local.example

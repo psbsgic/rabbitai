@@ -1,0 +1,16 @@
+{{- if .Values.extraConfigs }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "rabbitai.fullname" . }}-extra-config
+  labels:
+    app: {{ template "rabbitai.name" . }}
+    chart: {{ template "rabbitai.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+{{- range $path, $config := .Values.extraConfigs }}
+  {{ $path }}: |
+{{- tpl $config $ | nindent 4 -}}
+{{- end -}}
+{{- end -}}

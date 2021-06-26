@@ -1,0 +1,44 @@
+---
+name: Upgrading Rabbitai
+menu: Installation and Configuration
+route: /docs/installation/upgrading-rabbitai
+index: 6
+version: 1
+---
+
+## Upgrading Rabbitai
+
+### Docker Compose
+
+First make sure to wind down the running containers in Docker Compose:
+
+```bash
+docker-compose down
+```
+
+Then, update the folder that mirrors the `rabbitai` repo through git:
+
+```bash
+cd rabbitai/
+git pull origin master
+```
+
+Then, restart the containers and any changed Docker images will be automatically pulled down:
+
+```bash
+docker-compose up
+```
+
+### Updating Rabbitai Manually
+
+To upgrade rabbitai in a native installation, run the following commands:
+
+```bash
+pip install apache-rabbitai --upgrade
+rabbitai db upgrade
+rabbitai init
+```
+
+While upgrading rabbitai should not delete your charts and dashboards, we recommend following best
+practices and to backup your metadata database before upgrading. Before upgrading production, we
+recommend upgrading in a staging environment and upgrading production finally during off-peak usage.

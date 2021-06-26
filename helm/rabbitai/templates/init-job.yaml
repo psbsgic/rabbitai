@@ -1,0 +1,61 @@
+
+{{- if .Values.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "rabbitai.name" . }}-init-db
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+spec:
+  template:
+    metadata:
+      name: {{ template "rabbitai.name" . }}-init-db
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.runAsUser }}
+      {{- if .Values.init.initContainers }}
+      initContainers:
+      {{-  tpl (toYaml .Values.init.initContainers) . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: {{ template "rabbitai.name" . }}-init-db
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        {{ if .Values.extraEnv }}
+        env:
+          {{- range $key, $value := .Values.extraEnv }}
+          - name: {{ $key | quote }}
+            value: {{ $value | quote }}
+          {{- end }}
+        {{- end }}
+        envFrom:
+          - secretRef:
+              name: {{ tpl .Values.envFromSecret . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        volumeMounts:
+          - name: rabbitai-config
+            mountPath: {{ .Values.configMountPath | quote }}
+            readOnly: true
+        {{ if .Values.extraConfigs }}
+          - name: rabbitai-extra-config
+            mountPath: {{ .Values.extraConfigMountPath | quote }}
+            readOnly: true
+        {{- end }}
+        command: {{  tpl (toJson .Values.init.command) . }}
+        resources:
+{{ toYaml .Values.init.resources | indent 10 }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      volumes:
+        - name: rabbitai-config
+          secret:
+            secretName: {{ tpl .Values.configFromSecret . }}
+        {{- if .Values.extraConfigs }}
+        - name: rabbitai-extra-config
+          configMap:
+            name: {{ template "rabbitai.fullname" . }}-extra-config
+        {{- end }}
+      restartPolicy: Never
+{{- end }}

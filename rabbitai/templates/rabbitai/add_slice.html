@@ -1,0 +1,17 @@
+{% extends "rabbitai/basic.html" %}
+
+{% block title %}
+  Add new chart
+{% endblock %}
+
+{% block body %}
+  <div
+    id="app"
+    data-bootstrap="{{ bootstrap_data }}"
+  ></div>
+{% endblock %}
+
+{% block tail_js %}
+  {{ super() }}
+  {{ js_bundle("addSlice") }}
+{% endblock %}

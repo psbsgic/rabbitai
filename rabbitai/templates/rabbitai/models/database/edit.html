@@ -1,0 +1,10 @@
+{% extends "appbuilder/general/model/edit.html" %}
+
+{% import "rabbitai/models/database/macros.html" as macros %}
+{% block tail_js %}
+  {{ super() }}
+  {{ macros.testconn() }}
+  {{ macros.expand_extra_textarea() }}
+  {{ macros.expand_encrypted_extra_textarea() }}
+  {{ macros.expand_server_cert_textarea() }}
+{% endblock %}

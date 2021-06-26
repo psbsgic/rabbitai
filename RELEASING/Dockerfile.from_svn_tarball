@@ -1,0 +1,52 @@
+
+FROM python:3.7-buster
+
+RUN useradd --user-group --create-home --no-log-init --shell /bin/bash rabbitai
+
+# Configure environment
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+RUN apt-get update -y
+
+# Install dependencies to fix `curl https support error` and `elaying package configuration warning`
+RUN apt-get install -y apt-transport-https apt-utils
+
+# Install rabbitai dependencies
+# https://rabbitai.apache.org/docs/installation/installing-rabbitai-from-scratch
+RUN apt-get install -y build-essential libssl-dev \
+    libffi-dev python3-dev libsasl2-dev libldap2-dev libxi-dev
+
+# Install nodejs for custom build
+# https://nodejs.org/en/download/package-manager/
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
+    && apt-get install -y nodejs
+
+RUN mkdir -p /home/rabbitai
+RUN chown rabbitai /home/rabbitai
+
+WORKDIR /home/rabbitai
+ARG VERSION
+
+# Can fetch source from svn or copy tarball from local mounted directory
+RUN svn co https://dist.apache.org/repos/dist/dev/rabbitai/$VERSION ./
+RUN tar -xvf *.tar.gz
+WORKDIR apache-rabbitai-$VERSION
+
+RUN cd rabbitai-frontend \
+    && npm ci \
+    && npm run build \
+    && rm -rf node_modules
+
+
+WORKDIR /home/rabbitai/apache-rabbitai-$VERSION
+RUN pip install --upgrade setuptools pip \
+    && pip install -r requirements/base.txt \
+    && pip install --no-cache-dir .
+
+RUN flask fab babel-compile --target rabbitai/translations
+
+ENV PATH=/home/rabbitai/rabbitai/bin:$PATH \
+    PYTHONPATH=/home/rabbitai/rabbitai/:$PYTHONPATH
+COPY from_tarball_entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

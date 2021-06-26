@@ -1,0 +1,11 @@
+include NOTICE
+include LICENSE.txt
+graft licenses/
+include README.md
+include rabbitai-frontend/package.json
+recursive-include rabbitai/examples *
+recursive-include rabbitai/migrations *
+recursive-include rabbitai/templates *
+recursive-include rabbitai/translations *
+recursive-include rabbitai/static *
+recursive-exclude tests *
