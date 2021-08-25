@@ -1,4 +1,3 @@
-
 import { DASHBOARD_FILTER_SCOPE_GLOBAL } from 'src/dashboard/reducers/dashboardFilters';
 import { filterId } from './mockSliceEntities';
 

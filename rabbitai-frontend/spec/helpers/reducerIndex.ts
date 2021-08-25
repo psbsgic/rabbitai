@@ -1,4 +1,3 @@
-
 import charts from 'src/chart/chartReducer';
 import dataMask from 'src/dataMask/reducer';
 import dashboardInfo from 'src/dashboard/reducers/dashboardInfo';

@@ -415,7 +415,7 @@ pip install -r requirements/local.txt
 pip install -e .
 
 # Create an admin user in your metadata database
-rabbitai fab create-admin
+rabbitai wab create-admin
 
 # Initialize the database
 rabbitai db upgrade

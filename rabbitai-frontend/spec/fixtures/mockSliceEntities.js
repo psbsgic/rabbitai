@@ -1,4 +1,3 @@
-
 import { datasourceId } from 'spec/fixtures/mockDatasource';
 import { sliceId } from './mockChartQueries';
 

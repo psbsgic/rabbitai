@@ -32,8 +32,7 @@ class ExportDatabasesCommand(ExportModelsCommand):
             include_defaults=True,
             export_uuids=True,
         )
-        # TODO (betodealmeida): move this logic to export_to_dict once this
-        # becomes the default export endpoint
+
         if payload.get("extra"):
             try:
                 payload["extra"] = json.loads(payload["extra"])

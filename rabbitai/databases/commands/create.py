@@ -34,7 +34,7 @@ class CreateDatabaseCommand(BaseCommand):
 
             try:
                 TestConnectionDatabaseCommand(self._actor, self._properties).run()
-            except Exception as ex:  # pylint: disable=broad-except
+            except Exception as ex:
                 db.session.rollback()
                 event_logger.log_with_context(
                     action=f"db_creation_failed.{ex.__class__.__name__}",

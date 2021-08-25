@@ -155,7 +155,7 @@ def import_column(session: Session, column: BaseColumn) -> BaseColumn:
     return import_simple_obj(session, column, lookup_column)
 
 
-def import_datasource(  # pylint: disable=too-many-arguments
+def import_datasource(
     session: Session,
     i_datasource: Model,
     lookup_database: Callable[[Model], Optional[Model]],
@@ -283,7 +283,6 @@ class ImportDatasetsCommand(BaseCommand):
     def run(self) -> None:
         self.validate()
 
-        # TODO (betodealmeida): add rollback in case of error
         for file_name, config in self._configs.items():
             logger.info("Importing dataset from file %s", file_name)
             if isinstance(config, dict):

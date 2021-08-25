@@ -1,4 +1,3 @@
-
 import sinon from 'sinon';
 
 import { ActionCreators as UndoActionCreators } from 'redux-undo';

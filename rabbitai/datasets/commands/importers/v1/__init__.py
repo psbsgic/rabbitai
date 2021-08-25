@@ -13,7 +13,6 @@ from rabbitai.datasets.schemas import ImportV1DatasetSchema
 
 
 class ImportDatasetsCommand(ImportModelsCommand):
-
     """Import datasets"""
 
     dao = DatasetDAO

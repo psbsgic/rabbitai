@@ -1,4 +1,3 @@
-
 import sinon from 'sinon';
 import { SupersetClient } from '@rabbitai-ui/core';
 

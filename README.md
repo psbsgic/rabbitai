@@ -1,7 +1,7 @@
 # Rabbitai
 
 <img
-  src="https://github.com/pengsongbo2016/rabbitai/raw/master/rabbitai-frontend/src/assets/branding/rabbitai-logo-horiz-apache.png"
+  src="https://github.com/psbsgic/rabbitai/blob/main/rabbitai-frontend/src/assets/branding/rabbitai-logo-horiz-apache.png"
   alt="Rabbitai"
   width="500"
 />

@@ -227,7 +227,7 @@ Follow these few simple steps to install Rabbitai.::
 
     # Create an admin user (you will be prompted to set a username, first and last name before setting a password)
     $ export FLASK_APP=rabbitai
-    rabbitai fab create-admin
+    rabbitai wab create-admin
 
     # Load some data to play with
     rabbitai load_examples

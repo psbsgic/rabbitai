@@ -12,6 +12,11 @@ import reducerIndex from 'spec/helpers/reducerIndex';
 import 'src/theme.ts';
 import './storybook.css';
 
+/**
+ * 创建并返回存储对象。
+ *
+ * @type {Store<unknown, Action>}
+ */
 const store = createStore(
   combineReducers(reducerIndex),
   {},

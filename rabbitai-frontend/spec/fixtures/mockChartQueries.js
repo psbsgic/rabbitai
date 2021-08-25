@@ -1,4 +1,3 @@
-
 import { datasourceId } from './mockDatasource';
 
 export const sliceId = 18;

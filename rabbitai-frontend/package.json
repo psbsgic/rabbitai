@@ -31,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pengsongbo2016/rabbitai.git"
+    "url": "git+https://github.com/psbsgic/rabbitai.git"
   },
   "keywords": [
     "big",
@@ -47,7 +47,7 @@
   ],
   "author": "Apache",
   "bugs": {
-    "url": "https://github.com/pengsongbo2016/rabbitai/issues"
+    "url": "https://github.com/psbsgic/rabbitai/issues"
   },
   "browserslist": [
     "last 3 chrome versions",

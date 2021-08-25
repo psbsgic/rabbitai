@@ -1,4 +1,3 @@
-
 export const id = 7;
 export const datasourceId = `${id}__table`;
 

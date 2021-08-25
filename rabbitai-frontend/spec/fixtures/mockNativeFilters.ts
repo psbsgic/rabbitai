@@ -1,4 +1,3 @@
-
 import { ExtraFormData } from '@rabbitai-ui/core';
 import { NativeFiltersState } from 'src/dashboard/reducers/types';
 import { DataMaskStateWithId } from '../../src/dataMask/types';

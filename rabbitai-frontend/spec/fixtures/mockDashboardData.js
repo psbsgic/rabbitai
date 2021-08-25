@@ -1,4 +1,3 @@
-
 import { dashboardLayout } from './mockDashboardLayout';
 
 // mock the object to be posted to save_dash or copy_dash API

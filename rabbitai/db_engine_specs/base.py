@@ -57,6 +57,7 @@ logger = logging.getLogger()
 
 
 class TimeGrain(NamedTuple):
+    """时间粒度，包括：name、label、function、duration。"""
     name: str
     label: str
     function: str
@@ -84,9 +85,12 @@ builtin_time_grains: Dict[Optional[str], str] = {
     "P1W/1970-01-03T00:00:00Z": __("Week ending saturday"),
     "P1W/1970-01-04T00:00:00Z": __("Week_ending sunday"),
 }
+"""在建时间粒度。"""
 
 
 class TimestampExpression(ColumnClause):
+    """时间戳列从句表达式。"""
+
     def __init__(self, expr: str, col: ColumnClause, **kwargs: Any) -> None:
         """Sqlalchemy class that can be can be used to render native column elements
         respeting engine-specific quoting rules as part of a string-based expression.
@@ -129,6 +133,8 @@ class BaseEngineSpec:
         allows_alias_to_source_column: 当SELECT中的列具有与源列相同的别名时，引擎是否能够为ORDER BY中使用的聚合子句选取源列。
         allows_hidden_orderby_agg:     引擎是否允许ORDER BY直接使用聚合子句，而不必在SELECT中添加相同的聚合。
     """
+
+    # region 类属性
 
     engine = "base"
     engine_aliases: Set[str] = set()
@@ -265,6 +271,8 @@ class BaseEngineSpec:
         Pattern[str], Tuple[str, RabbitaiErrorType, Dict[str, Any]]
     ] = {}
 
+    # endregion
+
     @classmethod
     def get_dbapi_exception_mapping(cls) -> Dict[Type[Exception], Type[Exception]]:
         """
@@ -305,6 +313,15 @@ class BaseEngineSpec:
         schema: Optional[str] = None,
         source: Optional[str] = None,
     ) -> Engine:
+        """
+        依据指定数据库对象、模式和源，获取SQLA数据库引擎。
+
+        :param database: 数据库对象。
+        :param schema: 模式。
+        :param source: 源。
+        :return:
+        """
+
         user_name = utils.get_username()
         return database.get_sqla_engine(
             schema=schema, nullpool=True, user_name=user_name, source=source
@@ -327,6 +344,7 @@ class BaseEngineSpec:
         :param type_: the source column type
         :return: TimestampExpression object
         """
+
         if time_grain:
             time_expr = cls.get_time_grain_expressions().get(time_grain)
             if not time_expr:
@@ -370,9 +388,7 @@ class BaseEngineSpec:
         return tuple(ret_list)
 
     @classmethod
-    def _sort_time_grains(
-        cls, val: Tuple[Optional[str], str], index: int
-    ) -> Union[float, int, str]:
+    def _sort_time_grains(cls, val: Tuple[Optional[str], str], index: int) -> Union[float, int, str]:
         """
         Return an ordered time-based value of a portion of a time grain
         for sorting
@@ -382,6 +398,7 @@ class BaseEngineSpec:
         It can also start or end with epoch start time denoting a range
         i.e, week beginning or ending with a day
         """
+
         pos = {
             "FIRST": 0,
             "SECOND": 1,
@@ -439,6 +456,7 @@ class BaseEngineSpec:
 
         :return: All time grain expressions supported by the engine
         """
+
         # TODO: use @memoize decorator or similar to avoid recomputation on every call
         time_grain_expressions = cls._time_grain_expressions.copy()
         grain_addon_expressions = current_app.config["TIME_GRAIN_ADDON_EXPRESSIONS"]
@@ -460,9 +478,7 @@ class BaseEngineSpec:
         )
 
     @classmethod
-    def fetch_data(
-        cls, cursor: Any, limit: Optional[int] = None
-    ) -> List[Tuple[Any, ...]]:
+    def fetch_data(cls, cursor: Any, limit: Optional[int] = None) -> List[Tuple[Any, ...]]:
         """
 
         :param cursor: Cursor instance
@@ -1266,8 +1282,7 @@ class BaseEngineSpec:
         return None
 
 
-# schema for adding a database by providing parameters instead of the
-# full SQLAlchemy URI
+# schema for adding a database by providing parameters instead of the full SQLAlchemy URI
 class BasicParametersSchema(Schema):
     """基本参数架构。"""
 

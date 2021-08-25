@@ -1,4 +1,3 @@
-
 import datasources from 'spec/fixtures/mockDatasource';
 import messageToasts from 'spec/javascripts/messageToasts/mockMessageToasts';
 import {

@@ -44,7 +44,7 @@ RUN pip install --upgrade setuptools pip \
     && pip install -r requirements/base.txt \
     && pip install --no-cache-dir .
 
-RUN flask fab babel-compile --target rabbitai/translations
+RUN flask wab babel-compile --target rabbitai/translations
 
 ENV PATH=/home/rabbitai/rabbitai/bin:$PATH \
     PYTHONPATH=/home/rabbitai/rabbitai/:$PYTHONPATH

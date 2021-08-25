@@ -20,7 +20,7 @@ from rabbitai.utils import core as utils
 from rabbitai.utils.hashing import md5_sha_from_str
 
 if TYPE_CHECKING:
-    from rabbitai.models.core import Database  # pragma: no cover
+    from rabbitai.models.core import Database
 
 
 CONNECTION_DATABASE_PERMISSIONS_REGEX = re.compile(

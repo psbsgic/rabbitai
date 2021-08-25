@@ -1,4 +1,3 @@
-
 import { sliceId } from './mockChartQueries';
 
 export default {
