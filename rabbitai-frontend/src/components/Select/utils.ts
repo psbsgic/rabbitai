@@ -1,10 +1,29 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import {
   OptionTypeBase,
   ValueType,
   OptionsType,
   GroupedOptionsType,
 } from 'react-select';
+
+import { OptionsType as AntdOptionsType } from './Select';
 
 /**
  * Find Option value that matches a possibly string value.
@@ -39,4 +58,17 @@ export function findValue<OptionType extends OptionTypeBase>(
   // If value is a single string, must return an Array so `cleanValue` won't be
   // empty: https://github.com/JedWatson/react-select/blob/32ad5c040bdd96cd1ca71010c2558842d684629c/packages/react-select/src/utils.js#L64
   return (Array.isArray(value) ? value : [value]).map(find);
+}
+
+export function hasOption(search: string, options: AntdOptionsType) {
+  const searchOption = search.trim().toLowerCase();
+  return options.find(opt => {
+    const { label, value } = opt;
+    const labelText = String(label);
+    const valueText = String(value);
+    return (
+      valueText.toLowerCase().includes(searchOption) ||
+      labelText.toLowerCase().includes(searchOption)
+    );
+  });
 }

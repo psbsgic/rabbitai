@@ -1,5 +1,23 @@
-import React from 'react';
-import { styled } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import React, { RefObject } from 'react';
+import { styled } from '@superset-ui/core';
 import {
   Dropdown,
   Menu as AntdMenu,
@@ -24,7 +42,6 @@ export {
   Dropdown,
   Form,
   Empty,
-  Modal,
   Typography,
   Tree,
   Popover,
@@ -36,9 +53,11 @@ export {
   Tag,
   Tabs,
   Tooltip,
+  Upload,
   Input as AntdInput,
 } from 'antd';
 export { Card as AntdCard } from 'antd';
+export { default as Modal, ModalProps } from 'antd/lib/modal';
 export { FormInstance } from 'antd/lib/form';
 export { RadioChangeEvent } from 'antd/lib/radio';
 export { TreeProps } from 'antd/lib/tree';
@@ -162,11 +181,14 @@ export const StyledSubMenu = styled(AntdMenu.SubMenu)`
   & > .ant-menu-submenu-title {
     padding: 0 ${({ theme }) => theme.gridUnit * 6}px 0
       ${({ theme }) => theme.gridUnit * 3}px !important;
-    svg {
+    span[role='img'] {
       position: absolute;
-      top: ${({ theme }) => theme.gridUnit * 4 + 7}px;
-      right: ${({ theme }) => theme.gridUnit}px;
-      width: ${({ theme }) => theme.gridUnit * 6}px;
+      right: ${({ theme }) => -theme.gridUnit + -2}px;
+      top: ${({ theme }) => theme.gridUnit * 5.25}px;
+      svg {
+        font-size: ${({ theme }) => theme.gridUnit * 6}px;
+        color: ${({ theme }) => theme.colors.grayscale.base};
+      }
     }
     & > span {
       position: relative;
@@ -195,6 +217,10 @@ export const MainNav = Object.assign(StyledNav, {
   ItemGroup: AntdMenu.ItemGroup,
 });
 
+interface ExtendedDropDownProps extends DropDownProps {
+  ref?: RefObject<HTMLDivElement>;
+}
+
 export const Input = styled(AntdInput)`
   border: 1px solid ${({ theme }) => theme.colors.secondary.light3};
   border-radius: ${({ theme }) => theme.borderRadius}px;
@@ -210,11 +236,11 @@ export const TextArea = styled(AntdInput.TextArea)`
   border-radius: ${({ theme }) => theme.borderRadius}px;
 `;
 
-export const NoAnimationDropdown = (props: DropDownProps) => (
-  <Dropdown
-    overlayStyle={{ zIndex: 4000, animationDuration: '0s' }}
-    {...props}
-  />
+// @z-index-below-dashboard-header (100) - 1 = 99
+export const NoAnimationDropdown = (
+  props: ExtendedDropDownProps & { children?: React.ReactNode },
+) => (
+  <Dropdown overlayStyle={{ zIndex: 99, animationDuration: '0s' }} {...props} />
 );
 
 export const ThinSkeleton = styled(Skeleton)`

@@ -1,10 +1,28 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { debounce } from 'lodash';
 import { max as d3Max } from 'd3-array';
 import { AsyncCreatableSelect, CreatableSelect } from 'src/components/Select';
 import Button from 'src/components/Button';
-import { t, RabbitaiClient, ensureIsArray } from '@rabbitai-ui/core';
+import { t, SupersetClient, ensureIsArray } from '@superset-ui/core';
 
 import {
   BOOL_FALSE_DISPLAY,
@@ -140,6 +158,8 @@ class FilterBox extends React.PureComponent {
     if (options !== null) {
       if (Array.isArray(options)) {
         vals = options.map(opt => (typeof opt === 'string' ? opt : opt.value));
+      } else if (Object.values(TIME_FILTER_MAP).includes(fltr)) {
+        vals = options.value ?? options;
       } else {
         // must use array member for legacy extra_filters's value
         vals = ensureIsArray(options.value ?? options);
@@ -203,16 +223,16 @@ class FilterBox extends React.PureComponent {
         ? [
             {
               clause: 'WHERE',
-              comparator: null,
-              expressionType: 'SQL',
-              // TODO: Evaluate SQL Injection risk
-              sqlExpression: `lower(${key}) like '%${input}%'`,
+              expressionType: 'SIMPLE',
+              subject: key,
+              operator: 'ILIKE',
+              comparator: `%${input}%`,
             },
           ]
         : null,
     };
 
-    const { json } = await RabbitaiClient.get({
+    const { json } = await SupersetClient.get({
       url: getExploreUrl({
         formData,
         endpointType: 'json',

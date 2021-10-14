@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { Provider } from 'react-redux';
 import thunk from 'redux-thunk';
@@ -19,7 +36,7 @@ const mockData = {
   id: 1,
   name: 'test report',
   description: 'test report description',
-  chart: { id: 1, slice_name: 'test chart' },
+  chart: { id: 1, slice_name: 'test chart', viz_type: 'table' },
   database: { id: 1, database_name: 'test database' },
   sql: 'SELECT NaN',
 };
@@ -59,7 +76,7 @@ fetchMock.get(dashboardEndpoint, {
 });
 
 fetchMock.get(chartEndpoint, {
-  result: [],
+  result: [{ text: 'table chart', value: 1 }],
 });
 
 async function mountAndWait(props = mockedProps) {
@@ -209,12 +226,12 @@ describe('AlertReportModal', () => {
     expect(input.props().value).toEqual('SELECT NaN');
   });
 
-  it('renders one select element when in report mode', () => {
+  it('renders two select element when in report mode', () => {
     expect(wrapper.find(Select)).toExist();
-    expect(wrapper.find(Select)).toHaveLength(1);
+    expect(wrapper.find(Select)).toHaveLength(2);
   });
 
-  it('renders two select elements when in alert mode', async () => {
+  it('renders three select elements when in alert mode', async () => {
     const props = {
       ...mockedProps,
       isReport: false,
@@ -223,7 +240,7 @@ describe('AlertReportModal', () => {
     const addWrapper = await mountAndWait(props);
 
     expect(addWrapper.find(Select)).toExist();
-    expect(addWrapper.find(Select)).toHaveLength(2);
+    expect(addWrapper.find(Select)).toHaveLength(3);
   });
 
   it('renders value input element when in alert mode', async () => {
@@ -241,6 +258,22 @@ describe('AlertReportModal', () => {
   it('renders two radio buttons', () => {
     expect(wrapper.find(Radio)).toExist();
     expect(wrapper.find(Radio)).toHaveLength(2);
+  });
+
+  it('renders text option for text-based charts', async () => {
+    const props = {
+      ...mockedProps,
+      alert: mockData,
+    };
+    const textWrapper = await mountAndWait(props);
+
+    const chartOption = textWrapper.find('input[value="chart"]');
+    act(() => {
+      chartOption.props().onChange({ target: { value: 'chart' } });
+    });
+    await waitForComponentToPaint(textWrapper);
+
+    expect(textWrapper.find('input[value="TEXT"]')).toExist();
   });
 
   it('renders input element for working timeout', () => {

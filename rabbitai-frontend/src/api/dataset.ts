@@ -1,4 +1,23 @@
-import { RabbitaiClient, JsonResponse } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { SupersetClient, JsonResponse } from '@superset-ui/core';
 import rison from 'rison';
 
 export const getByUser = async (userId: number) => {
@@ -14,7 +33,7 @@ export const getByUser = async (userId: number) => {
     order_direction: 'desc',
   });
   const endpoint = `/api/v1/dataset?q=${queryParams}`;
-  const data: JsonResponse = await RabbitaiClient.get({
+  const data: JsonResponse = await SupersetClient.get({
     endpoint,
   });
   return data.json.result;
@@ -35,7 +54,7 @@ export const put = async (
     database_id: dbId,
   });
 
-  const data: JsonResponse = await RabbitaiClient.put({
+  const data: JsonResponse = await SupersetClient.put({
     endpoint,
     headers,
     body,

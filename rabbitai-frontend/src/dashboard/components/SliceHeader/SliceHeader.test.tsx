@@ -1,5 +1,21 @@
-
-import { Slice } from 'src/types/Chart';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { render, screen } from 'spec/helpers/testing-library';
 import userEvent from '@testing-library/user-event';
@@ -15,8 +31,8 @@ jest.mock('src/dashboard/components/SliceHeaderControls', () => ({
       data-is-expanded={props.isExpanded}
       data-cached-dttm={props.cachedDttm}
       data-updated-dttm={props.updatedDttm}
-      data-rabbitai-can-explore={props.rabbitaiCanExplore}
-      data-rabbitai-can-csv={props.rabbitaiCanCSV}
+      data-superset-can-explore={props.supersetCanExplore}
+      data-superset-can-csv={props.supersetCanCSV}
       data-slice-can-edit={props.sliceCanEdit}
       data-component-id={props.componentId}
       data-dashboard-id={props.dashboardId}
@@ -41,7 +57,7 @@ jest.mock('src/dashboard/components/SliceHeaderControls', () => ({
       <button
         type="button"
         data-test="exploreChart"
-        onClick={props.exploreChart}
+        onClick={props.logExploreChart}
       >
         exploreChart
       </button>
@@ -77,7 +93,7 @@ jest.mock('src/dashboard/components/SliceHeaderControls', () => ({
   ),
 }));
 
-jest.mock('src/dashboard/containers/FiltersBadge', () => ({
+jest.mock('src/dashboard/components/FiltersBadge', () => ({
   __esModule: true,
   default: (props: any) => (
     <div data-test="FiltersBadge" data-chart-id={props.chartId} />
@@ -94,17 +110,17 @@ const createProps = () => ({
   isCached: [false],
   isExpanded: false,
   sliceName: 'Vaccine Candidates per Phase',
-  rabbitaiCanExplore: true,
-  rabbitaiCanCSV: true,
+  supersetCanExplore: true,
+  supersetCanCSV: true,
   sliceCanEdit: false,
-  slice: ({
+  slice: {
     slice_id: 312,
-    slice_url: '/rabbitai/explore/?form_data=%7B%22slice_id%22%3A%20312%7D',
+    slice_url: '/superset/explore/?form_data=%7B%22slice_id%22%3A%20312%7D',
     slice_name: 'Vaccine Candidates per Phase',
     form_data: {
       adhoc_filters: [],
       bottom_margin: 'auto',
-      color_scheme: 'RABBITAI_DEFAULT',
+      color_scheme: 'SUPERSET_DEFAULT',
       columns: [],
       datasource: '58__table',
       groupby: ['clinical_stage'],
@@ -122,12 +138,13 @@ const createProps = () => ({
     },
     viz_type: 'dist_bar',
     datasource: '58__table',
-    description: null,
+    description: '',
     description_markeddown: '',
     owners: [],
     modified: '<span class="no-wrap">20 hours ago</span>',
     changed_on: 1617143411366,
-  } as unknown) as Slice,
+    slice_description: '',
+  },
   componentId: 'CHART-aGfmWtliqA',
   dashboardId: 26,
   isFullSize: false,
@@ -138,7 +155,7 @@ const createProps = () => ({
   updateSliceName: jest.fn(),
   toggleExpandSlice: jest.fn(),
   forceRefresh: jest.fn(),
-  exploreChart: jest.fn(),
+  logExploreChart: jest.fn(),
   exportCSV: jest.fn(),
   formData: {},
 });
@@ -159,7 +176,7 @@ test('Should render - default props', () => {
   // @ts-ignore
   delete props.toggleExpandSlice;
   // @ts-ignore
-  delete props.exploreChart;
+  delete props.logExploreChart;
   // @ts-ignore
   delete props.exportCSV;
   // @ts-ignore
@@ -181,9 +198,9 @@ test('Should render - default props', () => {
   // @ts-ignore
   delete props.sliceName;
   // @ts-ignore
-  delete props.rabbitaiCanExplore;
+  delete props.supersetCanExplore;
   // @ts-ignore
-  delete props.rabbitaiCanCSV;
+  delete props.supersetCanCSV;
   // @ts-ignore
   delete props.sliceCanEdit;
 
@@ -201,7 +218,7 @@ test('Should render default props and "call" actions', () => {
   // @ts-ignore
   delete props.toggleExpandSlice;
   // @ts-ignore
-  delete props.exploreChart;
+  delete props.logExploreChart;
   // @ts-ignore
   delete props.exportCSV;
   // @ts-ignore
@@ -223,9 +240,9 @@ test('Should render default props and "call" actions', () => {
   // @ts-ignore
   delete props.sliceName;
   // @ts-ignore
-  delete props.rabbitaiCanExplore;
+  delete props.supersetCanExplore;
   // @ts-ignore
-  delete props.rabbitaiCanCSV;
+  delete props.supersetCanCSV;
   // @ts-ignore
   delete props.sliceCanEdit;
 
@@ -328,11 +345,11 @@ test('Correct props to "SliceHeaderControls"', () => {
     'false',
   );
   expect(screen.getByTestId('SliceHeaderControls')).toHaveAttribute(
-    'data-rabbitai-can-csv',
+    'data-superset-can-csv',
     'true',
   );
   expect(screen.getByTestId('SliceHeaderControls')).toHaveAttribute(
-    'data-rabbitai-can-explore',
+    'data-superset-can-explore',
     'true',
   );
   expect(screen.getByTestId('SliceHeaderControls')).toHaveAttribute(
@@ -361,9 +378,9 @@ test('Correct actions to "SliceHeaderControls"', () => {
   userEvent.click(screen.getByTestId('forceRefresh'));
   expect(props.forceRefresh).toBeCalledTimes(1);
 
-  expect(props.exploreChart).toBeCalledTimes(0);
+  expect(props.logExploreChart).toBeCalledTimes(0);
   userEvent.click(screen.getByTestId('exploreChart'));
-  expect(props.exploreChart).toBeCalledTimes(1);
+  expect(props.logExploreChart).toBeCalledTimes(1);
 
   expect(props.exportCSV).toBeCalledTimes(0);
   userEvent.click(screen.getByTestId('exportCSV'));

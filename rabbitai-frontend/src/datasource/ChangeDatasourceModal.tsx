@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, {
   FunctionComponent,
   useState,
@@ -7,17 +24,24 @@ import React, {
   useCallback,
 } from 'react';
 import Alert from 'src/components/Alert';
-import { RabbitaiClient, t, styled } from '@rabbitai-ui/core';
+import { SupersetClient, t, styled } from '@superset-ui/core';
 import TableView, { EmptyWrapperType } from 'src/components/TableView';
+import { ServerPagination, SortByType } from 'src/components/TableView/types';
 import StyledModal from 'src/components/Modal';
 import Button from 'src/components/Button';
 import { useListViewResource } from 'src/views/CRUD/hooks';
 import Dataset from 'src/types/Dataset';
 import { useDebouncedEffect } from 'src/explore/exploreUtils';
+import { SLOW_DEBOUNCE } from 'src/constants';
 import { getClientErrorObject } from 'src/utils/getClientErrorObject';
 import Loading from 'src/components/Loading';
 import withToasts from 'src/messageToasts/enhancers/withToasts';
 import { Input, AntdInput } from 'src/common/components';
+import {
+  PAGE_SIZE as DATASET_PAGE_SIZE,
+  SORT_BY as DATASET_SORT_BY,
+} from 'src/views/CRUD/data/dataset/constants';
+import FacePile from '../components/FacePile';
 
 const CONFIRM_WARNING_MESSAGE = t(
   'Warning! Changing the dataset may break the chart if the metadata does not exist.',
@@ -64,21 +88,6 @@ const StyledSpan = styled.span`
   }
 `;
 
-const TABLE_COLUMNS = [
-  'name',
-  'type',
-  'schema',
-  'connection',
-  'creator',
-].map(col => ({ accessor: col, Header: col }));
-
-const emptyRequest = {
-  pageIndex: 0,
-  pageSize: 20,
-  filters: [],
-  sortBy: [{ id: 'changed_on_delta_humanized' }],
-};
-
 const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
   addDangerToast,
   addSuccessToast,
@@ -88,12 +97,14 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
   show,
 }) => {
   const [filter, setFilter] = useState<any>(undefined);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<SortByType>(DATASET_SORT_BY);
   const [confirmChange, setConfirmChange] = useState(false);
   const [confirmedDataset, setConfirmedDataset] = useState<Datasource>();
   const searchRef = useRef<AntdInput>(null);
 
   const {
-    state: { loading, resourceCollection },
+    state: { loading, resourceCollection, resourceCount },
     fetchData,
   } = useListViewResource<Dataset>('dataset', t('dataset'), addDangerToast);
 
@@ -102,10 +113,17 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
     setConfirmedDataset(datasource);
   }, []);
 
+  const fetchDatasetPayload = {
+    pageIndex,
+    pageSize: DATASET_PAGE_SIZE,
+    filters: [],
+    sortBy,
+  };
+
   useDebouncedEffect(
     () => {
       fetchData({
-        ...emptyRequest,
+        ...fetchDatasetPayload,
         ...(filter && {
           filters: [
             {
@@ -117,8 +135,8 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
         }),
       });
     },
-    300,
-    [filter],
+    SLOW_DEBOUNCE,
+    [filter, pageIndex, sortBy],
   );
 
   useEffect(() => {
@@ -142,10 +160,11 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
   const changeSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchValue = event.target.value ?? '';
     setFilter(searchValue);
+    setPageIndex(0);
   };
 
   const handleChangeConfirm = () => {
-    RabbitaiClient.get({
+    SupersetClient.get({
       endpoint: `/datasource/get/${confirmedDataset?.type}/${confirmedDataset?.id}/`,
     })
       .then(({ json }) => {
@@ -170,25 +189,53 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
     setConfirmChange(false);
   };
 
-  const renderTableView = () => {
-    const data = resourceCollection.map((ds: any) => ({
-      rawName: ds.table_name,
-      connection: ds.database.database_name,
-      schema: ds.schema,
-      name: (
+  const columns = [
+    {
+      Cell: ({ row: { original } }: any) => (
         <StyledSpan
           role="button"
           tabIndex={0}
           data-test="datasource-link"
-          onClick={() => selectDatasource({ type: 'table', ...ds })}
+          onClick={() => selectDatasource({ type: 'table', ...original })}
         >
-          {ds.table_name}
+          {original?.table_name}
         </StyledSpan>
       ),
-      type: ds.kind,
-    }));
+      Header: t('Name'),
+      accessor: 'table_name',
+    },
+    {
+      Header: t('Type'),
+      accessor: 'kind',
+      disableSortBy: true,
+    },
+    {
+      Header: t('Schema'),
+      accessor: 'schema',
+    },
+    {
+      Header: t('Connection'),
+      accessor: 'database.database_name',
+      disableSortBy: true,
+    },
+    {
+      Cell: ({
+        row: {
+          original: { owners = [] },
+        },
+      }: any) => <FacePile users={owners} />,
+      Header: t('Owners'),
+      id: 'owners',
+      disableSortBy: true,
+    },
+  ];
 
-    return data;
+  const onServerPagination = (args: ServerPagination) => {
+    setPageIndex(args.pageIndex);
+    if (args.sortBy) {
+      // ensure default sort by
+      setSortBy(args.sortBy.length > 0 ? args.sortBy : DATASET_SORT_BY);
+    }
   };
 
   return (
@@ -198,7 +245,7 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
       responsive
       title={t('Change dataset')}
       width={confirmChange ? '432px' : ''}
-      height={confirmChange ? 'auto' : '480px'}
+      height={confirmChange ? 'auto' : '540px'}
       hideFooter={!confirmChange}
       footer={
         <>
@@ -242,11 +289,17 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
             {loading && <Loading />}
             {!loading && (
               <TableView
-                columns={TABLE_COLUMNS}
-                data={renderTableView()}
-                pageSize={20}
+                columns={columns}
+                data={resourceCollection}
+                pageSize={DATASET_PAGE_SIZE}
+                initialPageIndex={pageIndex}
+                initialSortBy={sortBy}
+                totalCount={resourceCount}
+                onServerPagination={onServerPagination}
                 className="table-condensed"
                 emptyWrapperType={EmptyWrapperType.Small}
+                serverPagination
+                isPaginationSticky
                 scrollTable
               />
             )}

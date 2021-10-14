@@ -1,8 +1,26 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { render, screen } from 'spec/helpers/testing-library';
+import { FeatureFlag } from 'src/featureFlags';
 import SliceHeaderControls from '.';
 
 jest.mock('src/common/components', () => {
@@ -23,16 +41,18 @@ const createProps = () => ({
   addSuccessToast: jest.fn(),
   exploreChart: jest.fn(),
   exportCSV: jest.fn(),
+  exportFullCSV: jest.fn(),
   forceRefresh: jest.fn(),
   handleToggleFullSize: jest.fn(),
   toggleExpandSlice: jest.fn(),
   slice: {
     slice_id: 371,
-    slice_url: '/rabbitai/explore/?form_data=%7B%22slice_id%22%3A%20371%7D',
+    slice_url: '/superset/explore/?form_data=%7B%22slice_id%22%3A%20371%7D',
     slice_name: 'Vaccine Candidates per Country & Stage',
+    slice_description: 'Table of vaccine candidates for 100 countries',
     form_data: {
       adhoc_filters: [],
-      color_scheme: 'rabbitaiColors',
+      color_scheme: 'supersetColors',
       datasource: '58__table',
       groupby: ['product_category', 'clinical_stage'],
       linear_color_scheme: 'schemeYlOrBr',
@@ -59,15 +79,18 @@ const createProps = () => ({
   },
   isCached: [false],
   isExpanded: false,
-  cachedDttm: [null],
+  cachedDttm: [''],
   updatedDttm: 1617213803803,
-  rabbitaiCanExplore: true,
-  rabbitaiCanCSV: true,
+  supersetCanExplore: true,
+  supersetCanCSV: true,
   sliceCanEdit: false,
   componentId: 'CHART-fYo7IyvKZQ',
   dashboardId: 26,
   isFullSize: false,
   chartStatus: 'rendered',
+  showControls: true,
+  supersetCanShare: true,
+  formData: {},
 });
 
 test('Should render', () => {
@@ -102,7 +125,6 @@ test('Should render default props', () => {
   delete props.sliceCanEdit;
 
   render(<SliceHeaderControls {...props} />, { useRedux: true });
-
   userEvent.click(screen.getByRole('menuitem', { name: 'Maximize chart' }));
   userEvent.click(screen.getByRole('menuitem', { name: /Force refresh/ }));
   userEvent.click(
@@ -130,16 +152,45 @@ test('Should "export to CSV"', () => {
   expect(props.exportCSV).toBeCalledWith(371);
 });
 
-test('Should "View chart in Explore"', () => {
+test('Export full CSV is under featureflag', () => {
+  // @ts-ignore
+  global.featureFlags = {
+    [FeatureFlag.ALLOW_FULL_CSV_EXPORT]: false,
+  };
+  const props = createProps();
+  props.slice.viz_type = 'table';
+  render(<SliceHeaderControls {...props} />, { useRedux: true });
+  expect(screen.queryByRole('menuitem', { name: 'Export full CSV' })).toBe(
+    null,
+  );
+});
+test('Should "export full CSV"', () => {
+  // @ts-ignore
+  global.featureFlags = {
+    [FeatureFlag.ALLOW_FULL_CSV_EXPORT]: true,
+  };
+  const props = createProps();
+  props.slice.viz_type = 'table';
+  render(<SliceHeaderControls {...props} />, { useRedux: true });
+  expect(screen.queryByRole('menuitem', { name: 'Export full CSV' })).not.toBe(
+    null,
+  );
+  expect(props.exportFullCSV).toBeCalledTimes(0);
+  userEvent.click(screen.getByRole('menuitem', { name: 'Export full CSV' }));
+  expect(props.exportFullCSV).toBeCalledTimes(1);
+  expect(props.exportFullCSV).toBeCalledWith(371);
+});
+
+test('Should not show export full CSV if report is not table', () => {
+  // @ts-ignore
+  global.featureFlags = {
+    [FeatureFlag.ALLOW_FULL_CSV_EXPORT]: true,
+  };
   const props = createProps();
   render(<SliceHeaderControls {...props} />, { useRedux: true });
-
-  expect(props.exploreChart).toBeCalledTimes(0);
-  userEvent.click(
-    screen.getByRole('menuitem', { name: 'View chart in Explore' }),
+  expect(screen.queryByRole('menuitem', { name: 'Export full CSV' })).toBe(
+    null,
   );
-  expect(props.exploreChart).toBeCalledTimes(1);
-  expect(props.exploreChart).toBeCalledWith(371);
 });
 
 test('Should "Toggle chart description"', () => {

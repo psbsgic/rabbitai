@@ -1,10 +1,28 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
+import { styled, t } from '@superset-ui/core';
+import { connect } from 'react-redux';
 import { LineEditableTabs } from 'src/components/Tabs';
 import { LOG_ACTIONS_SELECT_DASHBOARD_TAB } from 'src/logger/LogUtils';
 import { Modal } from 'src/common/components';
-import { styled, t } from '@rabbitai-ui/core';
 import DragDroppable from '../dnd/DragDroppable';
 import DragHandle from '../dnd/DragHandle';
 import DashboardComponent from '../../containers/DashboardComponent';
@@ -16,7 +34,7 @@ import getLeafComponentIdFromPath from '../../util/getLeafComponentIdFromPath';
 import { componentShape } from '../../util/propShapes';
 import { NEW_TAB_ID, DASHBOARD_ROOT_ID } from '../../util/constants';
 import { RENDER_TAB, RENDER_TAB_CONTENT } from './Tab';
-import { TAB_TYPE } from '../../util/componentTypes';
+import { TABS_TYPE, TAB_TYPE } from '../../util/componentTypes';
 
 const propTypes = {
   id: PropTypes.string.isRequired,
@@ -29,9 +47,11 @@ const propTypes = {
   editMode: PropTypes.bool.isRequired,
   renderHoverMenu: PropTypes.bool,
   directPathToChild: PropTypes.arrayOf(PropTypes.string),
+  activeTabs: PropTypes.arrayOf(PropTypes.string),
 
   // actions (from DashboardComponent.jsx)
   logEvent: PropTypes.func.isRequired,
+  setActiveTabs: PropTypes.func,
 
   // grid related
   availableColumnCount: PropTypes.number,
@@ -54,6 +74,8 @@ const defaultProps = {
   availableColumnCount: 0,
   columnWidth: 0,
   directPathToChild: [],
+  activeTabs: [],
+  setActiveTabs() {},
   onResizeStart() {},
   onResize() {},
   onResizeStop() {},
@@ -72,6 +94,10 @@ const StyledTabsContainer = styled.div`
   .ant-tabs {
     overflow: visible;
 
+    .ant-tabs-nav-wrap {
+      min-height: ${({ theme }) => theme.gridUnit * 12.5}px;
+    }
+
     .ant-tabs-content-holder {
       overflow: visible;
     }
@@ -82,7 +108,7 @@ const StyledTabsContainer = styled.div`
   }
 `;
 
-class Tabs extends React.PureComponent {
+export class Tabs extends React.PureComponent {
   constructor(props) {
     super(props);
     const tabIndex = Math.max(
@@ -105,6 +131,19 @@ class Tabs extends React.PureComponent {
     this.handleDropOnTab = this.handleDropOnTab.bind(this);
   }
 
+  componentDidMount() {
+    this.props.setActiveTabs([...this.props.activeTabs, this.state.activeKey]);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.activeKey !== this.state.activeKey) {
+      this.props.setActiveTabs([
+        ...this.props.activeTabs.filter(tabId => tabId !== prevState.activeKey),
+        this.state.activeKey,
+      ]);
+    }
+  }
+
   UNSAFE_componentWillReceiveProps(nextProps) {
     const maxIndex = Math.max(0, nextProps.component.children.length - 1);
     const currTabsIds = this.props.component.children;
@@ -118,7 +157,11 @@ class Tabs extends React.PureComponent {
       const lastTabId = nextTabsIds[nextTabsIds.length - 1];
       // if a new tab is added focus on it immediately
       if (nextTabsIds.length > currTabsIds.length) {
-        this.setState(() => ({ activeKey: lastTabId }));
+        // a new tab's path may be empty, here also need to set tabIndex
+        this.setState(() => ({
+          activeKey: lastTabId,
+          tabIndex: maxIndex,
+        }));
       }
       // if a tab is removed focus on the first
       if (nextTabsIds.length < currTabsIds.length) {
@@ -142,7 +185,10 @@ class Tabs extends React.PureComponent {
 
         // make sure nextFocusComponent is under this tabs component
         if (nextTabIndex > -1 && nextTabIndex !== this.state.tabIndex) {
-          this.setState(() => ({ tabIndex: nextTabIndex }));
+          this.setState(() => ({
+            tabIndex: nextTabIndex,
+            activeKey: nextTabsIds[nextTabIndex],
+          }));
         }
       }
     }
@@ -162,7 +208,7 @@ class Tabs extends React.PureComponent {
       onOk: () => {
         deleteComponent(key, component.id);
         const tabIndex = component.children.indexOf(key);
-        this.handleClickTab(Math.max(0, tabIndex - 1));
+        this.handleDeleteTab(tabIndex);
       },
       okType: 'danger',
       okText: 'DELETE',
@@ -251,11 +297,17 @@ class Tabs extends React.PureComponent {
       renderHoverMenu,
       isComponentVisible: isCurrentTabVisible,
       editMode,
+      nativeFilters,
     } = this.props;
 
     const { children: tabIds } = tabsComponent;
     const { tabIndex: selectedTabIndex, activeKey } = this.state;
 
+    let tabsToHighlight;
+    if (nativeFilters?.focusedFilterId) {
+      tabsToHighlight =
+        nativeFilters.filters[nativeFilters.focusedFilterId].tabsInScope;
+    }
     return (
       <DragDroppable
         component={tabsComponent}
@@ -263,7 +315,11 @@ class Tabs extends React.PureComponent {
         orientation="row"
         index={index}
         depth={depth}
-        onDrop={handleComponentDrop}
+        onDrop={dropResult => {
+          if (dropResult.dragging.type !== TABS_TYPE) {
+            handleComponentDrop(dropResult);
+          }
+        }}
         editMode={editMode}
       >
         {({
@@ -305,6 +361,9 @@ class Tabs extends React.PureComponent {
                       columnWidth={columnWidth}
                       onDropOnTab={this.handleDropOnTab}
                       isFocused={activeKey === tabId}
+                      isHighlighted={
+                        activeKey !== tabId && tabsToHighlight?.includes(tabId)
+                      }
                     />
                   }
                 >
@@ -345,4 +404,7 @@ class Tabs extends React.PureComponent {
 Tabs.propTypes = propTypes;
 Tabs.defaultProps = defaultProps;
 
-export default Tabs;
+function mapStateToProps(state) {
+  return { nativeFilters: state.nativeFilters };
+}
+export default connect(mapStateToProps)(Tabs);

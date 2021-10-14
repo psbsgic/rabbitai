@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { render, screen, fireEvent } from 'spec/helpers/testing-library';
 import userEvent from '@testing-library/user-event';
@@ -15,11 +32,22 @@ const createProps = () => ({
     dash_edit_perm: false,
     dash_save_perm: false,
     dash_share_perm: false,
-    userId: 1,
+    userId: '1',
     metadata: {},
     common: {
       conf: {},
     },
+  },
+  user: {
+    createdOn: '2021-04-27T18:12:38.952304',
+    email: 'admin',
+    firstName: 'admin',
+    isActive: true,
+    lastName: 'admin',
+    permissions: {},
+    roles: { Admin: Array(173) },
+    userId: 1,
+    username: 'admin',
   },
   dashboardTitle: 'Dashboard Title',
   charts: {},
@@ -36,6 +64,8 @@ const createProps = () => ({
   onChange: jest.fn(),
   fetchFaveStar: jest.fn(),
   fetchCharts: jest.fn(),
+  onRefresh: jest.fn(),
+  fetchUISpecificReport: jest.fn(),
   saveFaveStar: jest.fn(),
   savePublished: jest.fn(),
   isPublished: false,
@@ -78,6 +108,7 @@ const redoProps = {
 };
 
 fetchMock.get('glob:*/csstemplateasyncmodelview/api/read', {});
+fetchMock.get('glob:*/api/v1/report*', {});
 
 function setup(props: HeaderProps) {
   return (
@@ -231,6 +262,21 @@ test('should render the selected fave icon', () => {
   ).toBeInTheDocument();
 });
 
+test('should NOT render the fave icon on anonymous user', () => {
+  const mockedProps = createProps();
+  const anonymousUserProps = {
+    ...mockedProps,
+    user: undefined,
+  };
+  render(setup(anonymousUserProps));
+  expect(() =>
+    screen.getByRole('img', { name: 'favorite-unselected' }),
+  ).toThrowError('Unable to find');
+  expect(() =>
+    screen.getByRole('img', { name: 'favorite-selected' }),
+  ).toThrowError('Unable to find');
+});
+
 test('should fave', async () => {
   const mockedProps = createProps();
   render(setup(mockedProps));
@@ -267,5 +313,5 @@ test('should refresh the charts', async () => {
   render(setup(mockedProps));
   await openActionsDropdown();
   userEvent.click(screen.getByText('Refresh dashboard'));
-  expect(mockedProps.fetchCharts).toHaveBeenCalledTimes(1);
+  expect(mockedProps.onRefresh).toHaveBeenCalledTimes(1);
 });

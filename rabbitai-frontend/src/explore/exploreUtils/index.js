@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 import { useCallback, useEffect } from 'react';
 /* eslint camelcase: 0 */
@@ -8,11 +25,14 @@ import {
   ensureIsArray,
   getChartBuildQueryRegistry,
   getChartMetadataRegistry,
-} from '@rabbitai-ui/core';
+} from '@superset-ui/core';
 import { availableDomains } from 'src/utils/hostNamesConfig';
 import { safeStringify } from 'src/utils/safeStringify';
 import { URL_PARAMS } from 'src/constants';
-import { MULTI_OPERATORS } from 'src/explore/constants';
+import {
+  MULTI_OPERATORS,
+  OPERATOR_ENUM_TO_OPERATOR_TYPE,
+} from 'src/explore/constants';
 import { DashboardStandaloneMode } from 'src/dashboard/util/constants';
 
 const MAX_URL_LENGTH = 8000;
@@ -47,7 +67,7 @@ export function getAnnotationJsonUrl(slice_id, form_data, isNative, force) {
   const uri = URI(window.location.search);
   const endpoint = isNative ? 'annotation_json' : 'slice_json';
   return uri
-    .pathname(`/rabbitai/${endpoint}/${slice_id}`)
+    .pathname(`/superset/${endpoint}/${slice_id}`)
     .search({
       form_data: safeStringify(form_data, (key, value) =>
         value === null ? undefined : value,
@@ -64,11 +84,15 @@ export function getURIDirectory(endpointType = 'base') {
       endpointType,
     )
   ) {
-    return '/rabbitai/explore_json/';
+    return '/superset/explore_json/';
   }
-  return '/rabbitai/explore/';
+  return '/superset/explore/';
 }
 
+/**
+ * This gets the url of the explore page, with all the form data included explicitly.
+ * This includes any form data overrides from the dashboard.
+ */
 export function getExploreLongUrl(
   formData,
   endpointType,
@@ -86,7 +110,7 @@ export function getExploreLongUrl(
     search[key] = extraSearch[key];
   });
   search.form_data = safeStringify(formData);
-  if (endpointType === URL_PARAMS.standalone) {
+  if (endpointType === URL_PARAMS.standalone.name) {
     search.standalone = DashboardStandaloneMode.HIDE_NAV;
   }
   const url = uri.directory(directory).search(search).toString();
@@ -118,6 +142,11 @@ export function getChartDataUri({ path, qs, allowDomainSharding = false }) {
   return uri;
 }
 
+/**
+ * This gets the minimal url for the given form data.
+ * If there are dashboard overrides present in the form data,
+ * they will not be included in the url.
+ */
 export function getExploreUrl({
   formData,
   endpointType = 'base',
@@ -159,7 +188,7 @@ export function getExploreUrl({
   if (endpointType === 'csv') {
     search.csv = 'true';
   }
-  if (endpointType === URL_PARAMS.standalone) {
+  if (endpointType === URL_PARAMS.standalone.name) {
     search.standalone = '1';
   }
   if (endpointType === 'query') {
@@ -302,7 +331,10 @@ export const useDebouncedEffect = (effect, delay, deps) => {
 };
 
 export const getSimpleSQLExpression = (subject, operator, comparator) => {
-  const isMulti = MULTI_OPERATORS.has(operator);
+  const isMulti =
+    [...MULTI_OPERATORS]
+      .map(op => OPERATOR_ENUM_TO_OPERATOR_TYPE[op].operation)
+      .indexOf(operator) >= 0;
   let expression = subject ?? '';
   if (subject && operator) {
     expression += ` ${operator}`;

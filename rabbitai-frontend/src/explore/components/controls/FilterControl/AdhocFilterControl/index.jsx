@@ -1,19 +1,39 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
   t,
   logging,
-  RabbitaiClient,
+  SupersetClient,
   withTheme,
   ensureIsArray,
-} from '@rabbitai-ui/core';
+} from '@superset-ui/core';
 
 import ControlHeader from 'src/explore/components/ControlHeader';
 import adhocMetricType from 'src/explore/components/controls/MetricControl/adhocMetricType';
 import savedMetricType from 'src/explore/components/controls/MetricControl/savedMetricType';
 import AdhocMetric from 'src/explore/components/controls/MetricControl/AdhocMetric';
-import { OPERATORS } from 'src/explore/constants';
+import {
+  Operators,
+  OPERATOR_ENUM_TO_OPERATOR_TYPE,
+} from 'src/explore/constants';
 import FilterDefinitionOption from 'src/explore/components/controls/MetricControl/FilterDefinitionOption';
 import {
   AddControlLabel,
@@ -112,8 +132,8 @@ class AdhocFilterControl extends React.Component {
       } = datasource;
 
       if (!isSqllabView && dbId && name && schema) {
-        RabbitaiClient.get({
-          endpoint: `/rabbitai/extra_table_metadata/${dbId}/${name}/${schema}/`,
+        SupersetClient.get({
+          endpoint: `/superset/extra_table_metadata/${dbId}/${name}/${schema}/`,
         })
           .then(({ json }) => {
             if (json && json.partitions) {
@@ -225,7 +245,8 @@ class AdhocFilterControl extends React.Component {
           this.props.datasource.type === 'druid'
             ? option.saved_metric_name
             : this.getMetricExpression(option.saved_metric_name),
-        operator: OPERATORS['>'],
+        operator:
+          OPERATOR_ENUM_TO_OPERATOR_TYPE[Operators.GREATER_THAN].operation,
         comparator: 0,
         clause: CLAUSES.HAVING,
       });
@@ -241,7 +262,8 @@ class AdhocFilterControl extends React.Component {
           this.props.datasource.type === 'druid'
             ? option.label
             : new AdhocMetric(option).translateToSql(),
-        operator: OPERATORS['>'],
+        operator:
+          OPERATOR_ENUM_TO_OPERATOR_TYPE[Operators.GREATER_THAN].operation,
         comparator: 0,
         clause: CLAUSES.HAVING,
       });
@@ -251,7 +273,7 @@ class AdhocFilterControl extends React.Component {
       return new AdhocFilter({
         expressionType: EXPRESSION_TYPES.SIMPLE,
         subject: option.column_name,
-        operator: OPERATORS['=='],
+        operator: OPERATOR_ENUM_TO_OPERATOR_TYPE[Operators.EQUALS].operation,
         comparator: '',
         clause: CLAUSES.WHERE,
         isNew: true,

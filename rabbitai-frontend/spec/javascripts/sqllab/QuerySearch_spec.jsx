@@ -1,11 +1,28 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import thunk from 'redux-thunk';
 import configureStore from 'redux-mock-store';
 import fetchMock from 'fetch-mock';
 import QuerySearch from 'src/SqlLab/components/QuerySearch';
 import { Provider } from 'react-redux';
-import { rabbitaiTheme, ThemeProvider } from '@rabbitai-ui/core';
+import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 import { fireEvent, render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import userEvent from '@testing-library/user-event';
@@ -16,7 +33,7 @@ const store = mockStore({
   sqlLab: user,
 });
 
-const SEARCH_ENDPOINT = 'glob:*/rabbitai/search_queries?*';
+const SEARCH_ENDPOINT = 'glob:*/superset/search_queries?*';
 const USER_ENDPOINT = 'glob:*/api/v1/query/related/user';
 const DATABASE_ENDPOINT = 'glob:*/api/v1/database/?*';
 
@@ -33,7 +50,7 @@ describe('QuerySearch', () => {
   it('is valid', () => {
     expect(
       React.isValidElement(
-        <ThemeProvider theme={rabbitaiTheme}>
+        <ThemeProvider theme={supersetTheme}>
           <Provider store={store}>
             <QuerySearch {...mockedProps} />
           </Provider>
@@ -46,7 +63,7 @@ describe('QuerySearch', () => {
     // You need this await function in order to change state in the app. In fact you need it everytime you re-render.
     await act(async () => {
       render(
-        <ThemeProvider theme={rabbitaiTheme}>
+        <ThemeProvider theme={supersetTheme}>
           <Provider store={store}>
             <QuerySearch {...mockedProps} />
           </Provider>

@@ -1,8 +1,25 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
-import { css, styled } from '@rabbitai-ui/core';
+import { css, styled } from '@superset-ui/core';
 import AntDTabs, { TabsProps as AntDTabsProps } from 'antd/lib/tabs';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 
 export interface TabsProps extends AntDTabsProps {
   fullWidth?: boolean;
@@ -48,11 +65,6 @@ const StyledTabs = ({
       css`
         .ant-tabs-nav-list {
           width: 100%;
-        }
-
-        .ant-tabs-tab {
-          width: 0;
-          margin-right: 0;
         }
       `};
 
@@ -107,6 +119,9 @@ const StyledEditableTabs = styled(StyledTabs)`
     `}
 `;
 
+const StyledCancelXIcon = styled(Icons.CancelX)`
+  color: ${({ theme }) => theme.colors.grayscale.base};
+`;
 export const EditableTabs = Object.assign(StyledEditableTabs, {
   TabPane: StyledTabPane,
 });
@@ -118,9 +133,7 @@ EditableTabs.defaultProps = {
 };
 
 EditableTabs.TabPane.defaultProps = {
-  closeIcon: (
-    <Icon role="button" tabIndex={0} cursor="pointer" name="cancel-x" />
-  ),
+  closeIcon: <StyledCancelXIcon role="button" tabIndex={0} />,
 };
 
 export const StyledLineEditableTabs = styled(EditableTabs)`

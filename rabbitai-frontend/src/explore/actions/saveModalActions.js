@@ -1,6 +1,23 @@
-
-import { RabbitaiClient } from '@rabbitai-ui/core';
-import { getExploreUrl } from '../exploreUtils';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { SupersetClient } from '@superset-ui/core';
+import { buildV1ChartDataPayload, getExploreUrl } from '../exploreUtils';
 
 export const FETCH_DASHBOARDS_SUCCEEDED = 'FETCH_DASHBOARDS_SUCCEEDED';
 export function fetchDashboardsSucceeded(choices) {
@@ -14,7 +31,7 @@ export function fetchDashboardsFailed(userId) {
 
 export function fetchDashboards(userId) {
   return function fetchDashboardsThunk(dispatch) {
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: `/dashboardasync/api/read?_flt_0_owners=${userId}`,
     })
       .then(({ json }) => {
@@ -53,7 +70,19 @@ export function saveSlice(formData, requestParams) {
       requestParams,
     });
 
-    return RabbitaiClient.post({ url, postPayload: { form_data: formData } })
+    // Save the query context so we can re-generate the data from Python
+    // for alerts and reports
+    const queryContext = buildV1ChartDataPayload({
+      formData,
+      force: false,
+      resultFormat: 'json',
+      resultType: 'full',
+    });
+
+    return SupersetClient.post({
+      url,
+      postPayload: { form_data: formData, query_context: queryContext },
+    })
       .then(response => {
         dispatch(saveSliceSuccess(response.json));
         return response.json;

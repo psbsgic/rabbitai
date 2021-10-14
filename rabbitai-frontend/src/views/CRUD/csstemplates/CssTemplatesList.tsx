@@ -1,7 +1,24 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 import React, { useMemo, useState } from 'react';
-import { t, RabbitaiClient } from '@rabbitai-ui/core';
+import { t, SupersetClient } from '@superset-ui/core';
 
 import rison from 'rison';
 import moment from 'moment';
@@ -70,7 +87,7 @@ function CssTemplatesList({
   ] = useState<TemplateObject | null>(null);
 
   const handleTemplateDelete = ({ id, template_name }: TemplateObject) => {
-    RabbitaiClient.delete({
+    SupersetClient.delete({
       endpoint: `/api/v1/css_template/${id}`,
     }).then(
       () => {
@@ -87,7 +104,7 @@ function CssTemplatesList({
   };
 
   const handleBulkTemplateDelete = (templatesToDelete: TemplateObject[]) => {
-    RabbitaiClient.delete({
+    SupersetClient.delete({
       endpoint: `/api/v1/css_template/?q=${rison.encode(
         templatesToDelete.map(({ id }) => id),
       )}`,

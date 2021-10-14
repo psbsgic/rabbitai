@@ -1,19 +1,36 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col, Input } from 'src/common/components';
 import { Form, FormItem } from 'src/components/Form';
 import jsonStringify from 'json-stringify-pretty-compact';
 import Button from 'src/components/Button';
-import { AsyncSelect } from 'src/components/Select';
+import { Select } from 'src/components';
 import rison from 'rison';
 import {
   styled,
   t,
-  RabbitaiClient,
+  SupersetClient,
   getCategoricalSchemeRegistry,
   CategoricalColorNamespace,
-} from '@rabbitai-ui/core';
+} from '@superset-ui/core';
 
 import Modal from 'src/components/Modal';
 import { JsonEditor } from 'src/components/AsyncAceEditor';
@@ -21,7 +38,6 @@ import { JsonEditor } from 'src/components/AsyncAceEditor';
 import ColorSchemeControlWrapper from 'src/dashboard/components/ColorSchemeControlWrapper';
 import { getClientErrorObject } from 'src/utils/getClientErrorObject';
 import withToasts from 'src/messageToasts/enhancers/withToasts';
-import 'src/dashboard/stylesheets/buttons.less';
 import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
 
 const StyledJsonEditor = styled(JsonEditor)`
@@ -72,20 +88,25 @@ const handleErrorResponse = async response => {
 
 const loadAccessOptions = accessType => (input = '') => {
   const query = rison.encode({ filter: input });
-  return RabbitaiClient.get({
+  return SupersetClient.get({
     endpoint: `/api/v1/dashboard/related/${accessType}?q=${query}`,
   }).then(
-    response =>
-      response.json.result.map(item => ({
+    response => ({
+      data: response.json.result.map(item => ({
         value: item.value,
         label: item.text,
       })),
+      totalCount: response.json.count,
+    }),
     badResponse => {
       handleErrorResponse(badResponse);
       return [];
     },
   );
 };
+
+const loadOwners = loadAccessOptions('owners');
+const loadRoles = loadAccessOptions('roles');
 
 class PropertiesModal extends React.PureComponent {
   constructor(props) {
@@ -178,7 +199,7 @@ class PropertiesModal extends React.PureComponent {
     // that renders this component have all the values we need.
     // At some point when we have a more consistent frontend
     // datamodel, the dashboard could probably just be passed as a prop.
-    RabbitaiClient.get({
+    SupersetClient.get({
       endpoint: `/api/v1/dashboard/${this.props.dashboardId}`,
     }).then(response => {
       const dashboard = response.json.result;
@@ -273,7 +294,7 @@ class PropertiesModal extends React.PureComponent {
       });
       this.props.onHide();
     } else {
-      RabbitaiClient.put({
+      SupersetClient.put({
         endpoint: `/api/v1/dashboard/${this.props.dashboardId}`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -310,16 +331,15 @@ class PropertiesModal extends React.PureComponent {
         <Col xs={24} md={12}>
           <h3 style={{ marginTop: '1em' }}>{t('Access')}</h3>
           <FormItem label={t('Owners')}>
-            <AsyncSelect
-              name="owners"
-              isMulti
-              value={values.owners}
-              loadOptions={loadAccessOptions('owners')}
-              defaultOptions // load options on render
-              cacheOptions
-              onChange={this.onOwnersChange}
+            <Select
+              allowClear
+              ariaLabel={t('Owners')}
               disabled={!isDashboardLoaded}
-              filterOption={null} // options are filtered at the api
+              name="owners"
+              mode="multiple"
+              value={values.owners}
+              options={loadOwners}
+              onChange={this.onOwnersChange}
             />
             <p className="help-block">
               {t(
@@ -352,16 +372,15 @@ class PropertiesModal extends React.PureComponent {
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <FormItem label={t('Owners')}>
-              <AsyncSelect
-                name="owners"
-                isMulti
-                value={values.owners}
-                loadOptions={loadAccessOptions('owners')}
-                defaultOptions // load options on render
-                cacheOptions
-                onChange={this.onOwnersChange}
+              <Select
+                allowClear
+                ariaLabel={t('Owners')}
                 disabled={!isDashboardLoaded}
-                filterOption={null} // options are filtered at the api
+                name="owners"
+                mode="multiple"
+                value={values.owners}
+                options={loadOwners}
+                onChange={this.onOwnersChange}
               />
               <p className="help-block">
                 {t(
@@ -372,16 +391,15 @@ class PropertiesModal extends React.PureComponent {
           </Col>
           <Col xs={24} md={12}>
             <FormItem label={t('Roles')}>
-              <AsyncSelect
-                name="roles"
-                isMulti
-                value={values.roles}
-                loadOptions={loadAccessOptions('roles')}
-                defaultOptions // load options on render
-                cacheOptions
-                onChange={this.onRolesChange}
+              <Select
+                allowClear
+                ariaLabel={t('Roles')}
                 disabled={!isDashboardLoaded}
-                filterOption={null} // options are filtered at the api
+                name="roles"
+                mode="multiple"
+                value={values.roles}
+                options={loadRoles}
+                onChange={this.onRolesChange}
               />
               <p className="help-block">
                 {t(

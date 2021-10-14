@@ -1,11 +1,30 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import Button from 'src/components/Button';
-import { t, styled, css } from '@rabbitai-ui/core';
+import { t, styled, css } from '@superset-ui/core';
 import Collapse from 'src/components/Collapse';
+import Icons from 'src/components/Icons';
 import TableElement from './TableElement';
 import TableSelector from '../../components/TableSelector';
+import { IconTooltip } from '../../components/IconTooltip';
 
 const propTypes = {
   queryEditor: PropTypes.object.isRequired,
@@ -117,6 +136,23 @@ export default class SqlEditorLeftBar extends React.PureComponent {
     this.props.actions.addTable(this.props.queryEditor, tableName, schemaName);
   }
 
+  renderExpandIconWithTooltip = ({ isActive }) => (
+    <IconTooltip
+      css={css`
+        transform: rotate(90deg);
+      `}
+      aria-label="Collapse"
+      tooltip={t(`${isActive ? 'Collapse' : 'Expand'} table preview`)}
+    >
+      <Icons.RightOutlined
+        iconSize="s"
+        css={css`
+          transform: ${isActive ? 'rotateY(180deg)' : ''};
+        `}
+      />
+    </IconTooltip>
+  );
+
   render() {
     const shouldShowReset = window.location.search === '?reset=1';
     const tableMetaDataHeight = this.props.height - 130; // 130 is the height of the selects above
@@ -167,6 +203,7 @@ export default class SqlEditorLeftBar extends React.PureComponent {
               expandIconPosition="right"
               ghost
               onChange={this.onToggleTable}
+              expandIcon={this.renderExpandIconWithTooltip}
             >
               {this.props.tables.map(table => (
                 <TableElement

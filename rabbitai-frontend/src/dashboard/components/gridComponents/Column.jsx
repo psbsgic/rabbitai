@@ -1,22 +1,37 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import cx from 'classnames';
-
-import DashboardComponent from '../../containers/DashboardComponent';
-import DeleteComponentButton from '../DeleteComponentButton';
-import DragDroppable from '../dnd/DragDroppable';
-import DragHandle from '../dnd/DragHandle';
-import HoverMenu from '../menu/HoverMenu';
-import IconButton from '../IconButton';
-import ResizableContainer from '../resizable/ResizableContainer';
-import BackgroundStyleDropdown from '../menu/BackgroundStyleDropdown';
-import WithPopoverMenu from '../menu/WithPopoverMenu';
-
-import backgroundStyleOptions from '../../util/backgroundStyleOptions';
-import { componentShape } from '../../util/propShapes';
-
-import { BACKGROUND_TRANSPARENT } from '../../util/constants';
+import Icons from 'src/components/Icons';
+import DashboardComponent from 'src/dashboard/containers/DashboardComponent';
+import DeleteComponentButton from 'src/dashboard/components/DeleteComponentButton';
+import DragDroppable from 'src/dashboard/components/dnd/DragDroppable';
+import DragHandle from 'src/dashboard/components/dnd/DragHandle';
+import HoverMenu from 'src/dashboard/components/menu/HoverMenu';
+import IconButton from 'src/dashboard/components/IconButton';
+import ResizableContainer from 'src/dashboard/components/resizable/ResizableContainer';
+import BackgroundStyleDropdown from 'src/dashboard/components/menu/BackgroundStyleDropdown';
+import WithPopoverMenu from 'src/dashboard/components/menu/WithPopoverMenu';
+import backgroundStyleOptions from 'src/dashboard/util/backgroundStyleOptions';
+import { componentShape } from 'src/dashboard/util/propShapes';
+import { BACKGROUND_TRANSPARENT } from 'src/dashboard/util/constants';
 
 const propTypes = {
   id: PropTypes.string.isRequired,
@@ -152,7 +167,7 @@ class Column extends React.PureComponent {
                   />
                   <IconButton
                     onClick={this.handleChangeFocus}
-                    className="fa fa-cog"
+                    icon={<Icons.Cog iconSize="xl" />}
                   />
                 </HoverMenu>
               )}

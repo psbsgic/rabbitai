@@ -1,3 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 // Forked Cosmo 3.3.7
 // Variables
 // --------------------------------------------------
@@ -6,25 +24,25 @@
 //
 // ## Gray and brand colors for use across Bootstrap.
 
-@gray-base: @darkest; // rabbitai-var
+@gray-base: @darkest; // superset-var
 @gray-darker: lighten(@gray-base, 13.5%);
 @gray-dark: lighten(@gray-base, 20%);
 @bs-gray: lighten(@gray-base, 33.5%);
 @bs-gray-light: lighten(@gray-base, 60%);
 @gray-lighter: lighten(@gray-base, 95%);
 
-@brand-primary: @primary-color; // rabbitai-var
-@brand-success: @success; // rabbitai-var
-@brand-info: @info; // rabbitai-var
-@brand-warning: @warning; // rabbitai-var
-@brand-danger: @danger; // rabbitai-var
+@brand-primary: @primary-color; // superset-var
+@brand-success: @success; // superset-var
+@brand-info: @info; // superset-var
+@brand-warning: @warning; // superset-var
+@brand-danger: @danger; // superset-var
 
 // == Scaffolding
 //
 // ## Settings for some of the most global styles.
 
 // ** Background color for `<body>`.
-@body-bg: @gray-bg; // rabbitai-var
+@body-bg: @gray-bg; // superset-var
 // ** Global text color on `<body>`.
 @text-color: @gray-dark;
 
@@ -54,7 +72,7 @@
 
 // ** By default, this inherits from the `<body>`.
 @headings-font-family: @font-family-base;
-@headings-font-weight: @font-weight-normal; // rabbitai-var
+@headings-font-weight: @font-weight-normal; // superset-var
 @headings-line-height: @line-height-tight;
 @headings-color: inherit;
 
@@ -93,7 +111,7 @@
 @border-radius-small: 4px;
 
 // ** Global color for active items (e.g., navs or dropdowns).
-@component-active-color: @lightest; // rabbitai-var
+@component-active-color: @lightest; // superset-var
 // ** Global background color for active items (e.g., navs or dropdowns).
 @component-active-bg: @brand-primary;
 
@@ -114,13 +132,13 @@
 // ** Default background color used for all tables.
 @table-bg: transparent;
 // ** Background color used for `.table-striped`.
-@table-bg-accent: fade(@gray-bg, @opacity-medium-light); // rabbitai-var
+@table-bg-accent: fade(@gray-bg, @opacity-medium-light); // superset-var
 // ** Background color used for `.table-hover`.
-@table-bg-hover: @gray-bg; // rabbitai-var
+@table-bg-hover: @gray-bg; // superset-var
 @table-bg-active: @table-bg-hover;
 
 // ** Border color for table and cell borders.
-@table-border-color: @gray-light; // rabbitai-var
+@table-border-color: @gray-light; // superset-var
 
 // == Buttons
 //
@@ -164,14 +182,14 @@
 // ##
 
 // ** `<input>` background color
-@input-bg: @lightest; // rabbitai-var
+@input-bg: @lightest; // superset-var
 // ** `<input disabled>` background color
 @input-bg-disabled: @gray-lighter;
 
 // ** Text color for `<input>`s
 @input-color: @text-color;
 // ** `<input>` border color
-@input-border: @gray-light; // rabbitai-var
+@input-border: @gray-light; // superset-var
 
 // TODO: Rename `@input-border-radius` to `@input-border-radius-base` in v4
 // ** Default `.form-control` border radius
@@ -183,7 +201,7 @@
 @input-border-radius-small: @border-radius-small;
 
 // ** Border color for inputs on focus
-@input-border-focus: @indicator-color; // rabbitai-var
+@input-border-focus: @indicator-color; // superset-var
 
 // ** Placeholder text color
 @input-color-placeholder: @bs-gray-light;
@@ -220,23 +238,23 @@
 // ## Dropdown menu container and contents.
 
 // ** Background for the dropdown menu.
-@dropdown-bg: @lightest; // rabbitai-var
+@dropdown-bg: @lightest; // superset-var
 // ** Dropdown menu `border-color`.
-@dropdown-border: fade(@darkest, @opacity-light); // rabbitai-var
+@dropdown-border: fade(@darkest, @opacity-light); // superset-var
 // ** Dropdown menu `border-color` **for IE8**.
-@dropdown-fallback-border: @gray-light; // rabbitai-var
+@dropdown-fallback-border: @gray-light; // superset-var
 // ** Divider color for between dropdown items.
-@dropdown-divider-bg: @gray-bg; // rabbitai-var
+@dropdown-divider-bg: @gray-bg; // superset-var
 
 // ** Dropdown link text color.
 @dropdown-link-color: @gray-dark;
 // ** Hover color for dropdown links.
-@dropdown-link-hover-color: @lightest; // rabbitai-var
+@dropdown-link-hover-color: @lightest; // superset-var
 // ** Hover background for dropdown links.
 @dropdown-link-hover-bg: @component-active-bg;
 
 // ** Active dropdown menu item text color.
-@dropdown-link-active-color: @lightest; // rabbitai-var
+@dropdown-link-active-color: @lightest; // superset-var
 // ** Active dropdown menu item background color.
 @dropdown-link-active-bg: @component-active-bg;
 
@@ -247,7 +265,7 @@
 @dropdown-header-color: @bs-gray-light;
 
 // ** Deprecated `@dropdown-caret-color` as of v3.1.0
-@dropdown-caret-color: @darkest; // rabbitai-var
+@dropdown-caret-color: @darkest; // superset-var
 
 //-- Z-index master list
 //
@@ -347,33 +365,33 @@
 @navbar-padding-vertical: ((@navbar-height - @line-height-computed) / 2);
 @navbar-collapse-max-height: 340px;
 
-@navbar-default-color: @lightest; // rabbitai-var
+@navbar-default-color: @lightest; // superset-var
 @navbar-default-bg: @gray-darker;
 @navbar-default-border: darken(@navbar-default-bg, 6.5%);
 
 // Navbar links
-@navbar-default-link-color: @lightest; // rabbitai-var
-@navbar-default-link-hover-color: @lightest; // rabbitai-var
+@navbar-default-link-color: @lightest; // superset-var
+@navbar-default-link-hover-color: @lightest; // superset-var
 @navbar-default-link-hover-bg: darken(@navbar-default-bg, 10%);
 @navbar-default-link-active-color: @navbar-default-link-hover-color;
 @navbar-default-link-active-bg: @navbar-default-link-hover-bg;
-@navbar-default-link-disabled-color: @gray-light; // rabbitai-var
+@navbar-default-link-disabled-color: @gray-light; // superset-var
 @navbar-default-link-disabled-bg: transparent;
 
 // Navbar brand label
 @navbar-default-brand-color: @navbar-default-link-color;
-@navbar-default-brand-hover-color: @lightest; // rabbitai-var
+@navbar-default-brand-hover-color: @lightest; // superset-var
 @navbar-default-brand-hover-bg: none;
 
 // Navbar toggle
 @navbar-default-toggle-hover-bg: @navbar-default-link-hover-bg;
-@navbar-default-toggle-icon-bar-bg: @lightest; // rabbitai-var
+@navbar-default-toggle-icon-bar-bg: @lightest; // superset-var
 @navbar-default-toggle-border-color: transparent;
 
 // === Inverted navbar
 // Reset inverted navbar basics
 @navbar-inverse-color: @gray-dark;
-@navbar-inverse-bg: @lightest; // rabbitai-var
+@navbar-inverse-bg: @lightest; // superset-var
 @navbar-inverse-border: transparent;
 
 // Inverted navbar links
@@ -392,7 +410,7 @@
 
 // Inverted navbar toggle
 @navbar-inverse-toggle-hover-bg: @navbar-inverse-link-hover-bg;
-@navbar-inverse-toggle-icon-bar-bg: @lightest; // rabbitai-var
+@navbar-inverse-toggle-icon-bar-bg: @lightest; // superset-var
 @navbar-inverse-toggle-border-color: transparent;
 
 // == Navs
@@ -407,15 +425,15 @@
 @nav-disabled-link-hover-color: @bs-gray-light;
 
 // == Tabs
-@nav-tabs-border-color: @gray-light; // rabbitai-var
+@nav-tabs-border-color: @gray-light; // superset-var
 
 @nav-tabs-link-hover-border-color: @gray-lighter;
 
 @nav-tabs-active-link-hover-bg: @body-bg;
 @nav-tabs-active-link-hover-color: @bs-gray;
-@nav-tabs-active-link-hover-border-color: @gray-light; // rabbitai-var
+@nav-tabs-active-link-hover-border-color: @gray-light; // superset-var
 
-@nav-tabs-justified-link-border-color: @gray-light; // rabbitai-var
+@nav-tabs-justified-link-border-color: @gray-light; // superset-var
 @nav-tabs-justified-active-link-border-color: @body-bg;
 
 // == Pills
@@ -428,20 +446,20 @@
 // ##
 
 @pagination-color: @link-color;
-@pagination-bg: @lightest; // rabbitai-var
-@pagination-border: @gray-light; // rabbitai-var
+@pagination-bg: @lightest; // superset-var
+@pagination-border: @gray-light; // superset-var
 
 @pagination-hover-color: @link-hover-color;
 @pagination-hover-bg: @gray-lighter;
-@pagination-hover-border: @gray-light; // rabbitai-var
+@pagination-hover-border: @gray-light; // superset-var
 
 @pagination-active-color: @bs-gray-light;
-@pagination-active-bg: @gray-bg; // rabbitai-var
-@pagination-active-border: @gray-light; // rabbitai-var
+@pagination-active-bg: @gray-bg; // superset-var
+@pagination-active-border: @gray-light; // superset-var
 
 @pagination-disabled-color: @bs-gray-light;
-@pagination-disabled-bg: @lightest; // rabbitai-var
-@pagination-disabled-border: @gray-light; // rabbitai-var
+@pagination-disabled-bg: @lightest; // superset-var
+@pagination-disabled-border: @gray-light; // superset-var
 
 // == Pager
 //
@@ -496,9 +514,9 @@
 // ** Tooltip max width
 @tooltip-max-width: 200px;
 // ** Tooltip text color
-@tooltip-color: @lightest; // rabbitai-var
+@tooltip-color: @lightest; // superset-var
 // ** Tooltip background color
-@tooltip-bg: @darkest; // rabbitai-var
+@tooltip-bg: @darkest; // superset-var
 @tooltip-opacity: 0.9;
 
 // ** Tooltip arrow width
@@ -511,13 +529,13 @@
 // ##
 
 // ** Popover body background color
-@popover-bg: @lightest; // rabbitai-var
+@popover-bg: @lightest; // superset-var
 // ** Popover maximum width
 @popover-max-width: 276px;
 // ** Popover border color
-@popover-border-color: fade(@darkest, @opacity-light); // rabbitai-var
+@popover-border-color: fade(@darkest, @opacity-light); // superset-var
 // ** Popover fallback border color
-@popover-fallback-border-color: @gray-light; // rabbitai-var
+@popover-fallback-border-color: @gray-light; // superset-var
 
 // ** Popover title background color
 @popover-title-bg: darken(@popover-bg, 3%);
@@ -555,9 +573,9 @@
 @label-danger-bg: @brand-danger;
 
 // ** Default label text color
-@label-color: @lightest; // rabbitai-var
+@label-color: @lightest; // superset-var
 // ** Default text color of a linked label
-@label-link-hover-color: @lightest; // rabbitai-var
+@label-link-hover-color: @lightest; // superset-var
 
 // == Modals
 //
@@ -572,18 +590,18 @@
 @modal-title-line-height: @line-height-base;
 
 // ** Background color of modal content area
-@modal-content-bg: @lightest; // rabbitai-var
+@modal-content-bg: @lightest; // superset-var
 // ** Modal content border color
 @modal-content-border-color: transparent;
 // ** Modal content border color **for IE8**
-@modal-content-fallback-border-color: @gray; // rabbitai-var
+@modal-content-fallback-border-color: @gray; // superset-var
 
 // ** Modal backdrop background color
-@modal-backdrop-bg: @darkest; // rabbitai-var
+@modal-backdrop-bg: @darkest; // superset-var
 // ** Modal backdrop opacity
 @modal-backdrop-opacity: 0.5;
 // ** Modal header border color
-@modal-header-border-color: @gray-bg; // rabbitai-var
+@modal-header-border-color: @gray-bg; // superset-var
 // ** Modal footer border color
 @modal-footer-border-color: @modal-header-border-color;
 
@@ -620,9 +638,9 @@
 // ##
 
 // ** Background color of the whole progress component
-@progress-bg: @gray-light; // rabbitai-var
+@progress-bg: @gray-light; // superset-var
 // ** Progress bar text color
-@progress-bar-color: @lightest; // rabbitai-var
+@progress-bar-color: @lightest; // superset-var
 // ** Variable for setting rounded corners on progress bar.
 @progress-border-radius: @border-radius-base;
 
@@ -642,14 +660,14 @@
 // ##
 
 // ** Background color on `.list-group-item`
-@list-group-bg: @lightest; // rabbitai-var
+@list-group-bg: @lightest; // superset-var
 // ** `.list-group-item` border color
-@list-group-border: @gray-light; // rabbitai-var
+@list-group-border: @gray-light; // superset-var
 // ** List group border radius
 @list-group-border-radius: @border-radius-base;
 
 // ** Background color of single list items on hover
-@list-group-hover-bg: @gray-bg; // rabbitai-var
+@list-group-hover-bg: @gray-bg; // superset-var
 // ** Text color of active list items
 @list-group-active-color: @component-active-color;
 // ** Background color of active list items
@@ -668,27 +686,27 @@
 
 @list-group-link-color: #555;
 @list-group-link-hover-color: @list-group-link-color;
-@list-group-link-heading-color: @almost-black; // rabbitai-var
+@list-group-link-heading-color: @almost-black; // superset-var
 
 // == Panels
 //
 // ##
 
-@panel-bg: @lightest; // rabbitai-var
+@panel-bg: @lightest; // superset-var
 @panel-body-padding: 15px;
 @panel-heading-padding: 10px 15px;
 @panel-footer-padding: @panel-heading-padding;
 @panel-border-radius: @border-radius-base;
 
 // ** Border color for elements within panels
-@panel-inner-border: @gray-light; // rabbitai-var
-@panel-footer-bg: @gray-bg; // rabbitai-var
+@panel-inner-border: @gray-light; // superset-var
+@panel-footer-bg: @gray-bg; // superset-var
 
 @panel-default-text: @gray-dark;
 @panel-default-border: transparent;
-@panel-default-heading-bg: @lightest; // rabbitai-var
+@panel-default-heading-bg: @lightest; // superset-var
 
-@panel-primary-text: @lightest; // rabbitai-var
+@panel-primary-text: @lightest; // superset-var
 @panel-primary-border: transparent;
 @panel-primary-heading-bg: @brand-primary;
 
@@ -717,7 +735,7 @@
 // ** Thumbnail background color
 @thumbnail-bg: @body-bg;
 // ** Thumbnail border color
-@thumbnail-border: @gray-light; // rabbitai-var
+@thumbnail-border: @gray-light; // superset-var
 // ** Thumbnail border radius
 @thumbnail-border-radius: @border-radius-base;
 
@@ -730,22 +748,22 @@
 //
 // ##
 
-@well-bg: @gray-bg; // rabbitai-var
+@well-bg: @gray-bg; // superset-var
 @well-border: darken(@well-bg, 7%);
 
 // == Badges
 //
 // ##
 
-@badge-color: @lightest; // rabbitai-var
+@badge-color: @lightest; // superset-var
 // ** Linked badge text color on hover
-@badge-link-hover-color: @lightest; // rabbitai-var
+@badge-link-hover-color: @lightest; // superset-var
 @badge-bg: @brand-primary;
 
 // ** Badge text color in active nav link
 @badge-active-color: @link-color;
 // ** Badge background color in active nav link
-@badge-active-bg: @lightest; // rabbitai-var
+@badge-active-bg: @lightest; // superset-var
 
 @badge-font-weight: bold;
 @badge-line-height: 1;
@@ -758,9 +776,9 @@
 @breadcrumb-padding-vertical: 8px;
 @breadcrumb-padding-horizontal: 15px;
 // ** Breadcrumb background color
-@breadcrumb-bg: @gray-bg; // rabbitai-var
+@breadcrumb-bg: @gray-bg; // superset-var
 // ** Breadcrumb text color
-@breadcrumb-color: @gray-light; // rabbitai-var
+@breadcrumb-color: @gray-light; // superset-var
 // ** Text color of current page in the breadcrumb
 @breadcrumb-active-color: @bs-gray-light;
 // ** Textual separator for between breadcrumb elements
@@ -770,39 +788,39 @@
 //
 // ##
 
-@carousel-text-shadow: 0 1px 2px fade(@darkest, @opacity-light); // rabbitai-var
+@carousel-text-shadow: 0 1px 2px fade(@darkest, @opacity-light); // superset-var
 
-@carousel-control-color: @lightest; // rabbitai-var
+@carousel-control-color: @lightest; // superset-var
 @carousel-control-width: 15%;
 @carousel-control-opacity: 0.5;
 @carousel-control-font-size: 20px;
 
-@carousel-indicator-active-bg: @lightest; // rabbitai-var
-@carousel-indicator-border-color: @lightest; // rabbitai-var
+@carousel-indicator-active-bg: @lightest; // superset-var
+@carousel-indicator-border-color: @lightest; // superset-var
 
-@carousel-caption-color: @lightest; // rabbitai-var
+@carousel-caption-color: @lightest; // superset-var
 
 // == Close
 //
 // ##
 
 @close-font-weight: bold;
-@close-color: @lightest; // rabbitai-var
-@close-text-shadow: 0 1px 0 @lightest; // rabbitai-var
+@close-color: @lightest; // superset-var
+@close-text-shadow: 0 1px 0 @lightest; // superset-var
 
 // == Code
 //
 // ##
 
 @code-color: darken(@info, @colorstop-one);
-@code-bg: @gray-bg; // rabbitai-var
+@code-bg: @gray-bg; // superset-var
 
-@kbd-color: @lightest; // rabbitai-var
-@kbd-bg: @almost-black; // rabbitai-var
+@kbd-color: @lightest; // superset-var
+@kbd-bg: @almost-black; // superset-var
 
-@pre-bg: @gray-bg; // rabbitai-var
+@pre-bg: @gray-bg; // superset-var
 @pre-color: @gray-dark;
-@pre-border-color: @gray-light; // rabbitai-var
+@pre-border-color: @gray-light; // superset-var
 @pre-scrollable-max-height: 340px;
 
 // == Type

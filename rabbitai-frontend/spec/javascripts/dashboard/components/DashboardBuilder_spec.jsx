@@ -1,11 +1,28 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { Provider } from 'react-redux';
 import React from 'react';
 import { mount } from 'enzyme';
 import sinon from 'sinon';
 import fetchMock from 'fetch-mock';
 import { ParentSize } from '@vx/responsive';
-import { rabbitaiTheme, ThemeProvider } from '@rabbitai-ui/core';
-import { Sticky, StickyContainer } from 'react-sticky';
+import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 import Tabs from 'src/components/Tabs';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -32,16 +49,21 @@ jest.mock('src/dashboard/actions/dashboardState');
 
 describe('DashboardBuilder', () => {
   let favStarStub;
+  let activeTabsStub;
 
   beforeAll(() => {
     // this is invoked on mount, so we stub it instead of making a request
     favStarStub = sinon
       .stub(dashboardStateActions, 'fetchFaveStar')
       .returns({ type: 'mock-action' });
+    activeTabsStub = sinon
+      .stub(dashboardStateActions, 'setActiveTabs')
+      .returns({ type: 'mock-action' });
   });
 
   afterAll(() => {
     favStarStub.restore();
+    activeTabsStub.restore();
   });
 
   function setup(overrideState = {}, overrideStore) {
@@ -60,21 +82,21 @@ describe('DashboardBuilder', () => {
       </Provider>,
       {
         wrappingComponent: ThemeProvider,
-        wrappingComponentProps: { theme: rabbitaiTheme },
+        wrappingComponentProps: { theme: supersetTheme },
       },
     );
   }
 
   it('should render a StickyContainer with class "dashboard"', () => {
     const wrapper = setup();
-    const stickyContainer = wrapper.find(StickyContainer);
+    const stickyContainer = wrapper.find('[data-test="dashboard-content"]');
     expect(stickyContainer).toHaveLength(1);
     expect(stickyContainer.prop('className')).toBe('dashboard');
   });
 
   it('should add the "dashboard--editing" class if editMode=true', () => {
     const wrapper = setup({ dashboardState: { editMode: true } });
-    const stickyContainer = wrapper.find(StickyContainer).first();
+    const stickyContainer = wrapper.find('[data-test="dashboard-content"]');
     expect(stickyContainer.prop('className')).toBe(
       'dashboard dashboard--editing',
     );
@@ -90,12 +112,12 @@ describe('DashboardBuilder', () => {
       { dashboardLayout: undoableDashboardLayoutWithTabs },
       mockStoreWithTabs,
     );
-    const sticky = wrapper.find(Sticky);
+
+    const sticky = wrapper.find('[data-test="top-level-tabs"]');
     const dashboardComponent = sticky.find(DashboardComponent);
 
     const tabChildren =
       undoableDashboardLayoutWithTabs.present.TABS_ID.children;
-    expect(sticky).toHaveLength(1);
     expect(dashboardComponent).toHaveLength(1 + tabChildren.length); // tab + tabs
     expect(dashboardComponent.at(0).prop('id')).toBe('TABS_ID');
     tabChildren.forEach((tabId, i) => {

@@ -1,14 +1,31 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 /* eslint camelcase: 0 */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { styled, t, css, useTheme } from '@rabbitai-ui/core';
+import { styled, t, css, useTheme } from '@superset-ui/core';
 import { debounce } from 'lodash';
 import { Resizable } from 're-resizable';
 
-import { useDynamicPluginContext } from 'src/components/DynamicPlugins';
+import { usePluginContext } from 'src/components/DynamicPlugins';
 import { Global } from '@emotion/react';
 import { Tooltip } from 'src/components/Tooltip';
 import { usePrevious } from 'src/common/hooks/usePrevious';
@@ -142,12 +159,17 @@ function useWindowSize({ delayMs = 250 } = {}) {
 }
 
 function ExploreViewContainer(props) {
-  const dynamicPluginContext = useDynamicPluginContext();
-  const dynamicPlugin = dynamicPluginContext.plugins[props.vizType];
-  const isDynamicPluginLoading = dynamicPlugin && dynamicPlugin.loading;
+  const dynamicPluginContext = usePluginContext();
+  const dynamicPlugin = dynamicPluginContext.dynamicPlugins[props.vizType];
+  const isDynamicPluginLoading = dynamicPlugin && dynamicPlugin.mounting;
   const wasDynamicPluginLoading = usePrevious(isDynamicPluginLoading);
 
+  /** the state of controls in the previous render */
   const previousControls = usePrevious(props.controls);
+  /** the state of controls last time a query was triggered */
+  const [lastQueriedControls, setLastQueriedControls] = useState(
+    props.controls,
+  );
   const windowSize = useWindowSize();
 
   const [showingModal, setShowingModal] = useState(false);
@@ -170,29 +192,32 @@ function ExploreViewContainer(props) {
     datasource_width: 300,
   };
 
-  function addHistory({ isReplace = false, title } = {}) {
-    const payload = { ...props.form_data };
-    const longUrl = getExploreLongUrl(
-      props.form_data,
-      props.standalone ? URL_PARAMS.standalone : null,
-      false,
-    );
-    try {
-      if (isReplace) {
-        window.history.replaceState(payload, title, longUrl);
-      } else {
-        window.history.pushState(payload, title, longUrl);
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        'Failed at altering browser history',
-        payload,
-        title,
-        longUrl,
+  const addHistory = useCallback(
+    ({ isReplace = false, title } = {}) => {
+      const payload = { ...props.form_data };
+      const longUrl = getExploreLongUrl(
+        props.form_data,
+        props.standalone ? URL_PARAMS.standalone.name : null,
+        false,
       );
-    }
-  }
+      try {
+        if (isReplace) {
+          window.history.replaceState(payload, title, longUrl);
+        } else {
+          window.history.pushState(payload, title, longUrl);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          'Failed at altering browser history',
+          payload,
+          title,
+          longUrl,
+        );
+      }
+    },
+    [props.form_data, props.standalone],
+  );
 
   function handlePopstate() {
     const formData = window.history.state;
@@ -206,11 +231,11 @@ function ExploreViewContainer(props) {
       );
     }
   }
-
-  function onQuery() {
+  const onQuery = useCallback(() => {
     props.actions.triggerQuery(true, props.chart.id);
     addHistory();
-  }
+    setLastQueriedControls(props.controls);
+  }, [props.controls, addHistory, props.actions, props.chart.id]);
 
   function handleKeydown(event) {
     const controlOrCommand = event.ctrlKey || event.metaKey;
@@ -321,13 +346,13 @@ function ExploreViewContainer(props) {
   }, [props.controls, props.ownState]);
 
   const chartIsStale = useMemo(() => {
-    if (previousControls) {
+    if (lastQueriedControls) {
       const changedControlKeys = Object.keys(props.controls).filter(
         key =>
-          typeof previousControls[key] !== 'undefined' &&
+          typeof lastQueriedControls[key] !== 'undefined' &&
           !areObjectsEqual(
             props.controls[key].value,
-            previousControls[key].value,
+            lastQueriedControls[key].value,
           ),
       );
 
@@ -338,7 +363,7 @@ function ExploreViewContainer(props) {
       );
     }
     return false;
-  }, [previousControls, props.controls]);
+  }, [lastQueriedControls, props.controls]);
 
   useEffect(() => {
     if (props.ownState !== undefined) {
@@ -555,7 +580,7 @@ function ExploreViewContainer(props) {
 ExploreViewContainer.propTypes = propTypes;
 
 function mapStateToProps(state) {
-  const { explore, charts, impressionId, dataMask } = state;
+  const { explore, charts, impressionId, dataMask, reports } = state;
   const form_data = getFormDataFromControls(explore.controls);
   form_data.extra_form_data = mergeExtraFormData(
     { ...form_data.extra_form_data },
@@ -591,10 +616,12 @@ function mapStateToProps(state) {
     standalone: explore.standalone,
     forcedHeight: explore.forced_height,
     chart,
-    timeout: explore.common.conf.RABBITAI_WEBSERVER_TIMEOUT,
+    timeout: explore.common.conf.SUPERSET_WEBSERVER_TIMEOUT,
     ownState: dataMask[form_data.slice_id ?? 0]?.ownState, // 0 - unsaved chart
     impressionId,
     userId: explore.user_id,
+    user: explore.user,
+    reports,
   };
 }
 

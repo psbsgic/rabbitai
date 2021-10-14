@@ -1,7 +1,24 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 /* eslint camelcase: 0 */
 import { ActionCreators as UndoActionCreators } from 'redux-undo';
-import { t, RabbitaiClient } from '@rabbitai-ui/core';
+import { t, SupersetClient } from '@superset-ui/core';
 
 import { addChart, removeChart, refreshChart } from '../../chart/chartAction';
 import { chart as initChart } from '../../chart/chartReducer';
@@ -42,7 +59,7 @@ export function removeSlice(sliceId) {
   return { type: REMOVE_SLICE, sliceId };
 }
 
-const FAVESTAR_BASE_URL = '/rabbitai/favstar/Dashboard';
+const FAVESTAR_BASE_URL = '/superset/favstar/Dashboard';
 export const TOGGLE_FAVE_STAR = 'TOGGLE_FAVE_STAR';
 export function toggleFaveStar(isStarred) {
   return { type: TOGGLE_FAVE_STAR, isStarred };
@@ -51,7 +68,7 @@ export function toggleFaveStar(isStarred) {
 export const FETCH_FAVE_STAR = 'FETCH_FAVE_STAR';
 export function fetchFaveStar(id) {
   return function fetchFaveStarThunk(dispatch) {
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: `${FAVESTAR_BASE_URL}/${id}/count/`,
     })
       .then(({ json }) => {
@@ -73,7 +90,7 @@ export const SAVE_FAVE_STAR = 'SAVE_FAVE_STAR';
 export function saveFaveStar(id, isStarred) {
   return function saveFaveStarThunk(dispatch) {
     const urlSuffix = isStarred ? 'unselect' : 'select';
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: `${FAVESTAR_BASE_URL}/${id}/${urlSuffix}/`,
     })
       .then(() => {
@@ -94,7 +111,7 @@ export function togglePublished(isPublished) {
 
 export function savePublished(id, isPublished) {
   return function savePublishedThunk(dispatch) {
-    return RabbitaiClient.put({
+    return SupersetClient.put({
       endpoint: `/api/v1/dashboard/${id}`,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -173,8 +190,8 @@ export function saveDashboardRequest(data, id, saveType) {
     const serializedFilters = serializeActiveFilterValues(getActiveFilters());
     // serialize filter scope for each filter field, grouped by filter id
     const serializedFilterScopes = serializeFilterScopes(dashboardFilters);
-    return RabbitaiClient.post({
-      endpoint: `/rabbitai/${path}/${id}/`,
+    return SupersetClient.post({
+      endpoint: `/superset/${path}/${id}/`,
       postPayload: {
         data: {
           ...data,
@@ -258,6 +275,32 @@ export function fetchCharts(
   };
 }
 
+const refreshCharts = (chartList, force, interval, dashboardId, dispatch) =>
+  new Promise(resolve => {
+    dispatch(fetchCharts(chartList, force, interval, dashboardId));
+    resolve();
+  });
+
+export const ON_REFRESH_SUCCESS = 'ON_REFRESH_SUCCESS';
+export function onRefreshSuccess() {
+  return { type: ON_REFRESH_SUCCESS };
+}
+
+export const ON_REFRESH = 'ON_REFRESH';
+export function onRefresh(
+  chartList = [],
+  force = false,
+  interval = 0,
+  dashboardId,
+) {
+  return dispatch => {
+    dispatch({ type: ON_REFRESH });
+    refreshCharts(chartList, force, interval, dashboardId, dispatch).then(() =>
+      dispatch({ type: ON_REFRESH_SUCCESS }),
+    );
+  };
+}
+
 export const SHOW_BUILDER_PANE = 'SHOW_BUILDER_PANE';
 export function showBuilderPane() {
   return { type: SHOW_BUILDER_PANE };
@@ -327,6 +370,11 @@ export function setDirectPathToChild(path) {
   return { type: SET_DIRECT_PATH, path };
 }
 
+export const SET_ACTIVE_TABS = 'SET_ACTIVE_TABS';
+export function setActiveTabs(tabIds) {
+  return { type: SET_ACTIVE_TABS, tabIds };
+}
+
 export const SET_FOCUSED_FILTER_FIELD = 'SET_FOCUSED_FILTER_FIELD';
 export function setFocusedFilterField(chartId, column) {
   return { type: SET_FOCUSED_FILTER_FIELD, chartId, column };
@@ -335,6 +383,11 @@ export function setFocusedFilterField(chartId, column) {
 export const UNSET_FOCUSED_FILTER_FIELD = 'UNSET_FOCUSED_FILTER_FIELD';
 export function unsetFocusedFilterField(chartId, column) {
   return { type: UNSET_FOCUSED_FILTER_FIELD, chartId, column };
+}
+
+export const SET_FULL_SIZE_CHART_ID = 'SET_FULL_SIZE_CHART_ID';
+export function setFullSizeChartId(chartId) {
+  return { type: SET_FULL_SIZE_CHART_ID, chartId };
 }
 
 // Undo history ---------------------------------------------------------------

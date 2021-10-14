@@ -1,6 +1,23 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
-
-import { makeApi } from '@rabbitai-ui/core';
+import { makeApi } from '@superset-ui/core';
 import { Dispatch } from 'redux';
 import { FilterConfiguration } from 'src/dashboard/components/nativeFilters/types';
 import { DataMaskType, DataMaskStateWithId } from 'src/dataMask/types';
@@ -30,6 +47,11 @@ export interface SetFilterConfigComplete {
 export const SET_FILTER_CONFIG_FAIL = 'SET_FILTER_CONFIG_FAIL';
 export interface SetFilterConfigFail {
   type: typeof SET_FILTER_CONFIG_FAIL;
+  filterConfig: FilterConfiguration;
+}
+export const SET_IN_SCOPE_STATUS_OF_FILTERS = 'SET_IN_SCOPE_STATUS_OF_FILTERS';
+export interface SetInScopeStatusOfFilters {
+  type: typeof SET_IN_SCOPE_STATUS_OF_FILTERS;
   filterConfig: FilterConfiguration;
 }
 export const SET_FILTER_SETS_CONFIG_BEGIN = 'SET_FILTER_SETS_CONFIG_BEGIN';
@@ -68,11 +90,19 @@ export const setFilterConfiguration = (
     endpoint: `/api/v1/dashboard/${id}`,
   });
 
+  const mergedFilterConfig = filterConfig.map(filter => {
+    const oldFilter = oldFilters[filter.id];
+    if (!oldFilter) {
+      return filter;
+    }
+    return { ...oldFilter, ...filter };
+  });
+
   try {
     const response = await updateDashboard({
       json_metadata: JSON.stringify({
         ...metadata,
-        native_filter_configuration: filterConfig,
+        native_filter_configuration: mergedFilterConfig,
       }),
     });
     dispatch(
@@ -82,13 +112,40 @@ export const setFilterConfiguration = (
     );
     dispatch({
       type: SET_FILTER_CONFIG_COMPLETE,
-      filterConfig,
+      filterConfig: mergedFilterConfig,
     });
-    dispatch(setDataMaskForFilterConfigComplete(filterConfig, oldFilters));
+    dispatch(
+      setDataMaskForFilterConfigComplete(mergedFilterConfig, oldFilters),
+    );
   } catch (err) {
-    dispatch({ type: SET_FILTER_CONFIG_FAIL, filterConfig });
-    dispatch({ type: SET_DATA_MASK_FOR_FILTER_CONFIG_FAIL, filterConfig });
+    dispatch({
+      type: SET_FILTER_CONFIG_FAIL,
+      filterConfig: mergedFilterConfig,
+    });
+    dispatch({
+      type: SET_DATA_MASK_FOR_FILTER_CONFIG_FAIL,
+      filterConfig: mergedFilterConfig,
+    });
   }
+};
+
+export const setInScopeStatusOfFilters = (
+  filterScopes: {
+    filterId: string;
+    chartsInScope: number[];
+    tabsInScope: string[];
+  }[],
+) => async (dispatch: Dispatch, getState: () => any) => {
+  const filters = getState().nativeFilters?.filters;
+  const filtersWithScopes = filterScopes.map(scope => ({
+    ...filters[scope.filterId],
+    chartsInScope: scope.chartsInScope,
+    tabsInScope: scope.tabsInScope,
+  }));
+  dispatch({
+    type: SET_IN_SCOPE_STATUS_OF_FILTERS,
+    filterConfig: filtersWithScopes,
+  });
 };
 
 type BootstrapData = {
@@ -194,6 +251,7 @@ export type AnyFilterAction =
   | SetFilterSetsConfigBegin
   | SetFilterSetsConfigComplete
   | SetFilterSetsConfigFail
+  | SetInScopeStatusOfFilters
   | SaveFilterSets
   | SetBootstrapData
   | SetFocusedNativeFilter

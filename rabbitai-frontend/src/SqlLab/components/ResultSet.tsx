@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { CSSProperties } from 'react';
 import ButtonGroup from 'src/components/ButtonGroup';
 import Alert from 'src/components/Alert';
@@ -8,7 +25,7 @@ import { RadioChangeEvent } from 'antd/lib/radio';
 import Button from 'src/components/Button';
 import shortid from 'shortid';
 import rison from 'rison';
-import { styled, t, makeApi } from '@rabbitai-ui/core';
+import { styled, t, makeApi } from '@superset-ui/core';
 import { debounce } from 'lodash';
 import ErrorMessageWithStackTrace from 'src/components/ErrorMessage/ErrorMessageWithStackTrace';
 import { SaveDatasetModal } from 'src/SqlLab/components/SaveDatasetModal';
@@ -254,8 +271,22 @@ export default class ResultSet extends React.PureComponent<
       return;
     }
 
-    const { schema, sql, dbId, templateParams } = this.props.query;
+    const { schema, sql, dbId } = this.props.query;
+    let { templateParams } = this.props.query;
     const selectedColumns = this.props.query?.results?.selected_columns || [];
+
+    // The filters param is only used to test jinja templates.
+    // Remove the special filters entry from the templateParams
+    // before saving the dataset.
+    if (templateParams) {
+      const p = JSON.parse(templateParams);
+      /* eslint-disable-next-line no-underscore-dangle */
+      if (p._filters) {
+        /* eslint-disable-next-line no-underscore-dangle */
+        delete p._filters;
+        templateParams = JSON.stringify(p);
+      }
+    }
 
     this.props.actions
       .createDatasource({
@@ -470,7 +501,7 @@ export default class ResultSet extends React.PureComponent<
             {this.props.csv && (
               <Button
                 buttonSize="small"
-                href={`/rabbitai/csv/${this.props.query.id}`}
+                href={`/superset/csv/${this.props.query.id}`}
               >
                 <i className="fa fa-file-text-o" /> {t('Download to CSV')}
               </Button>
@@ -510,7 +541,7 @@ export default class ResultSet extends React.PureComponent<
     let limitMessage;
     const limitReached = results?.displayLimitReached;
     const limit = queryLimit || results.query.limit;
-    const isAdmin = !!this.props.user?.roles.Admin;
+    const isAdmin = !!this.props.user?.roles?.Admin;
     const displayMaxRowsReachedMessage = {
       withAdmin: t(
         `The number of results displayed is limited to %(rows)d by the configuration DISPLAY_MAX_ROWS. `,

@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 // ***********************************************
 // Tests for setting controls in the UI
 // ***********************************************
@@ -82,20 +99,14 @@ describe('VizType control', () => {
     cy.visitChartByName('Daily Totals');
     cy.verifySliceSuccess({ waitAlias: '@tableChartData' });
 
-    let numScripts = 0;
-    cy.get('script').then(nodes => {
-      numScripts = nodes.length;
-    });
-
     cy.get('[data-test="visualization-type"]').contains('Table').click();
 
+    cy.get('button').contains('Evolution').click(); // change categories
     cy.get('[role="button"]').contains('Line Chart').click();
+    cy.get('button').contains('Select').click();
 
     // should load mathjs for line chart
     cy.get('script[src*="mathjs"]').should('have.length', 1);
-    cy.get('script').then(nodes => {
-      expect(nodes.length).to.greaterThan(numScripts);
-    });
 
     cy.get('button[data-test="run-query-button"]').click();
     cy.verifySliceSuccess({

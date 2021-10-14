@@ -1,19 +1,38 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { bindActionCreators, Dispatch } from 'redux';
 import { connect } from 'react-redux';
-import Dashboard from '../components/Dashboard';
+import { RootState } from 'src/dashboard/types';
+import Dashboard from 'src/dashboard/components/Dashboard';
 import {
   addSliceToDashboard,
   removeSliceFromDashboard,
-} from '../actions/dashboardState';
-import { triggerQuery } from '../../chart/chartAction';
-import { logEvent } from '../../logger/actions';
-import { getActiveFilters } from '../util/activeDashboardFilters';
+} from 'src/dashboard/actions/dashboardState';
+import { setDatasources } from 'src/dashboard/actions/datasources';
+
+import { triggerQuery } from 'src/chart/chartAction';
+import { logEvent } from 'src/logger/actions';
+import { getActiveFilters } from 'src/dashboard/util/activeDashboardFilters';
 import {
   getAllActiveFilters,
   getRelevantDataMask,
-} from '../util/activeAllDashboardFilters';
-import { RootState } from '../types';
+} from 'src/dashboard/util/activeAllDashboardFilters';
 
 function mapStateToProps(state: RootState) {
   const {
@@ -30,7 +49,7 @@ function mapStateToProps(state: RootState) {
 
   return {
     initMessages: dashboardInfo.common.flash_messages,
-    timeout: dashboardInfo.common.conf.RABBITAI_WEBSERVER_TIMEOUT,
+    timeout: dashboardInfo.common.conf.SUPERSET_WEBSERVER_TIMEOUT,
     userId: dashboardInfo.userId,
     dashboardInfo,
     dashboardState,
@@ -63,6 +82,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
   return {
     actions: bindActionCreators(
       {
+        setDatasources,
         addSliceToDashboard,
         removeSliceFromDashboard,
         triggerQuery,

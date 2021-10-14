@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { Provider } from 'react-redux';
 import React from 'react';
 import { shallow } from 'enzyme';
@@ -14,10 +31,13 @@ import DashboardComponent from 'src/dashboard/containers/DashboardComponent';
 import DeleteComponentButton from 'src/dashboard/components/DeleteComponentButton';
 import HoverMenu from 'src/dashboard/components/menu/HoverMenu';
 import DragDroppable from 'src/dashboard/components/dnd/DragDroppable';
-import Tabs from 'src/dashboard/components/gridComponents/Tabs';
+import { Tabs } from 'src/dashboard/components/gridComponents/Tabs';
 import { DASHBOARD_ROOT_ID } from 'src/dashboard/util/constants';
+import emptyDashboardLayout from 'src/dashboard/fixtures/emptyDashboardLayout';
 import { dashboardLayoutWithTabs } from 'spec/fixtures/mockDashboardLayout';
-import { mockStoreWithTabs } from 'spec/fixtures/mockStore';
+import { getMockStore } from 'spec/fixtures/mockStore';
+import { nativeFilters } from 'spec/fixtures/mockNativeFilters';
+import { initialState } from 'spec/javascripts/sqllab/fixtures';
 
 describe('Tabs', () => {
   fetchMock.post('glob:*/r/shortner/', {});
@@ -42,13 +62,21 @@ describe('Tabs', () => {
     deleteComponent() {},
     updateComponents() {},
     logEvent() {},
+    dashboardLayout: emptyDashboardLayout,
+    nativeFilters: nativeFilters.filters,
   };
+
+  const mockStore = getMockStore({
+    ...initialState,
+    dashboardLayout: dashboardLayoutWithTabs,
+    dashboardFilters: {},
+  });
 
   function setup(overrideProps) {
     // We have to wrap provide DragDropContext for the underlying DragDroppable
     // otherwise we cannot assert on DragDroppable children
     const wrapper = mount(
-      <Provider store={mockStoreWithTabs}>
+      <Provider store={mockStore}>
         <DndProvider backend={HTML5Backend}>
           <Tabs {...props} {...overrideProps} />
         </DndProvider>

@@ -1,11 +1,30 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import PropTypes from 'prop-types';
 import React from 'react';
 import Alert from 'src/components/Alert';
-import { styled, logging, t } from '@rabbitai-ui/core';
+import { styled, logging, t } from '@superset-ui/core';
 
 import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
+import { PLACEHOLDER_DATASOURCE } from 'src/dashboard/constants';
 import Button from 'src/components/Button';
-import Loading from '../components/Loading';
+import Loading from 'src/components/Loading';
 import ErrorBoundary from '../components/ErrorBoundary';
 import ChartRenderer from './ChartRenderer';
 import { ChartErrorMessage } from './ChartErrorMessage';
@@ -15,7 +34,7 @@ const propTypes = {
   annotationData: PropTypes.object,
   actions: PropTypes.object,
   chartId: PropTypes.number.isRequired,
-  datasource: PropTypes.object.isRequired,
+  datasource: PropTypes.object,
   // current chart is included by dashboard
   dashboardId: PropTypes.number,
   // original selected values for FilterBox viz
@@ -146,10 +165,32 @@ class Chart extends React.PureComponent {
   }
 
   renderErrorMessage(queryResponse) {
-    const { chartId, chartAlert, chartStackTrace, dashboardId } = this.props;
+    const {
+      chartId,
+      chartAlert,
+      chartStackTrace,
+      datasource,
+      dashboardId,
+      height,
+    } = this.props;
 
     const error = queryResponse?.errors?.[0];
     const message = chartAlert || queryResponse?.message;
+
+    // if datasource is still loading, don't render JS errors
+    if (chartAlert && datasource === PLACEHOLDER_DATASOURCE) {
+      return (
+        <Styles
+          data-ui-anchor="chart"
+          className="chart-container"
+          data-test="chart-container"
+          height={height}
+        >
+          <Loading />
+        </Styles>
+      );
+    }
+
     return (
       <ChartErrorMessage
         chartId={chartId}
@@ -180,6 +221,7 @@ class Chart extends React.PureComponent {
     if (chartStatus === 'failed') {
       return queriesResponse.map(item => this.renderErrorMessage(item));
     }
+
     if (errorMessage) {
       return (
         <Alert

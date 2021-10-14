@@ -1,9 +1,26 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { Provider } from 'react-redux';
 import React from 'react';
 import { mount } from 'enzyme';
 import sinon from 'sinon';
-import { rabbitaiTheme, ThemeProvider } from '@rabbitai-ui/core';
+import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -19,6 +36,8 @@ import { sliceId } from 'spec/fixtures/mockChartQueries';
 import dashboardInfo from 'spec/fixtures/mockDashboardInfo';
 import { dashboardLayout as mockLayout } from 'spec/fixtures/mockDashboardLayout';
 import { sliceEntitiesForChart } from 'spec/fixtures/mockSliceEntities';
+import { initialState } from 'spec/javascripts/sqllab/fixtures';
+import { nativeFiltersInfo } from '../../fixtures/mockNativeFilters';
 
 describe('ChartHolder', () => {
   const props = {
@@ -38,10 +57,12 @@ describe('ChartHolder', () => {
     handleComponentDrop() {},
     updateComponents() {},
     deleteComponent() {},
+    nativeFilters: nativeFiltersInfo.filters,
   };
 
   function setup(overrideProps) {
     const mockStore = getMockStore({
+      ...initialState,
       sliceEntities: sliceEntitiesForChart,
     });
 
@@ -55,7 +76,7 @@ describe('ChartHolder', () => {
       </Provider>,
       {
         wrappingComponent: ThemeProvider,
-        wrappingComponentProps: { theme: rabbitaiTheme },
+        wrappingComponentProps: { theme: supersetTheme },
       },
     );
     return wrapper;

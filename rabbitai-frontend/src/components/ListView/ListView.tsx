@@ -1,12 +1,29 @@
-
-import { t, styled } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { t, styled } from '@superset-ui/core';
 import React, { useEffect } from 'react';
 import { Empty } from 'src/common/components';
 import Alert from 'src/components/Alert';
 import { ReactComponent as EmptyImage } from 'images/empty.svg';
 import cx from 'classnames';
 import Button from 'src/components/Button';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 import IndeterminateCheckbox from 'src/components/IndeterminateCheckbox';
 import { TableCollection, Pagination } from 'src/components/dataViewCommon';
 import CardCollection from './CardCollection';
@@ -24,7 +41,7 @@ import { ListViewError, useListViewState } from './utils';
 const ListViewStyles = styled.div`
   text-align: center;
 
-  .rabbitai-list-view {
+  .superset-list-view {
     text-align: left;
     border-radius: 4px 0;
     margin: 0 ${({ theme }) => theme.gridUnit * 4}px;
@@ -97,6 +114,10 @@ const BulkSelectWrapper = styled(Alert)`
     vertical-align: middle;
     position: relative;
   }
+
+  .ant-alert-close-icon {
+    margin-top: ${({ theme }) => theme.gridUnit * 1.5}px;
+  }
 `;
 
 const bulkSelectColumnConfig = {
@@ -121,7 +142,7 @@ const ViewModeContainer = styled.div`
     display: inline-block;
     border-radius: ${({ theme }) => theme.gridUnit / 2}px;
     padding: ${({ theme }) => theme.gridUnit}px;
-    padding-bottom: 0;
+    padding-bottom: ${({ theme }) => theme.gridUnit * 0.5}px;
 
     &:first-of-type {
       margin-right: ${({ theme }) => theme.gridUnit * 2}px;
@@ -161,7 +182,7 @@ const ViewModeToggle = ({
       }}
       className={cx('toggle-button', { active: mode === 'card' })}
     >
-      <Icon name="card-view" />
+      <Icons.CardView />
     </div>
     <div
       role="button"
@@ -172,7 +193,7 @@ const ViewModeToggle = ({
       }}
       className={cx('toggle-button', { active: mode === 'table' })}
     >
-      <Icon name="list-view" />
+      <Icons.ListView />
     </div>
   </ViewModeContainer>
 );
@@ -276,7 +297,7 @@ function ListView<T extends object = any>({
 
   return (
     <ListViewStyles>
-      <div data-test={className} className={`rabbitai-list-view ${className}`}>
+      <div data-test={className} className={`superset-list-view ${className}`}>
         <div className="header">
           <div className="header-left">
             {cardViewEnabled && (

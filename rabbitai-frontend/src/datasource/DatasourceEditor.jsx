@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col } from 'src/common/components';
@@ -7,13 +24,12 @@ import Card from 'src/components/Card';
 import Alert from 'src/components/Alert';
 import Badge from 'src/components/Badge';
 import shortid from 'shortid';
-import { styled, RabbitaiClient, t, rabbitaiTheme } from '@rabbitai-ui/core';
+import { styled, SupersetClient, t, supersetTheme } from '@superset-ui/core';
 import Button from 'src/components/Button';
 import Tabs from 'src/components/Tabs';
 import CertifiedIcon from 'src/components/CertifiedIcon';
 import WarningIconWithTooltip from 'src/components/WarningIconWithTooltip';
 import DatabaseSelector from 'src/components/DatabaseSelector';
-import Icon from 'src/components/Icon';
 import Label from 'src/components/Label';
 import Loading from 'src/components/Loading';
 import TableSelector from 'src/components/TableSelector';
@@ -34,6 +50,7 @@ import Field from 'src/CRUD/Field';
 
 import withToasts from 'src/messageToasts/enhancers/withToasts';
 import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
+import Icons from 'src/components/Icons';
 
 const DatasourceContainer = styled.div`
   .change-warning {
@@ -58,7 +75,7 @@ const FlexRowContainer = styled.div`
   align-items: center;
   display: flex;
 
-  > svg {
+  svg {
     margin-right: ${({ theme }) => theme.gridUnit}px;
   }
 `;
@@ -70,8 +87,16 @@ const StyledTableTabs = styled(Tabs)`
   }
 `;
 
+const StyledBadge = styled(Badge)`
+  .ant-badge-count {
+    line-height: ${({ theme }) => theme.gridUnit * 4}px;
+    height: ${({ theme }) => theme.gridUnit * 4}px;
+    margin-left: ${({ theme }) => theme.gridUnit}px;
+  }
+`;
+
 const EditLockContainer = styled.div`
-  font-size: ${rabbitaiTheme.typography.sizes.s}px;
+  font-size: ${supersetTheme.typography.sizes.s}px;
   display: flex;
   align-items: center;
   a {
@@ -100,8 +125,12 @@ DATASOURCE_TYPES_ARR.forEach(o => {
 
 function CollectionTabTitle({ title, collection }) {
   return (
-    <div data-test={`collection-tab-${title}`}>
-      {title} <Badge count={collection ? collection.length : 0} showZero />
+    <div
+      css={{ display: 'flex', alignItems: 'center' }}
+      data-test={`collection-tab-${title}`}
+    >
+      {title}{' '}
+      <StyledBadge count={collection ? collection.length : 0} showZero />
     </div>
   );
 }
@@ -124,6 +153,7 @@ function ColumnCollectionTable({
     <CollectionTable
       collection={columns}
       tableColumns={['column_name', 'type', 'is_dttm', 'filterable', 'groupby']}
+      sortColumns={['column_name', 'type', 'is_dttm', 'filterable', 'groupby']}
       allowDeletes
       allowAddItem={allowAddItem}
       itemGenerator={itemGenerator}
@@ -290,7 +320,21 @@ class DatasourceEditor extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      datasource: props.datasource,
+      datasource: {
+        ...props.datasource,
+        metrics: props.datasource.metrics?.map(metric => {
+          const {
+            certification: { details, certified_by: certifiedBy } = {},
+            warning_markdown: warningMarkdown,
+          } = JSON.parse(metric.extra || '{}') || {};
+          return {
+            ...metric,
+            certification_details: details || '',
+            warning_markdown: warningMarkdown || '',
+            certified_by: certifiedBy,
+          };
+        }),
+      },
       errors: [],
       isDruid:
         props.datasource.type === 'druid' ||
@@ -314,6 +358,9 @@ class DatasourceEditor extends React.PureComponent {
     this.onChangeEditMode = this.onChangeEditMode.bind(this);
     this.onDatasourcePropChange = this.onDatasourcePropChange.bind(this);
     this.onDatasourceChange = this.onDatasourceChange.bind(this);
+    this.tableChangeAndSyncMetadata = this.tableChangeAndSyncMetadata.bind(
+      this,
+    );
     this.syncMetadata = this.syncMetadata.bind(this);
     this.setColumns = this.setColumns.bind(this);
     this.validateAndChange = this.validateAndChange.bind(this);
@@ -343,8 +390,8 @@ class DatasourceEditor extends React.PureComponent {
     this.setState(prevState => ({ isEditMode: !prevState.isEditMode }));
   }
 
-  onDatasourceChange(datasource) {
-    this.setState({ datasource }, this.validateAndChange);
+  onDatasourceChange(datasource, callback = this.validateAndChange) {
+    this.setState({ datasource }, callback);
   }
 
   onDatasourcePropChange(attr, value) {
@@ -353,7 +400,9 @@ class DatasourceEditor extends React.PureComponent {
       prevState => ({
         datasource: { ...prevState.datasource, [attr]: value },
       }),
-      this.onDatasourceChange(datasource),
+      attr === 'table_name'
+        ? this.onDatasourceChange(datasource, this.tableChangeAndSyncMetadata)
+        : this.onDatasourceChange(datasource, this.validateAndChange),
     );
   }
 
@@ -362,11 +411,19 @@ class DatasourceEditor extends React.PureComponent {
   }
 
   setColumns(obj) {
+    // update calculatedColumns or databaseColumns
     this.setState(obj, this.validateAndChange);
   }
 
   validateAndChange() {
     this.validate(this.onChange);
+  }
+
+  tableChangeAndSyncMetadata() {
+    this.validate(() => {
+      this.syncMetadata();
+      this.onChange();
+    });
   }
 
   updateColumns(cols) {
@@ -397,13 +454,18 @@ class DatasourceEditor extends React.PureComponent {
           type: col.type,
           groupby: true,
           filterable: true,
+          is_dttm: col.is_dttm,
         });
         results.added.push(col.name);
-      } else if (currentCol.type !== col.type) {
+      } else if (
+        currentCol.type !== col.type ||
+        currentCol.is_dttm !== col.is_dttm
+      ) {
         // modified column
         finalColumns.push({
           ...currentCol,
           type: col.type,
+          is_dttm: col.is_dttm,
         });
         results.modified.push(col.name);
       } else {
@@ -423,12 +485,14 @@ class DatasourceEditor extends React.PureComponent {
 
   syncMetadata() {
     const { datasource } = this.state;
-    const endpoint = `/datasource/external_metadata/${
+    const endpoint = `/datasource/external_metadata_by_name/${
       datasource.type || datasource.datasource_type
-    }/${datasource.id}/`;
+    }/${datasource.database.database_name || datasource.database.name}/${
+      datasource.schema
+    }/${datasource.table_name}/`;
     this.setState({ metadataLoading: true });
 
-    RabbitaiClient.get({ endpoint })
+    SupersetClient.get({ endpoint })
       .then(({ json }) => {
         const results = this.updateColumns(json);
         if (results.modified.length) {
@@ -505,6 +569,10 @@ class DatasourceEditor extends React.PureComponent {
 
   handleTabSelect(activeTabKey) {
     this.setState({ activeTabKey });
+  }
+
+  sortMetrics(metrics) {
+    return metrics.sort(({ id: a }, { id: b }) => b - a);
   }
 
   renderSettingsFieldset() {
@@ -725,7 +793,7 @@ class DatasourceEditor extends React.PureComponent {
                     label={t('SQL')}
                     description={t(
                       'When specifying SQL, the datasource acts as a view. ' +
-                        'Rabbitai will use this statement as a subquery while grouping and filtering ' +
+                        'Superset will use this statement as a subquery while grouping and filtering ' +
                         'on the generated parent queries.',
                     )}
                     control={
@@ -793,7 +861,7 @@ class DatasourceEditor extends React.PureComponent {
                   }
                   description={t(
                     'The pointer to a physical table (or view). Keep in mind that the chart is ' +
-                      'associated to this Rabbitai logical table, and this logical table points ' +
+                      'associated to this Superset logical table, and this logical table points ' +
                       'the physical table referenced here.',
                   )}
                 />
@@ -804,10 +872,15 @@ class DatasourceEditor extends React.PureComponent {
         {this.allowEditSource && (
           <EditLockContainer>
             <span role="button" tabIndex={0} onClick={this.onChangeEditMode}>
-              <Icon
-                color={rabbitaiTheme.colors.grayscale.base}
-                name={this.state.isEditMode ? 'lock-unlocked' : 'lock-locked'}
-              />
+              {this.state.isEditMode ? (
+                <Icons.LockUnlocked
+                  iconColor={supersetTheme.colors.grayscale.base}
+                />
+              ) : (
+                <Icons.LockLocked
+                  iconColor={supersetTheme.colors.grayscale.base}
+                />
+              )}
             </span>
             {!this.state.isEditMode && (
               <div>{t('Click the lock to make changes.')}</div>
@@ -841,9 +914,14 @@ class DatasourceEditor extends React.PureComponent {
   }
 
   renderMetricCollection() {
+    const { datasource } = this.state;
+    const { metrics } = datasource;
+    const sortedMetrics = metrics?.length ? this.sortMetrics(metrics) : [];
+
     return (
       <CollectionTable
         tableColumns={['metric_name', 'verbose_name', 'expression']}
+        sortColumns={['metric_name', 'verbose_name', 'expression']}
         columnLabels={{
           metric_name: t('Metric'),
           verbose_name: t('Label'),
@@ -913,7 +991,7 @@ class DatasourceEditor extends React.PureComponent {
             </Fieldset>
           </FormContainer>
         }
-        collection={this.state.datasource.metrics}
+        collection={sortedMetrics}
         allowAddItem
         onChange={this.onDatasourcePropChange.bind(this, 'metrics')}
         itemGenerator={() => ({
@@ -971,6 +1049,9 @@ class DatasourceEditor extends React.PureComponent {
 
   render() {
     const { datasource, activeTabKey } = this.state;
+    const { metrics } = datasource;
+    const sortedMetrics = metrics?.length ? this.sortMetrics(metrics) : [];
+
     return (
       <DatasourceContainer>
         {this.renderErrors()}
@@ -1000,7 +1081,7 @@ class DatasourceEditor extends React.PureComponent {
           <Tabs.TabPane
             tab={
               <CollectionTabTitle
-                collection={datasource.metrics}
+                collection={sortedMetrics}
                 title={t('Metrics')}
               />
             }
@@ -1022,9 +1103,10 @@ class DatasourceEditor extends React.PureComponent {
                 <span className="m-t-10 m-r-10">
                   <Button
                     buttonSize="small"
-                    buttonStyle="primary"
+                    buttonStyle="tertiary"
                     onClick={this.syncMetadata}
                     className="sync-from-source"
+                    disabled={this.state.isEditMode}
                   >
                     <i className="fa fa-database" />{' '}
                     {t('Sync columns from source')}

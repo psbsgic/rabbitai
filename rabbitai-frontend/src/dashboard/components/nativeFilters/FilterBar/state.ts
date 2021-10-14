@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 /* eslint-disable no-param-reassign */
 import { useSelector } from 'react-redux';
 import {
@@ -13,6 +30,7 @@ import {
 import { useEffect, useState } from 'react';
 import { ChartsState, RootState } from 'src/dashboard/types';
 import { NATIVE_FILTER_PREFIX } from '../FiltersConfigModal/utils';
+import { Filter } from '../types';
 
 export const useFilterSets = () =>
   useSelector<any, FilterSetsType>(
@@ -20,7 +38,20 @@ export const useFilterSets = () =>
   );
 
 export const useFilters = () =>
-  useSelector<any, Filters>(state => state.nativeFilters.filters);
+  useSelector<any, Filters>(state => {
+    const preselectNativeFilters =
+      state.dashboardState?.preselectNativeFilters || {};
+    return Object.entries(state.nativeFilters.filters).reduce(
+      (acc, [filterId, filter]: [string, Filter]) => ({
+        ...acc,
+        [filterId]: {
+          ...filter,
+          preselect: preselectNativeFilters[filterId],
+        },
+      }),
+      {} as Filters,
+    );
+  });
 
 export const useNativeFiltersDataMask = () => {
   const dataMask = useSelector<RootState, DataMaskStateWithId>(
@@ -59,6 +90,7 @@ export const useFilterUpdates = (
 // Load filters after charts loaded
 export const useInitialization = () => {
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const filters = useFilters();
   const charts = useSelector<RootState, ChartsState>(state => state.charts);
 
   // We need to know how much charts now shown on dashboard to know how many of all charts should be loaded
@@ -70,6 +102,11 @@ export const useInitialization = () => {
   }
   useEffect(() => {
     if (isInitialized) {
+      return;
+    }
+
+    if (Object.values(filters).find(({ requiredFirst }) => requiredFirst)) {
+      setIsInitialized(true);
       return;
     }
 

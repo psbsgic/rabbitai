@@ -1,11 +1,28 @@
-
+/* eslint-disable camelcase */
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { t, styled, rabbitaiTheme } from '@rabbitai-ui/core';
+import { t, styled, supersetTheme } from '@superset-ui/core';
 
 import { Dropdown, Menu } from 'src/common/components';
 import { Tooltip } from 'src/components/Tooltip';
-import Icon from 'src/components/Icon';
 import Icons from 'src/components/Icons';
 import ChangeDatasourceModal from 'src/datasource/ChangeDatasourceModal';
 import DatasourceModal from 'src/datasource/DatasourceModal';
@@ -19,6 +36,7 @@ const propTypes = {
   onChange: PropTypes.func,
   value: PropTypes.string,
   datasource: PropTypes.object.isRequired,
+  form_data: PropTypes.object.isRequired,
   isEditable: PropTypes.bool,
   onDatasourceSave: PropTypes.func,
 };
@@ -76,6 +94,12 @@ const Styles = styled.div`
     margin-right: ${({ theme }) => 2 * theme.gridUnit}px;
     flex: none;
   }
+  span[aria-label='dataset-physical'] {
+    color: ${({ theme }) => theme.colors.grayscale.base};
+  }
+  span[aria-label='more-vert'] {
+    color: ${({ theme }) => theme.colors.primary.base};
+  }
 `;
 
 const CHANGE_DATASET = 'change_dataset';
@@ -100,6 +124,19 @@ class DatasourceControl extends React.PureComponent {
 
   onDatasourceSave(datasource) {
     this.props.actions.setDatasource(datasource);
+    const timeCol = this.props.form_data?.granularity_sqla;
+    const { columns } = this.props.datasource;
+    const firstDttmCol = columns.find(column => column.is_dttm);
+    if (
+      datasource.type === 'table' &&
+      !columns.find(({ column_name }) => column_name === timeCol)?.is_dttm
+    ) {
+      // set `granularity_sqla` to first datatime column name or null
+      this.props.actions.setControlValue(
+        'granularity_sqla',
+        firstDttmCol ? firstDttmCol.column_name : null,
+      );
+    }
     if (this.props.onDatasourceSave) {
       this.props.onDatasourceSave(datasource);
     }
@@ -136,7 +173,7 @@ class DatasourceControl extends React.PureComponent {
         datasourceKey: `${datasource.id}__${datasource.type}`,
         sql: datasource.sql,
       };
-      postForm('/rabbitai/sqllab/', payload);
+      postForm('/superset/sqllab/', payload);
     }
   }
 
@@ -173,7 +210,7 @@ class DatasourceControl extends React.PureComponent {
     return (
       <Styles data-test="datasource-control" className="DatasourceControl">
         <div className="data-container">
-          <Icon name="dataset-physical" className="dataset-svg" />
+          <Icons.DatasetPhysical className="dataset-svg" />
           {/* Add a tooltip only for long dataset names */}
           {!isMissingDatasource && datasource.name.length > 25 ? (
             <Tooltip title={datasource.name}>
@@ -186,12 +223,12 @@ class DatasourceControl extends React.PureComponent {
           )}
           {healthCheckMessage && (
             <Tooltip title={healthCheckMessage}>
-              <Icons.AlertSolid iconColor={rabbitaiTheme.colors.warning.base} />
+              <Icons.AlertSolid iconColor={supersetTheme.colors.warning.base} />
             </Tooltip>
           )}
-          {extra?.warning_markdown && ( // eslint-disable-line camelcase
+          {extra?.warning_markdown && (
             <WarningIconWithTooltip
-              warningMarkdown={extra.warning_markdown} // eslint-disable-line camelcase
+              warningMarkdown={extra.warning_markdown}
               size={30}
             />
           )}
@@ -201,10 +238,9 @@ class DatasourceControl extends React.PureComponent {
             data-test="datasource-menu"
           >
             <Tooltip title={t('More dataset related options')}>
-              <Icon
+              <Icons.MoreVert
                 className="datasource-modal-trigger"
                 data-test="datasource-menu-trigger"
-                name="more-horiz"
               />
             </Tooltip>
           </Dropdown>

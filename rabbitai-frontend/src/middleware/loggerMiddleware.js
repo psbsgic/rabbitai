@@ -1,15 +1,32 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 /* eslint-disable camelcase */
 /* eslint prefer-const: 2 */
 import shortid from 'shortid';
-import { RabbitaiClient } from '@rabbitai-ui/core';
+import { SupersetClient } from '@superset-ui/core';
 
 import { safeStringify } from '../utils/safeStringify';
 import { LOG_EVENT } from '../logger/actions';
 import { LOG_EVENT_TYPE_TIMING } from '../logger/LogUtils';
 import DebouncedMessageQueue from '../utils/DebouncedMessageQueue';
 
-const LOG_ENDPOINT = '/rabbitai/log/?explode=events';
+const LOG_ENDPOINT = '/superset/log/?explode=events';
 const sendBeacon = events => {
   if (events.length <= 0) {
     return;
@@ -29,7 +46,7 @@ const sendBeacon = events => {
     formData.append('events', safeStringify(events));
     navigator.sendBeacon(endpoint, formData);
   } else {
-    RabbitaiClient.post({
+    SupersetClient.post({
       endpoint,
       postPayload: { events },
       parseMethod: null,

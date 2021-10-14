@@ -1,11 +1,28 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, {
   FunctionComponent,
   useEffect,
   useState,
   ReactNode,
 } from 'react';
-import { styled, RabbitaiClient, t } from '@rabbitai-ui/core';
+import { styled, SupersetClient, t } from '@superset-ui/core';
 import { AsyncSelect, CreatableSelect, Select } from 'src/components/Select';
 
 import { FormLabel } from 'src/components/Form';
@@ -48,6 +65,10 @@ const TableSelectorWrapper = styled.div`
     border-bottom: 1px solid ${({ theme }) => theme.colors.secondary.light5};
     margin: 15px 0;
   }
+
+  .table-length {
+    color: ${({ theme }) => theme.colors.grayscale.light1};
+  }
 `;
 
 const TableLabel = styled.span`
@@ -55,8 +76,8 @@ const TableLabel = styled.span`
   display: flex;
   white-space: nowrap;
 
-  > svg,
-  > small {
+  svg,
+  small {
     margin-right: ${({ theme }) => theme.gridUnit}px;
   }
 `;
@@ -69,7 +90,7 @@ interface TableSelectorProps {
   getDbList?: (arg0: any) => {};
   handleError: (msg: string) => void;
   isDatabaseSelectEnabled?: boolean;
-  onChange?: ({
+  onUpdate?: ({
     dbId,
     schema,
   }: {
@@ -96,7 +117,7 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
   getDbList,
   handleError,
   isDatabaseSelectEnabled = true,
-  onChange,
+  onUpdate,
   onDbChange,
   onSchemaChange,
   onSchemasLoad,
@@ -131,9 +152,9 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
       setTableLoading(true);
       setTableOptions([]);
       const endpoint = encodeURI(
-        `/rabbitai/tables/${actualDbId}/${encodedSchema}/${encodedSubstr}/${!!forceRefresh}/`,
+        `/superset/tables/${actualDbId}/${encodedSchema}/${encodedSubstr}/${!!forceRefresh}/`,
       );
-      return RabbitaiClient.get({ endpoint })
+      return SupersetClient.get({ endpoint })
         .then(({ json }) => {
           const options = json.options.map((o: any) => ({
             value: o.value,
@@ -177,8 +198,8 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
   }) {
     setCurrentTableName(tableName);
     setCurrentSchema(schema);
-    if (onChange) {
-      onChange({ dbId, schema, tableName });
+    if (onUpdate) {
+      onUpdate({ dbId, schema, tableName });
     }
   }
 
@@ -189,9 +210,9 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
     }
     const encodedSchema = encodeURIComponent(schema || '');
     const encodedSubstr = encodeURIComponent(substr);
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: encodeURI(
-        `/rabbitai/tables/${dbId}/${encodedSchema}/${encodedSubstr}`,
+        `/superset/tables/${dbId}/${encodedSchema}/${encodedSubstr}`,
       ),
     }).then(({ json }) => {
       const options = json.options.map((o: any) => ({
@@ -278,7 +299,7 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
         getDbList={getDbList}
         getTableList={fetchTables}
         handleError={handleError}
-        onChange={onSelectionChange}
+        onUpdate={onSelectionChange}
         onDbChange={readOnly ? undefined : onDbChange}
         onSchemaChange={readOnly ? undefined : onSchemaChange}
         onSchemasLoad={onSchemasLoad}
@@ -365,9 +386,8 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
         <FormLabel>
           {t('See table schema')}{' '}
           {schema && (
-            <small>
-              {tableOptions.length} in
-              <i>{schema}</i>
+            <small className="table-length">
+              {tableOptions.length} in {schema}
             </small>
           )}
         </FormLabel>

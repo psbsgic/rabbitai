@@ -1,8 +1,25 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import Button from 'src/components/Button';
 import { Empty } from 'src/common/components';
-import { t, styled } from '@rabbitai-ui/core';
+import { t, styled } from '@superset-ui/core';
 
 interface EmptyStateProps {
   tableName: string;
@@ -26,7 +43,7 @@ export default function EmptyState({ tableName, tab }: EmptyStateProps) {
   const mineRedirects = {
     DASHBOARDS: '/dashboard/new',
     CHARTS: '/chart/add',
-    SAVED_QUERIES: '/rabbitai/sqllab',
+    SAVED_QUERIES: '/superset/sqllab?new=true',
   };
   const favRedirects = {
     DASHBOARDS: '/dashboard/list/',
@@ -60,9 +77,7 @@ export default function EmptyState({ tableName, tab }: EmptyStateProps) {
           );
         }
         if (tab === 'Examples') {
-          return t(
-            `Recent example charts, dashboards, and saved queries will appear here`,
-          );
+          return t(`Example ${tableName.toLowerCase()} will appear here`);
         }
         if (tab === 'Edited') {
           return t(
@@ -74,12 +89,14 @@ export default function EmptyState({ tableName, tab }: EmptyStateProps) {
     </span>
   );
   // Mine and Recent Activity(all tabs) tab empty state
-  if (tab === 'Mine' || tableName === 'RECENTS') {
+  if (tab === 'Mine' || tableName === 'RECENTS' || tab === 'Examples') {
     return (
       <EmptyContainer>
         <Empty
           image={`/static/assets/images/${tableIcon[tableName]}`}
-          description={tableName === 'RECENTS' ? recent : mine}
+          description={
+            tableName === 'RECENTS' || tab === 'Examples' ? recent : mine
+          }
         >
           {tableName !== 'RECENTS' && (
             <ButtonContainer>

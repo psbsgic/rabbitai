@@ -1,5 +1,22 @@
-
-import React, { useRef } from 'react';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import React, { useMemo, useRef } from 'react';
 import {
   useDrag,
   useDrop,
@@ -7,7 +24,6 @@ import {
   DragSourceMonitor,
 } from 'react-dnd';
 import { DragContainer } from 'src/explore/components/controls/OptionControls';
-import { DndItemType } from 'src/explore/components/DndItemType';
 import {
   OptionProps,
   OptionItemInterface,
@@ -16,7 +32,7 @@ import Option from './Option';
 
 export default function OptionWrapper(
   props: OptionProps & {
-    type: DndItemType;
+    type: string;
     onShiftOptions: (dragIndex: number, hoverIndex: number) => void;
   },
 ) {
@@ -26,15 +42,20 @@ export default function OptionWrapper(
     onShiftOptions,
     clickClose,
     withCaret,
+    isExtra,
+    canDelete = true,
     children,
     ...rest
   } = props;
   const ref = useRef<HTMLDivElement>(null);
 
-  const item: OptionItemInterface = {
-    dragIndex: index,
-    type,
-  };
+  const item: OptionItemInterface = useMemo(
+    () => ({
+      dragIndex: index,
+      type,
+    }),
+    [index, type],
+  );
   const [, drag] = useDrag({
     item,
     collect: (monitor: DragSourceMonitor) => ({
@@ -90,7 +111,13 @@ export default function OptionWrapper(
 
   return (
     <DragContainer ref={ref} {...rest}>
-      <Option index={index} clickClose={clickClose} withCaret={withCaret}>
+      <Option
+        index={index}
+        clickClose={clickClose}
+        withCaret={withCaret}
+        isExtra={isExtra}
+        canDelete={canDelete}
+      >
         {children}
       </Option>
     </DragContainer>

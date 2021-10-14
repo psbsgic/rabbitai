@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import moment from 'moment';
@@ -7,7 +24,7 @@ import {
   getChartMetadataRegistry,
   styled,
   t,
-} from '@rabbitai-ui/core';
+} from '@superset-ui/core';
 import { Menu, NoAnimationDropdown } from 'src/common/components';
 import ShareMenuItems from 'src/dashboard/components/menu/ShareMenuItems';
 import downloadAsImage from 'src/utils/downloadAsImage';
@@ -28,9 +45,9 @@ const propTypes = {
   cachedDttm: PropTypes.arrayOf(PropTypes.string),
   isExpanded: PropTypes.bool,
   updatedDttm: PropTypes.number,
-  rabbitaiCanExplore: PropTypes.bool,
-  rabbitaiCanShare: PropTypes.bool,
-  rabbitaiCanCSV: PropTypes.bool,
+  supersetCanExplore: PropTypes.bool,
+  supersetCanShare: PropTypes.bool,
+  supersetCanCSV: PropTypes.bool,
   sliceCanEdit: PropTypes.bool,
   toggleExpandSlice: PropTypes.func,
   forceRefresh: PropTypes.func,
@@ -47,9 +64,9 @@ const defaultProps = {
   updatedDttm: null,
   isCached: [],
   isExpanded: false,
-  rabbitaiCanExplore: false,
-  rabbitaiCanShare: false,
-  rabbitaiCanCSV: false,
+  supersetCanExplore: false,
+  supersetCanShare: false,
+  supersetCanCSV: false,
   sliceCanEdit: false,
 };
 
@@ -176,7 +193,7 @@ class SliceHeaderControls extends React.PureComponent {
       addSuccessToast,
       addDangerToast,
       isFullSize,
-      rabbitaiCanShare,
+      supersetCanShare,
     } = this.props;
     const crossFilterItems = getChartMetadataRegistry().items;
     const isCrossFilter = Object.entries(crossFilterItems)
@@ -236,13 +253,13 @@ class SliceHeaderControls extends React.PureComponent {
           </Menu.Item>
         )}
 
-        {this.props.rabbitaiCanExplore && (
+        {this.props.supersetCanExplore && (
           <Menu.Item key={MENU_KEYS.EXPLORE_CHART}>
             {t('View chart in Explore')}
           </Menu.Item>
         )}
 
-        {this.props.rabbitaiCanExplore && (
+        {this.props.supersetCanExplore && (
           <Menu.Item key={MENU_KEYS.VIEW_QUERY}>
             <ModalTrigger
               triggerNode={
@@ -257,7 +274,7 @@ class SliceHeaderControls extends React.PureComponent {
           </Menu.Item>
         )}
 
-        {rabbitaiCanShare && (
+        {supersetCanShare && (
           <ShareMenuItems
             url={getDashboardUrl(
               window.location.pathname,
@@ -266,7 +283,7 @@ class SliceHeaderControls extends React.PureComponent {
             )}
             copyMenuItemTitle={t('Copy chart URL')}
             emailMenuItemTitle={t('Share chart by email')}
-            emailSubject={t('Rabbitai chart')}
+            emailSubject={t('Superset chart')}
             emailBody={t('Check out this chart: ')}
             addSuccessToast={addSuccessToast}
             addDangerToast={addDangerToast}
@@ -279,7 +296,7 @@ class SliceHeaderControls extends React.PureComponent {
           {t('Download as image')}
         </Menu.Item>
 
-        {this.props.rabbitaiCanCSV && (
+        {this.props.supersetCanCSV && (
           <Menu.Item key={MENU_KEYS.EXPORT_CSV}>{t('Export CSV')}</Menu.Item>
         )}
         {isFeatureEnabled(FeatureFlag.DASHBOARD_CROSS_FILTERS) &&

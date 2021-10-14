@@ -1,7 +1,24 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { CSSProperties, ComponentType, ReactNode } from 'react';
 import { SerializedStyles } from '@emotion/react';
-import { RabbitaiTheme, css } from '@rabbitai-ui/core';
+import { SupersetTheme, css } from '@superset-ui/core';
 import {
   Styles,
   Theme,
@@ -13,7 +30,7 @@ import { Props as SelectProps } from 'react-select/src/Select';
 import { colors as reactSelectColors } from 'react-select/src/theme';
 import { DeepNonNullable } from 'react-select/src/components';
 import { OptionType } from 'antd/lib/select';
-import { RabbitaiStyledSelectProps } from './Select';
+import { SupersetStyledSelectProps } from './DeprecatedSelect';
 
 export const DEFAULT_CLASS_NAME = 'Select';
 export const DEFAULT_CLASS_NAME_PREFIX = 'Select';
@@ -22,7 +39,7 @@ type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
 };
 
-const colors = (theme: RabbitaiTheme) => ({
+const colors = (theme: SupersetTheme) => ({
   primary: theme.colors.success.base,
   danger: theme.colors.error.base,
   warning: theme.colors.warning.base,
@@ -73,7 +90,7 @@ export type ThemeConfig = {
 export type PartialThemeConfig = RecursivePartial<ThemeConfig>;
 
 export const defaultTheme: (
-  theme: RabbitaiTheme,
+  theme: SupersetTheme,
 ) => PartialThemeConfig = theme => ({
   borderRadius: theme.borderRadius,
   zIndex: 11,
@@ -293,7 +310,7 @@ export type InputProps = ReactSelectInputProps & {
   placeholder?: ReactNode;
   selectProps: SelectProps;
   autoComplete?: string;
-  onPaste?: RabbitaiStyledSelectProps<OptionType>['onPaste'];
+  onPaste?: SupersetStyledSelectProps<OptionType>['onPaste'];
   inputStyle?: object;
 };
 
@@ -315,7 +332,7 @@ export const DEFAULT_COMPONENTS: SelectComponentsType = {
         <SelectContainer {...props}>{children}</SelectContainer>
         {assistiveText && (
           <span
-            css={(theme: RabbitaiTheme) => ({
+            css={(theme: SupersetTheme) => ({
               marginLeft: 3,
               fontSize: theme.typography.sizes.s,
               color: theme.colors.grayscale.light1,

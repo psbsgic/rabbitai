@@ -1,5 +1,22 @@
-
-import { styled, RabbitaiClient, t } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { styled, SupersetClient, t } from '@superset-ui/core';
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import rison from 'rison';
@@ -8,10 +25,12 @@ import {
   createFetchRelated,
   createErrorHandler,
   handleDashboardDelete,
-  handleBulkDashboardExport,
+  CardStylesOverrides,
 } from 'src/views/CRUD/utils';
 import { useListViewResource, useFavoriteStatus } from 'src/views/CRUD/hooks';
 import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
+import handleResourceExport from 'src/utils/export';
+import Loading from 'src/components/Loading';
 import SubMenu, { SubMenuProps } from 'src/components/Menu/SubMenu';
 import ListView, {
   ListViewProps,
@@ -106,6 +125,7 @@ function DashboardList(props: DashboardListProps) {
 
   const [importingDashboard, showImportModal] = useState<boolean>(false);
   const [passwordFields, setPasswordFields] = useState<string[]>([]);
+  const [preparingExport, setPreparingExport] = useState<boolean>(false);
 
   const openDashboardImportModal = () => {
     showImportModal(true);
@@ -132,14 +152,34 @@ function DashboardList(props: DashboardListProps) {
   }
 
   function handleDashboardEdit(edits: Dashboard) {
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: `/api/v1/dashboard/${edits.id}`,
     }).then(
       ({ json = {} }) => {
         setDashboards(
           dashboards.map(dashboard => {
-            if (dashboard.id === json.id) {
-              return json.result;
+            if (dashboard.id === json?.result?.id) {
+              const {
+                changed_by_name,
+                changed_by_url,
+                changed_by,
+                dashboard_title = '',
+                slug = '',
+                json_metadata = '',
+                changed_on_delta_humanized,
+                url = '',
+              } = json.result;
+              return {
+                ...dashboard,
+                changed_by_name,
+                changed_by_url,
+                changed_by,
+                dashboard_title,
+                slug,
+                json_metadata,
+                changed_on_delta_humanized,
+                url,
+              };
             }
             return dashboard;
           }),
@@ -153,8 +193,16 @@ function DashboardList(props: DashboardListProps) {
     );
   }
 
+  const handleBulkDashboardExport = (dashboardsToExport: Dashboard[]) => {
+    const ids = dashboardsToExport.map(({ id }) => id);
+    handleResourceExport('dashboard', ids, () => {
+      setPreparingExport(false);
+    });
+    setPreparingExport(true);
+  };
+
   function handleBulkDashboardDelete(dashboardsToDelete: Dashboard[]) {
-    return RabbitaiClient.delete({
+    return SupersetClient.delete({
       endpoint: `/api/v1/dashboard/?q=${rison.encode(
         dashboardsToDelete.map(({ id }) => id),
       )}`,
@@ -454,23 +502,26 @@ function DashboardList(props: DashboardListProps) {
     const { userId } = props.user;
     const userKey = getFromLocalStorage(userId.toString(), null);
     return (
-      <DashboardCard
-        dashboard={dashboard}
-        hasPerm={hasPerm}
-        bulkSelectEnabled={bulkSelectEnabled}
-        refreshData={refreshData}
-        showThumbnails={
-          userKey
-            ? userKey.thumbnails
-            : isFeatureEnabled(FeatureFlag.THUMBNAILS)
-        }
-        loading={loading}
-        addDangerToast={addDangerToast}
-        addSuccessToast={addSuccessToast}
-        openDashboardEditModal={openDashboardEditModal}
-        saveFavoriteStatus={saveFavoriteStatus}
-        favoriteStatus={favoriteStatus[dashboard.id]}
-      />
+      <CardStylesOverrides>
+        <DashboardCard
+          dashboard={dashboard}
+          hasPerm={hasPerm}
+          bulkSelectEnabled={bulkSelectEnabled}
+          refreshData={refreshData}
+          showThumbnails={
+            userKey
+              ? userKey.thumbnails
+              : isFeatureEnabled(FeatureFlag.THUMBNAILS)
+          }
+          loading={loading}
+          addDangerToast={addDangerToast}
+          addSuccessToast={addSuccessToast}
+          openDashboardEditModal={openDashboardEditModal}
+          saveFavoriteStatus={saveFavoriteStatus}
+          favoriteStatus={favoriteStatus[dashboard.id]}
+          handleBulkDashboardExport={handleBulkDashboardExport}
+        />
+      </CardStylesOverrides>
     );
   }
 
@@ -588,6 +639,7 @@ function DashboardList(props: DashboardListProps) {
         passwordFields={passwordFields}
         setPasswordFields={setPasswordFields}
       />
+      {preparingExport && <Loading />}
     </>
   );
 }

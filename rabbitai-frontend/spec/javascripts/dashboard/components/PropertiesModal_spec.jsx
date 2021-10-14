@@ -1,14 +1,31 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { mount } from 'enzyme';
 import { Provider } from 'react-redux';
 import fetchMock from 'fetch-mock';
 
 import {
-  rabbitaiTheme,
+  supersetTheme,
   SupersetClient,
   ThemeProvider,
-} from '@rabbitai-ui/core';
+} from '@superset-ui/core';
 
 import Modal from 'src/components/Modal';
 import PropertiesModal from 'src/dashboard/components/PropertiesModal';
@@ -61,25 +78,25 @@ describe('PropertiesModal', () => {
       </Provider>,
       {
         wrappingComponent: ThemeProvider,
-        wrappingComponentProps: { theme: rabbitaiTheme },
+        wrappingComponentProps: { theme: supersetTheme },
       },
     );
   }
 
   describe('onColorSchemeChange', () => {
     it('sets up a default state', () => {
-      const wrapper = setup({ colorScheme: 'RABBITAI_DEFAULT' });
+      const wrapper = setup({ colorScheme: 'SUPERSET_DEFAULT' });
       expect(
         wrapper.find('PropertiesModal').instance().state.values.colorScheme,
-      ).toEqual('RABBITAI_DEFAULT');
+      ).toEqual('SUPERSET_DEFAULT');
     });
     describe('with a valid color scheme as an arg', () => {
       describe('without metadata', () => {
-        const wrapper = setup({ colorScheme: 'RABBITAI_DEFAULT' });
+        const wrapper = setup({ colorScheme: 'SUPERSET_DEFAULT' });
         const modalInstance = wrapper.find('PropertiesModal').instance();
         it('does not update the color scheme in the metadata', () => {
           const spy = jest.spyOn(modalInstance, 'onMetadataChange');
-          modalInstance.onColorSchemeChange('RABBITAI_DEFAULT');
+          modalInstance.onColorSchemeChange('SUPERSET_DEFAULT');
           expect(spy).not.toHaveBeenCalled();
         });
       });
@@ -94,9 +111,9 @@ describe('PropertiesModal', () => {
               },
             });
             const spy = jest.spyOn(modalInstance, 'onMetadataChange');
-            modalInstance.onColorSchemeChange('RABBITAI_DEFAULT');
+            modalInstance.onColorSchemeChange('SUPERSET_DEFAULT');
             expect(spy).toHaveBeenCalledWith(
-              '{"color_scheme": "RABBITAI_DEFAULT", "label_colors": {}}',
+              '{"color_scheme": "SUPERSET_DEFAULT", "label_colors": {}}',
             );
           });
         });
@@ -110,7 +127,7 @@ describe('PropertiesModal', () => {
           });
           it('will not update the metadata', () => {
             const spy = jest.spyOn(modalInstance, 'onMetadataChange');
-            modalInstance.onColorSchemeChange('RABBITAI_DEFAULT');
+            modalInstance.onColorSchemeChange('SUPERSET_DEFAULT');
             expect(spy).not.toHaveBeenCalled();
           });
         });
@@ -236,7 +253,7 @@ describe('PropertiesModal', () => {
               result: {
                 dashboard_title: 'New Title',
                 slug: '/new',
-                json_metadata: '{"color_scheme":"RABBITAI_DEFAULT"}',
+                json_metadata: '{"color_scheme":"SUPERSET_DEFAULT"}',
                 owners: [],
                 roles: [],
               },
@@ -248,7 +265,7 @@ describe('PropertiesModal', () => {
           await fetchSpy();
 
           expect(modalInstance.state.values.colorScheme).toEqual(
-            'RABBITAI_DEFAULT',
+            'SUPERSET_DEFAULT',
           );
         });
         describe('when color_scheme is not defined in json_metadata', () => {
@@ -267,7 +284,7 @@ describe('PropertiesModal', () => {
     });
     describe('when colorScheme is defined as a prop', () => {
       describe('when color_scheme is defined in json_metadata', () => {
-        const wrapper = setup({ colorScheme: 'RABBITAI_DEFAULT' });
+        const wrapper = setup({ colorScheme: 'SUPERSET_DEFAULT' });
         const modalInstance = wrapper.find('PropertiesModal').instance();
         it('should use the color_scheme from json_metadata in the api response', async () => {
           const fetchSpy = jest.spyOn(SupersetClient, 'get').mockResolvedValue({
@@ -275,7 +292,7 @@ describe('PropertiesModal', () => {
               result: {
                 dashboard_title: 'New Title',
                 slug: '/new',
-                json_metadata: '{"color_scheme":"RABBITAI_DEFAULT"}',
+                json_metadata: '{"color_scheme":"SUPERSET_DEFAULT"}',
                 owners: [],
                 roles: [],
               },
@@ -284,12 +301,12 @@ describe('PropertiesModal', () => {
           modalInstance.fetchDashboardDetails();
           await fetchSpy();
           expect(modalInstance.state.values.colorScheme).toEqual(
-            'RABBITAI_DEFAULT',
+            'SUPERSET_DEFAULT',
           );
         });
       });
       describe('when color_scheme is not defined in json_metadata', () => {
-        const wrapper = setup({ colorScheme: 'RABBITAI_DEFAULT' });
+        const wrapper = setup({ colorScheme: 'SUPERSET_DEFAULT' });
         const modalInstance = wrapper.find('PropertiesModal').instance();
         it('should use the colorScheme from the prop', async () => {
           const fetchSpy = jest

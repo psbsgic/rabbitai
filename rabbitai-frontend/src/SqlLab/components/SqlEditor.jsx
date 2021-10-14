@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React from 'react';
@@ -7,7 +24,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import PropTypes from 'prop-types';
 import Split from 'react-split';
-import { t, styled, rabbitaiTheme } from '@rabbitai-ui/core';
+import { t, styled, supersetTheme, withTheme } from '@superset-ui/core';
 import debounce from 'lodash/debounce';
 import throttle from 'lodash/throttle';
 import StyledModal from 'src/components/Modal';
@@ -21,7 +38,7 @@ import {
   Switch,
   Input,
 } from 'src/common/components';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 import { detectOS } from 'src/utils/common';
 import {
   addQueryEditor,
@@ -88,7 +105,7 @@ const StyledToolbar = styled.div`
   background-color: @lightest;
   display: flex;
   justify-content: space-between;
-  border: 1px solid ${rabbitaiTheme.colors.grayscale.light2};
+  border: 1px solid ${supersetTheme.colors.grayscale.light2};
   border-top: 0;
 
   form {
@@ -177,6 +194,7 @@ class SqlEditor extends React.PureComponent {
       WINDOW_RESIZE_THROTTLE_MS,
     );
 
+    this.onBeforeUnload = this.onBeforeUnload.bind(this);
     this.renderDropdown = this.renderDropdown.bind(this);
   }
 
@@ -195,6 +213,7 @@ class SqlEditor extends React.PureComponent {
     this.setState({ height: this.getSqlEditorHeight() });
 
     window.addEventListener('resize', this.handleWindowResize);
+    window.addEventListener('beforeunload', this.onBeforeUnload);
 
     // setup hotkeys
     const hotkeys = this.getHotkeyConfig();
@@ -205,6 +224,7 @@ class SqlEditor extends React.PureComponent {
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.handleWindowResize);
+    window.removeEventListener('beforeunload', this.onBeforeUnload);
   }
 
   onResizeStart() {
@@ -222,6 +242,16 @@ class SqlEditor extends React.PureComponent {
         northPercent,
         southPercent,
       );
+    }
+  }
+
+  onBeforeUnload(event) {
+    if (
+      this.props.database?.extra_json?.cancel_query_on_windows_unload &&
+      this.props.latestQuery?.state === 'running'
+    ) {
+      event.preventDefault();
+      this.stopQuery();
     }
   }
 
@@ -547,7 +577,7 @@ class SqlEditor extends React.PureComponent {
       this.props.database || {};
 
     const showMenu = allowCTAS || allowCVAS;
-
+    const { theme } = this.props;
     const runMenuBtn = (
       <Menu>
         {allowCTAS && (
@@ -622,7 +652,7 @@ class SqlEditor extends React.PureComponent {
                         this.props.defaultQueryLimit,
                     )}
                   </span>
-                  <Icon name="triangle-down" />
+                  <Icons.TriangleDown iconColor={theme.colors.grayscale.base} />
                 </a>
               </Dropdown>
             </LimitSelectStyled>
@@ -650,7 +680,7 @@ class SqlEditor extends React.PureComponent {
             <ShareSqlLabQuery queryEditor={qe} />
           </span>
           <Dropdown overlay={this.renderDropdown()} trigger="click">
-            <Icon name="more-horiz" />
+            <Icons.MoreHoriz iconColor={theme.colors.grayscale.base} />
           </Dropdown>
         </div>
       </StyledToolbar>
@@ -766,4 +796,5 @@ function mapDispatchToProps(dispatch) {
   );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(SqlEditor);
+const themedSqlEditor = withTheme(SqlEditor);
+export default connect(mapStateToProps, mapDispatchToProps)(themedSqlEditor);

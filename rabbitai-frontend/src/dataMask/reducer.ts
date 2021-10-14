@@ -1,12 +1,31 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 /* eslint-disable no-param-reassign */
 // <- When we work with Immer, we need reassign, so disabling lint
 import produce from 'immer';
-import { DataMask, FeatureFlag } from '@rabbitai-ui/core';
+import { DataMask, FeatureFlag } from '@superset-ui/core';
 import { NATIVE_FILTER_PREFIX } from 'src/dashboard/components/nativeFilters/FiltersConfigModal/utils';
 import { HYDRATE_DASHBOARD } from 'src/dashboard/actions/hydrate';
 import { isFeatureEnabled } from 'src/featureFlags';
+import { getUrlParam } from 'src/utils/urlUtils';
+import { URL_PARAMS } from 'src/constants';
 import { DataMaskStateWithId, DataMaskWithId } from './types';
 import {
   AnyDataMaskAction,
@@ -20,8 +39,14 @@ import {
 import { areObjectsEqual } from '../reduxUtils';
 import { Filters } from '../dashboard/reducers/types';
 
-export function getInitialDataMask(id?: string): DataMask;
-export function getInitialDataMask(id: string): DataMaskWithId {
+export function getInitialDataMask(
+  id?: string | number,
+  moreProps?: DataMask,
+): DataMask;
+export function getInitialDataMask(
+  id: string | number,
+  moreProps: DataMask = {},
+): DataMaskWithId {
   let otherProps = {};
   if (id) {
     otherProps = {
@@ -32,9 +57,10 @@ export function getInitialDataMask(id: string): DataMaskWithId {
     ...otherProps,
     extraFormData: {},
     filterState: {
-      value: null,
+      value: undefined,
     },
     ownState: {},
+    ...moreProps,
   } as DataMaskWithId;
 }
 
@@ -44,13 +70,13 @@ function fillNativeFilters(
   draftDataMask: DataMaskStateWithId,
   currentFilters?: Filters,
 ) {
+  const dataMaskFromUrl = getUrlParam(URL_PARAMS.nativeFilters) || {};
   filterConfig.forEach((filter: Filter) => {
     mergedDataMask[filter.id] = {
       ...getInitialDataMask(filter.id), // take initial data
       ...filter.defaultDataMask, // if something new came from BE - take it
-      ...draftDataMask[filter.id], // keep local filter data
+      ...dataMaskFromUrl[filter.id],
     };
-    // if we came from filters config modal and particular filters changed take it's dataMask
     if (
       currentFilters &&
       !areObjectsEqual(

@@ -1,6 +1,23 @@
-
-import React, { useMemo, useState, useCallback } from 'react';
-import { RabbitaiClient, t, styled } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import React, { useMemo, useState, useCallback, ReactElement } from 'react';
+import { SupersetClient, t, styled, useTheme } from '@superset-ui/core';
 import moment from 'moment';
 import {
   createFetchRelated,
@@ -18,7 +35,6 @@ import ListView, {
   FilterOperator,
   ListViewProps,
 } from 'src/components/ListView';
-import Icon, { IconName } from 'src/components/Icon';
 import { Tooltip } from 'src/components/Tooltip';
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/light';
 import sql from 'react-syntax-highlighter/dist/cjs/languages/hljs/sql';
@@ -26,6 +42,7 @@ import github from 'react-syntax-highlighter/dist/cjs/styles/hljs/github';
 import { DATETIME_WITH_TIME_ZONE, TIME_WITH_MS } from 'src/constants';
 import { QueryObject, QueryObjectColumns } from 'src/views/CRUD/types';
 
+import Icons from 'src/components/Icons';
 import QueryPreviewModal from './QueryPreviewModal';
 
 const PAGE_SIZE = 25;
@@ -63,19 +80,6 @@ const StyledPopoverItem = styled.div`
   color: ${({ theme }) => theme.colors.grayscale.dark2};
 `;
 
-const StatusIcon = styled(Icon, {
-  shouldForwardProp: prop => prop !== 'status',
-})<{ status: string }>`
-  color: ${({ status, theme }) => {
-    if (status === 'success') return theme.colors.success.base;
-    if (status === 'failed') return theme.colors.error.base;
-    if (status === 'running') return theme.colors.primary.base;
-    if (status === 'offline') return theme.colors.grayscale.light1;
-
-    return theme.colors.grayscale.base;
-  }};
-`;
-
 function QueryList({ addDangerToast, addSuccessToast }: QueryListProps) {
   const {
     state: { loading, resourceCount: queryCount, resourceCollection: queries },
@@ -92,9 +96,11 @@ function QueryList({ addDangerToast, addSuccessToast }: QueryListProps) {
     setQueryCurrentlyPreviewing,
   ] = useState<QueryObject>();
 
+  const theme = useTheme();
+
   const handleQueryPreview = useCallback(
     (id: number) => {
-      RabbitaiClient.get({
+      SupersetClient.get({
         endpoint: `/api/v1/query/${id}`,
       }).then(
         ({ json = {} }) => {
@@ -124,44 +130,48 @@ function QueryList({ addDangerToast, addSuccessToast }: QueryListProps) {
             original: { status },
           },
         }: any) => {
-          const statusConfig = {
-            name: '',
+          const statusConfig: {
+            name: ReactElement | null;
+            label: string;
+          } = {
+            name: null,
             label: '',
-            status: '',
           };
           if (status === 'success') {
-            statusConfig.name = 'check';
+            statusConfig.name = (
+              <Icons.Check iconColor={theme.colors.success.base} />
+            );
             statusConfig.label = t('Success');
-            statusConfig.status = 'success';
-          }
-          if (status === 'failed' || status === 'stopped') {
-            statusConfig.name = 'x-small';
+          } else if (status === 'failed' || status === 'stopped') {
+            statusConfig.name = (
+              <Icons.XSmall
+                iconColor={
+                  status === 'failed'
+                    ? theme.colors.error.base
+                    : theme.colors.grayscale.base
+                }
+              />
+            );
             statusConfig.label = t('Failed');
-            statusConfig.status = 'failed';
-          }
-          if (status === 'running') {
-            statusConfig.name = 'running';
+          } else if (status === 'running') {
+            statusConfig.name = (
+              <Icons.Running iconColor={theme.colors.primary.base} />
+            );
             statusConfig.label = t('Running');
-            statusConfig.status = 'running';
-          }
-          if (status === 'timed_out') {
-            statusConfig.name = 'offline';
+          } else if (status === 'timed_out') {
+            statusConfig.name = (
+              <Icons.Offline iconColor={theme.colors.grayscale.light1} />
+            );
             statusConfig.label = t('Offline');
-            statusConfig.status = 'offline';
-          }
-          if (status === 'scheduled' || status === 'pending') {
-            statusConfig.name = 'queued';
+          } else if (status === 'scheduled' || status === 'pending') {
+            statusConfig.name = (
+              <Icons.Queued iconColor={theme.colors.grayscale.base} />
+            );
             statusConfig.label = t('Scheduled');
-            statusConfig.status = 'queued';
           }
           return (
             <Tooltip title={statusConfig.label} placement="bottom">
-              <span>
-                <StatusIcon
-                  name={statusConfig.name as IconName}
-                  status={statusConfig.status}
-                />
-              </span>
+              <span>{statusConfig.name}</span>
             </Tooltip>
           );
         },
@@ -307,8 +317,8 @@ function QueryList({ addDangerToast, addSuccessToast }: QueryListProps) {
           },
         }: any) => (
           <Tooltip title={t('Open query in SQL Lab')} placement="bottom">
-            <a href={`/rabbitai/sqllab?queryId=${id}`}>
-              <Icon name="full" />
+            <a href={`/superset/sqllab?queryId=${id}`}>
+              <Icons.Full iconColor={theme.colors.grayscale.base} />
             </a>
           </Tooltip>
         ),
@@ -396,7 +406,7 @@ function QueryList({ addDangerToast, addSuccessToast }: QueryListProps) {
           queries={queries}
           fetchData={handleQueryPreview}
           openInSqlLab={(id: number) =>
-            window.location.assign(`/rabbitai/sqllab?queryId=${id}`)
+            window.location.assign(`/superset/sqllab?queryId=${id}`)
           }
           show
         />

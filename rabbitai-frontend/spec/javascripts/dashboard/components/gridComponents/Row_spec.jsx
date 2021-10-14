@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { Provider } from 'react-redux';
 import React from 'react';
 import { mount } from 'enzyme';
@@ -15,10 +32,11 @@ import IconButton from 'src/dashboard/components/IconButton';
 import Row from 'src/dashboard/components/gridComponents/Row';
 import WithPopoverMenu from 'src/dashboard/components/menu/WithPopoverMenu';
 import { DASHBOARD_GRID_ID } from 'src/dashboard/util/constants';
-import { rabbitaiTheme, ThemeProvider } from '@rabbitai-ui/core';
+import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 
-import { mockStore } from 'spec/fixtures/mockStore';
+import { getMockStore } from 'spec/fixtures/mockStore';
 import { dashboardLayout as mockLayout } from 'spec/fixtures/mockDashboardLayout';
+import { initialState } from 'spec/javascripts/sqllab/fixtures';
 
 describe('Row', () => {
   const rowWithoutChildren = { ...mockLayout.present.ROW_ID, children: [] };
@@ -44,6 +62,9 @@ describe('Row', () => {
   function setup(overrideProps) {
     // We have to wrap provide DragDropContext for the underlying DragDroppable
     // otherwise we cannot assert on DragDroppable children
+    const mockStore = getMockStore({
+      ...initialState,
+    });
     const wrapper = mount(
       <Provider store={mockStore}>
         <DndProvider backend={HTML5Backend}>
@@ -52,7 +73,7 @@ describe('Row', () => {
       </Provider>,
       {
         wrappingComponent: ThemeProvider,
-        wrappingComponentProps: { theme: rabbitaiTheme },
+        wrappingComponentProps: { theme: supersetTheme },
       },
     );
     return wrapper;

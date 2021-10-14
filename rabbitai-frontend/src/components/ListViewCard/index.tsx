@@ -1,7 +1,23 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
-import { styled, useTheme } from '@rabbitai-ui/core';
-import Icon, { IconName } from 'src/components/Icon';
+import { styled, useTheme } from '@superset-ui/core';
 import { AntdCard, Skeleton, ThinSkeleton } from 'src/common/components';
 import { Tooltip } from 'src/components/Tooltip';
 import ImageLoader, { BackgroundPosition } from './ImageLoader';
@@ -76,20 +92,26 @@ const TitleContainer = styled.div`
   .card-actions {
     margin-left: auto;
     align-self: flex-end;
-    padding-left: ${({ theme }) => theme.gridUnit * 8}px;
+    padding-left: ${({ theme }) => theme.gridUnit}px;
+    span[role='img'] {
+      display: flex;
+      align-items: center;
+    }
   }
 `;
 
 const TitleLink = styled.span`
+  overflow: hidden;
+  text-overflow: ellipsis;
   & a {
     color: ${({ theme }) => theme.colors.grayscale.dark1} !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    & + .title-right {
-      margin-left: ${({ theme }) => theme.gridUnit * 2}px;
-    }
   }
+`;
+
+const TitleRight = styled.span`
+  position: absolute;
+  right: -1px;
+  bottom: ${({ theme }) => theme.gridUnit}px;
 `;
 
 const CoverFooter = styled.div`
@@ -137,7 +159,7 @@ interface CardProps {
   coverRight?: React.ReactNode;
   actions?: React.ReactNode | null;
   rows?: number | string;
-  avatar?: string;
+  avatar?: React.ReactElement | null;
   cover?: React.ReactNode | null;
 }
 
@@ -230,14 +252,14 @@ function ListViewCard({
                   <Link to={url!}>{title}</Link>
                 </TitleLink>
               </Tooltip>
-              {titleRight && <div className="title-right"> {titleRight}</div>}
+              {titleRight && <TitleRight>{titleRight}</TitleRight>}
               <div className="card-actions" data-test="card-actions">
                 {actions}
               </div>
             </TitleContainer>
           }
           description={description}
-          avatar={avatar ? <Icon name={avatar as IconName} /> : null}
+          avatar={avatar || null}
         />
       )}
     </StyledCard>

@@ -1,7 +1,24 @@
-
-import { RabbitaiClient, t, styled } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { SupersetClient, t, styled } from '@superset-ui/core';
 import React, { useState, useMemo } from 'react';
-import rison from 'rison';
+import Loading from 'src/components/Loading';
 import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
 import { useListViewResource } from 'src/views/CRUD/hooks';
 import { createErrorHandler } from 'src/views/CRUD/utils';
@@ -12,8 +29,10 @@ import { Tooltip } from 'src/components/Tooltip';
 import Icons from 'src/components/Icons';
 import ListView, { FilterOperator, Filters } from 'src/components/ListView';
 import { commonMenuData } from 'src/views/CRUD/data/common';
-import DatabaseModal from 'src/views/CRUD/data/database/DatabaseModal';
 import ImportModelsModal from 'src/components/ImportModal/index';
+import handleResourceExport from 'src/utils/export';
+import DatabaseModal from './DatabaseModal';
+
 import { DatabaseObject } from './types';
 
 const PAGE_SIZE = 25;
@@ -79,6 +98,7 @@ function DatabaseList({ addDangerToast, addSuccessToast }: DatabaseListProps) {
   );
   const [importingDatabase, showImportModal] = useState<boolean>(false);
   const [passwordFields, setPasswordFields] = useState<string[]>([]);
+  const [preparingExport, setPreparingExport] = useState<boolean>(false);
 
   const openDatabaseImportModal = () => {
     showImportModal(true);
@@ -94,7 +114,7 @@ function DatabaseList({ addDangerToast, addSuccessToast }: DatabaseListProps) {
   };
 
   const openDatabaseDeleteModal = (database: DatabaseObject) =>
-    RabbitaiClient.get({
+    SupersetClient.get({
       endpoint: `/api/v1/database/${database.id}/related_objects/`,
     })
       .then(({ json = {} }) => {
@@ -114,7 +134,7 @@ function DatabaseList({ addDangerToast, addSuccessToast }: DatabaseListProps) {
       );
 
   function handleDatabaseDelete({ id, database_name: dbName }: DatabaseObject) {
-    RabbitaiClient.delete({
+    SupersetClient.delete({
       endpoint: `/api/v1/database/${id}`,
     }).then(
       () => {
@@ -185,9 +205,14 @@ function DatabaseList({ addDangerToast, addSuccessToast }: DatabaseListProps) {
   }
 
   function handleDatabaseExport(database: DatabaseObject) {
-    return window.location.assign(
-      `/api/v1/database/export/?q=${rison.encode([database.id])}`,
-    );
+    if (database.id === undefined) {
+      return;
+    }
+
+    handleResourceExport('database', [database.id], () => {
+      setPreparingExport(false);
+    });
+    setPreparingExport(true);
   }
 
   const initialSort = [{ id: 'changed_on_delta_humanized', desc: true }];
@@ -218,7 +243,9 @@ function DatabaseList({ addDangerToast, addSuccessToast }: DatabaseListProps) {
           row: {
             original: { allow_run_async: allowRunAsync },
           },
-        }: any) => <BooleanDisplay value={allowRunAsync} />,
+        }: {
+          row: { original: { allow_run_async: boolean } };
+        }) => <BooleanDisplay value={allowRunAsync} />,
         size: 'sm',
       },
       {
@@ -451,6 +478,7 @@ function DatabaseList({ addDangerToast, addSuccessToast }: DatabaseListProps) {
         passwordFields={passwordFields}
         setPasswordFields={setPasswordFields}
       />
+      {preparingExport && <Loading />}
     </>
   );
 }

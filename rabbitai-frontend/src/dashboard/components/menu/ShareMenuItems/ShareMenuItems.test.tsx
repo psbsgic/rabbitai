@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 import React from 'react';
 import { Menu } from 'src/common/components';
@@ -13,10 +30,10 @@ const spy = jest.spyOn(copyTextToClipboard, 'default');
 const createProps = () => ({
   addDangerToast: jest.fn(),
   addSuccessToast: jest.fn(),
-  url: '/rabbitai/dashboard/26/?preselect_filters=%7B%7D',
+  url: '/superset/dashboard/26/?preselect_filters=%7B%7D',
   copyMenuItemTitle: 'Copy dashboard URL',
   emailMenuItemTitle: 'Share dashboard by email',
-  emailSubject: 'Rabbitai dashboard COVID Vaccine Dashboard',
+  emailSubject: 'Superset dashboard COVID Vaccine Dashboard',
   emailBody: 'Check out this dashboard: ',
 });
 
@@ -140,7 +157,7 @@ test('Click on "Share dashboard by email" and succeed', async () => {
   await waitFor(() => {
     expect(props.addDangerToast).toBeCalledTimes(0);
     expect(window.location.href).toBe(
-      'mailto:?Subject=Rabbitai dashboard COVID Vaccine Dashboard%20&Body=Check out this dashboard: http://localhost:8088/r/3',
+      'mailto:?Subject=Superset dashboard COVID Vaccine Dashboard%20&Body=Check out this dashboard: http://localhost:8088/r/3',
     );
   });
 });

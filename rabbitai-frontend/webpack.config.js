@@ -1,12 +1,25 @@
 /* eslint-disable no-console */
-
-// region const
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
-
-// region Plugin
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -17,8 +30,6 @@ const SpeedMeasurePlugin = require('speed-measure-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-// endregion
-
 const parsedArgs = require('yargs').argv;
 const getProxyConfig = require('./webpack.proxy-config');
 const packageConfig = require('./package.json');
@@ -26,7 +37,7 @@ const packageConfig = require('./package.json');
 // input dir
 const APP_DIR = path.resolve(__dirname, './');
 // output dir
-const BUILD_DIR = path.resolve(__dirname, '../rabbitai/static/assets');
+const BUILD_DIR = path.resolve(__dirname, '../superset/static/assets');
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const {
@@ -39,10 +50,11 @@ const {
 } = parsedArgs;
 const isDevMode = mode !== 'production';
 const isDevServer = process.argv[1].includes('webpack-dev-server');
+const ASSET_BASE_URL = process.env.ASSET_BASE_URL || '';
 
 const output = {
   path: BUILD_DIR,
-  publicPath: '/static/assets/', // necessary for lazy-loaded chunks
+  publicPath: `${ASSET_BASE_URL}/static/assets/`,
 };
 if (isDevMode) {
   output.filename = '[name].[hash:8].entry.js';
@@ -54,10 +66,6 @@ if (isDevMode) {
   output.filename = '[name].[chunkhash].entry.js';
   output.chunkFilename = '[chunkhash].chunk.js';
 }
-
-// endregion
-
-// region build plugins
 
 const plugins = [
   // creates a manifest.json mapping of name to hashed output used in template files
@@ -138,6 +146,7 @@ if (!process.env.CI) {
 if (!isDevServer) {
   plugins.push(
     new CleanWebpackPlugin({
+      dry: false,
       // required because the build directory is outside the frontend directory:
       dangerouslyAllowCleanPatternsOutsideProject: true,
     }),
@@ -155,10 +164,6 @@ if (!isDevMode) {
   plugins.push(new OptimizeCSSAssetsPlugin());
 }
 
-// endregion
-
-// region preamble
-
 const PREAMBLE = [path.join(APP_DIR, '/src/preamble.ts')];
 if (isDevMode) {
   // A Superset webpage normally includes two JS bundles in dev, `theme.ts` and
@@ -174,32 +179,6 @@ function addPreamble(entry) {
   return PREAMBLE.concat([path.join(APP_DIR, entry)]);
 }
 
-// endregion
-
-// pengspngbo 2021.05.31 change
-const babel_options = {
-  presets: [
-    'airbnb',
-    '@babel/preset-react',
-    [
-      '@babel/preset-env',
-      {
-        useBuiltIns: 'usage',
-        corejs: 3,
-        loose: true,
-        modules: false,
-        shippedProposals: true,
-      },
-    ],
-  ],
-  plugins: [
-    'lodash',
-    '@babel/plugin-syntax-dynamic-import',
-    'react-hot-loader/babel',
-    ['@babel/plugin-transform-runtime', { corejs: 3 }],
-  ],
-};
-
 const babelLoader = {
   loader: 'babel-loader',
   options: {
@@ -207,7 +186,7 @@ const babelLoader = {
     // disable gzip compression for cache files
     // faster when there are millions of small files
     cacheCompression: false,
-    plugins: ['@emotion'],
+    plugins: ['emotion'],
     presets: [
       [
         '@emotion/babel-preset-css-prop',
@@ -300,7 +279,7 @@ const config = {
         // viz thumbnails are used in `addSlice` and `explore` page
         thumbnail: {
           name: 'thumbnail',
-          test: /thumbnail(Large)?\.png/i,
+          test: /thumbnail(Large)?\.(png|jpg)/i,
           priority: 20,
           enforce: true,
         },
@@ -361,37 +340,18 @@ const config = {
           },
         ],
       },
-      // yangyd
       {
         test: /\.jsx?$/,
-        exclude: /node_modules/,
-        include: APP_DIR,
-        loader: 'babel-loader',
-      },
-      {
-        // handle symlinked modules
-        // for debugging @superset-ui packages via npm link
-        test: /\.jsx?$/,
-        exclude: /node_modules/,
-        include: /node_modules\/[@]superset[-]ui.+\/src/,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: babel_options,
-          },
+        // include source code for plugins, but exclude node_modules and test files within them
+        exclude: [/superset-ui.*\/node_modules\//, /\.test.jsx?$/],
+        include: [
+          new RegExp(`${APP_DIR}/src`),
+          /superset-ui.*\/src/,
+          new RegExp(`${APP_DIR}/.storybook`),
+          /@encodable/,
         ],
+        use: [babelLoader],
       },
-      // {
-      //   test: /\.jsx?$/,
-      //   // include source code for plugins, but exclude node_modules and test files within them
-      //   exclude: [/superset-ui.*\/node_modules\//, /\.test.jsx?$/],
-      //   include: [
-      //     new RegExp(`${APP_DIR}/src`),
-      //     /superset-ui.*\/src/,
-      //     new RegExp(`${APP_DIR}/.storybook`),
-      //   ],
-      //   use: [babelLoader],
-      // },
       {
         test: /\.css$/,
         include: [APP_DIR, /superset-ui.+\/src/],

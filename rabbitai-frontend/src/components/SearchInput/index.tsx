@@ -1,7 +1,24 @@
-
-import { styled } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { styled, useTheme } from '@superset-ui/core';
 import React from 'react';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 
 export interface SearchInputProps {
   onSubmit: () => void;
@@ -36,13 +53,13 @@ const commonStyles = `
   display: block;
   cursor: pointer;
 `;
-const SearchIcon = styled(Icon)`
+const SearchIcon = styled(Icons.Search)`
   ${commonStyles};
   top: 4px;
   left: 2px;
 `;
 
-const ClearIcon = styled(Icon)`
+const ClearIcon = styled(Icons.CancelX)`
   ${commonStyles};
   right: 0px;
   top: 4px;
@@ -56,12 +73,13 @@ export default function SearchInput({
   name,
   value,
 }: SearchInputProps) {
+  const theme = useTheme();
   return (
     <SearchInputWrapper>
       <SearchIcon
+        iconColor={theme.colors.grayscale.base}
         data-test="search-submit"
         role="button"
-        name="search"
         onClick={() => onSubmit()}
       />
       <StyledInput
@@ -81,7 +99,7 @@ export default function SearchInput({
         <ClearIcon
           data-test="search-clear"
           role="button"
-          name="cancel-x"
+          iconColor={theme.colors.grayscale.base}
           onClick={() => onClear()}
         />
       )}

@@ -1,7 +1,24 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 import React, { useEffect, useState, MouseEvent } from 'react';
-import { DataMask, HandlerFunction, styled, t } from '@rabbitai-ui/core';
+import { DataMask, HandlerFunction, styled, t } from '@superset-ui/core';
 import { useDispatch } from 'react-redux';
 import { DataMaskState, DataMaskWithId } from 'src/dataMask/types';
 import { setFilterSetsConfiguration } from 'src/dashboard/actions/nativeFilters';
@@ -19,7 +36,10 @@ const FilterSetsWrapper = styled.div`
   align-items: center;
   justify-content: center;
   grid-template-columns: 1fr;
-  & button.rabbitai-button {
+  padding: ${({ theme }) => theme.gridUnit * 2}px
+    ${({ theme }) => theme.gridUnit * 4}px;
+
+  & button.superset-button {
     margin-left: 0;
   }
   & input {
@@ -31,18 +51,17 @@ const FilterSetUnitWrapper = styled.div<{
   onClick?: HandlerFunction;
   'data-selected'?: boolean;
 }>`
-  display: grid;
-  align-items: center;
-  justify-content: center;
-  grid-template-columns: 1fr;
-  grid-gap: ${({ theme }) => theme.gridUnit}px;
-  ${({ theme }) =>
-    `padding: 0 ${theme.gridUnit * 4}px ${theme.gridUnit * 4}px`};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.grayscale.light2};
-  padding: ${({ theme }) => `${theme.gridUnit * 3}px ${theme.gridUnit * 2}px`};
-  cursor: ${({ onClick }) => (!onClick ? 'auto' : 'pointer')};
-  ${({ theme, 'data-selected': selected }) =>
-    `background: ${selected ? theme.colors.primary.light5 : 'transparent'}`};
+  ${({ theme, 'data-selected': selected, onClick }) => `
+    display: grid;
+    align-items: center;
+    justify-content: center;
+    grid-template-columns: 1fr;
+    grid-gap: ${theme.gridUnit}px;
+    border-bottom: 1px solid ${theme.colors.grayscale.light2};
+    padding: ${theme.gridUnit * 2}px 0px};
+    cursor: ${!onClick ? 'auto' : 'pointer'};
+    background: ${selected ? theme.colors.primary.light5 : 'transparent'};
+  `}
 `;
 
 export type FilterSetsProps = {

@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
@@ -18,7 +35,11 @@ import {
   updateComponents,
   handleComponentDrop,
 } from '../actions/dashboardLayout';
-import { setDirectPathToChild } from '../actions/dashboardState';
+import {
+  setDirectPathToChild,
+  setActiveTabs,
+  setFullSizeChartId,
+} from '../actions/dashboardState';
 
 const propTypes = {
   id: PropTypes.string,
@@ -47,42 +68,8 @@ const defaultProps = {
   isComponentVisible: true,
 };
 
-/**
- * Selects the chart scope of the filter input that has focus.
- *
- * @returns {{chartId: number, scope: { scope: string[], immune: string[] }} | null }
- * the scope of the currently focused filter, if any
- */
-function selectFocusedFilterScope(dashboardState, dashboardFilters) {
-  if (!dashboardState.focusedFilterField) return null;
-  const { chartId, column } = dashboardState.focusedFilterField;
-  return {
-    chartId,
-    scope: dashboardFilters[chartId].scopes[column],
-  };
-}
-
-function selectFocusedNativeFilterScope(nativeFilters) {
-  if (!nativeFilters.focusedFilterId) return null;
-  const id = nativeFilters.focusedFilterId;
-  const focusedFilterScope = nativeFilters.filters[id].scope;
-  return {
-    chartId: id,
-    scope: {
-      scope: focusedFilterScope.rootPath,
-      immune: focusedFilterScope.excluded,
-    },
-  };
-}
-
 function mapStateToProps(
-  {
-    dashboardLayout: undoableLayout,
-    dashboardState,
-    dashboardInfo,
-    dashboardFilters,
-    nativeFilters,
-  },
+  { dashboardLayout: undoableLayout, dashboardState, dashboardInfo },
   ownProps,
 ) {
   const dashboardLayout = undoableLayout.present;
@@ -90,17 +77,17 @@ function mapStateToProps(
   const component = dashboardLayout[id];
   const props = {
     component,
+    dashboardLayout,
     parentComponent: dashboardLayout[parentId],
     editMode: dashboardState.editMode,
     undoLength: undoableLayout.past.length,
     redoLength: undoableLayout.future.length,
     filters: getActiveFilters(),
     directPathToChild: dashboardState.directPathToChild,
+    activeTabs: dashboardState.activeTabs,
     directPathLastUpdated: dashboardState.directPathLastUpdated,
     dashboardId: dashboardInfo.id,
-    focusedFilterScope:
-      selectFocusedFilterScope(dashboardState, dashboardFilters) ||
-      selectFocusedNativeFilterScope(nativeFilters),
+    fullSizeChartId: dashboardState.fullSizeChartId,
   };
 
   // rows and columns need more data about their child dimensions
@@ -130,6 +117,8 @@ function mapDispatchToProps(dispatch) {
       updateComponents,
       handleComponentDrop,
       setDirectPathToChild,
+      setFullSizeChartId,
+      setActiveTabs,
       logEvent,
     },
     dispatch,

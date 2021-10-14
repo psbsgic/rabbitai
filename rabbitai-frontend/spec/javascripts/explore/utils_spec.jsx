@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import sinon from 'sinon';
 
 import URI from 'urijs';
@@ -11,7 +28,7 @@ import {
 } from 'src/explore/exploreUtils';
 import { DashboardStandaloneMode } from 'src/dashboard/util/constants';
 import * as hostNamesConfig from 'src/utils/hostNamesConfig';
-import { getChartMetadataRegistry } from '@rabbitai-ui/core';
+import { getChartMetadataRegistry } from '@superset-ui/core';
 
 describe('exploreUtils', () => {
   const { location } = window;
@@ -33,29 +50,29 @@ describe('exploreUtils', () => {
         formData,
         endpointType: 'base',
         force: false,
-        curUrl: 'http://rabbitai.com',
+        curUrl: 'http://superset.com',
       });
-      compareURI(URI(url), URI('/rabbitai/explore/'));
+      compareURI(URI(url), URI('/superset/explore/'));
     });
     it('generates proper json url', () => {
       const url = getExploreUrl({
         formData,
         endpointType: 'json',
         force: false,
-        curUrl: 'http://rabbitai.com',
+        curUrl: 'http://superset.com',
       });
-      compareURI(URI(url), URI('/rabbitai/explore_json/'));
+      compareURI(URI(url), URI('/superset/explore_json/'));
     });
     it('generates proper json forced url', () => {
       const url = getExploreUrl({
         formData,
         endpointType: 'json',
         force: true,
-        curUrl: 'rabbitai.com',
+        curUrl: 'superset.com',
       });
       compareURI(
         URI(url),
-        URI('/rabbitai/explore_json/').search({ force: 'true' }),
+        URI('/superset/explore_json/').search({ force: 'true' }),
       );
     });
     it('generates proper csv URL', () => {
@@ -63,11 +80,11 @@ describe('exploreUtils', () => {
         formData,
         endpointType: 'csv',
         force: false,
-        curUrl: 'rabbitai.com',
+        curUrl: 'superset.com',
       });
       compareURI(
         URI(url),
-        URI('/rabbitai/explore_json/').search({ csv: 'true' }),
+        URI('/superset/explore_json/').search({ csv: 'true' }),
       );
     });
     it('generates proper standalone URL', () => {
@@ -75,11 +92,11 @@ describe('exploreUtils', () => {
         formData,
         endpointType: 'standalone',
         force: false,
-        curUrl: 'rabbitai.com',
+        curUrl: 'superset.com',
       });
       compareURI(
         URI(url),
-        URI('/rabbitai/explore/').search({
+        URI('/superset/explore/').search({
           standalone: DashboardStandaloneMode.HIDE_NAV,
         }),
       );
@@ -89,11 +106,11 @@ describe('exploreUtils', () => {
         formData,
         endpointType: 'json',
         force: false,
-        curUrl: 'rabbitai.com?foo=bar',
+        curUrl: 'superset.com?foo=bar',
       });
       compareURI(
         URI(url),
-        URI('/rabbitai/explore_json/').search({ foo: 'bar' }),
+        URI('/superset/explore_json/').search({ foo: 'bar' }),
       );
     });
     it('generate proper save slice url', () => {
@@ -101,11 +118,11 @@ describe('exploreUtils', () => {
         formData,
         endpointType: 'json',
         force: false,
-        curUrl: 'rabbitai.com?foo=bar',
+        curUrl: 'superset.com?foo=bar',
       });
       compareURI(
         URI(url),
-        URI('/rabbitai/explore_json/').search({ foo: 'bar' }),
+        URI('/superset/explore_json/').search({ foo: 'bar' }),
       );
     });
   });
@@ -178,14 +195,14 @@ describe('exploreUtils', () => {
     it('generates proper base url with form_data', () => {
       compareURI(
         URI(getExploreLongUrl(formData, 'base')),
-        URI('/rabbitai/explore/').search({ form_data: sFormData }),
+        URI('/superset/explore/').search({ form_data: sFormData }),
       );
     });
 
     it('generates url with standalone', () => {
       compareURI(
         URI(getExploreLongUrl(formData, 'standalone')),
-        URI('/rabbitai/explore/').search({
+        URI('/superset/explore/').search({
           form_data: sFormData,
           standalone: DashboardStandaloneMode.HIDE_NAV,
         }),

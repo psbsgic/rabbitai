@@ -1,19 +1,38 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { t } from '@rabbitai-ui/core';
+import { t } from '@superset-ui/core';
 import { Charts, Layout, RootState } from 'src/dashboard/types';
 import { DASHBOARD_ROOT_ID } from 'src/dashboard/util/constants';
 import {
   CHART_TYPE,
   DASHBOARD_ROOT_TYPE,
 } from 'src/dashboard/util/componentTypes';
-import { TreeItem } from './types';
+import { BuildTreeLeafTitle, TreeItem } from './types';
 import { buildTree } from './utils';
 
 // eslint-disable-next-line import/prefer-default-export
 export function useFilterScopeTree(
   currentChartId?: number,
+  initiallyExcludedCharts: number[] = [],
+  buildTreeLeafTitle: BuildTreeLeafTitle = label => label,
 ): {
   treeData: [TreeItem];
   layout: Layout;
@@ -44,8 +63,16 @@ export function useFilterScopeTree(
   );
 
   useMemo(() => {
-    buildTree(layout[DASHBOARD_ROOT_ID], tree, layout, charts, validNodes);
-  }, [charts, layout, tree]);
+    buildTree(
+      layout[DASHBOARD_ROOT_ID],
+      tree,
+      layout,
+      charts,
+      validNodes,
+      initiallyExcludedCharts,
+      buildTreeLeafTitle,
+    );
+  }, [layout, tree, charts, initiallyExcludedCharts, buildTreeLeafTitle]);
 
   return { treeData: [tree], layout };
 }

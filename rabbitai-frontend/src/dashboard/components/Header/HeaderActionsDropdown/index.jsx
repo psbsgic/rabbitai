@@ -1,11 +1,28 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { styled, RabbitaiClient, t } from '@rabbitai-ui/core';
+import { styled, SupersetClient, t } from '@superset-ui/core';
 
 import { Menu, NoAnimationDropdown } from 'src/common/components';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 import { URL_PARAMS } from 'src/constants';
 import ShareMenuItems from 'src/dashboard/components/menu/ShareMenuItems';
 import CssEditor from 'src/dashboard/components/CssEditor';
@@ -25,6 +42,7 @@ const propTypes = {
   dashboardInfo: PropTypes.object.isRequired,
   dashboardId: PropTypes.number.isRequired,
   dashboardTitle: PropTypes.string.isRequired,
+  dataMask: PropTypes.object.isRequired,
   customCss: PropTypes.string.isRequired,
   colorNamespace: PropTypes.string,
   colorScheme: PropTypes.string,
@@ -70,6 +88,9 @@ const MENU_KEYS = {
 
 const DropdownButton = styled.div`
   margin-left: ${({ theme }) => theme.gridUnit * 2.5}px;
+  span {
+    color: ${({ theme }) => theme.colors.grayscale.base};
+  }
 `;
 
 const SCREENSHOT_NODE_SELECTOR = '.dashboard';
@@ -94,7 +115,7 @@ class HeaderActionsDropdown extends React.PureComponent {
   UNSAFE_componentWillMount() {
     injectCustomCss(this.state.css);
 
-    RabbitaiClient.get({ endpoint: '/csstemplateasyncmodelview/api/read' })
+    SupersetClient.get({ endpoint: '/csstemplateasyncmodelview/api/read' })
       .then(({ json }) => {
         const cssTemplates = json.result.map(row => ({
           value: row.template_name,
@@ -141,18 +162,21 @@ class HeaderActionsDropdown extends React.PureComponent {
         downloadAsImage(
           SCREENSHOT_NODE_SELECTOR,
           this.props.dashboardTitle,
+          {},
+          true,
         )(domEvent).then(() => {
           menu.style.visibility = 'visible';
         });
         break;
       }
       case MENU_KEYS.TOGGLE_FULLSCREEN: {
-        const url = getDashboardUrl(
-          window.location.pathname,
-          getActiveFilters(),
-          window.location.hash,
-          getUrlParam(URL_PARAMS.standalone, 'number'),
-        );
+        const url = getDashboardUrl({
+          dataMask: this.props.dataMask,
+          pathname: window.location.pathname,
+          filters: getActiveFilters(),
+          hash: window.location.hash,
+          standalone: !getUrlParam(URL_PARAMS.standalone),
+        });
         window.location.replace(url);
         break;
       }
@@ -166,6 +190,7 @@ class HeaderActionsDropdown extends React.PureComponent {
       dashboardTitle,
       dashboardId,
       dashboardInfo,
+      dataMask,
       refreshFrequency,
       shouldPersistRefreshFrequency,
       editMode,
@@ -186,14 +211,16 @@ class HeaderActionsDropdown extends React.PureComponent {
       addDangerToast,
     } = this.props;
 
-    const emailTitle = t('Rabbitai dashboard');
+    const emailTitle = t('Superset dashboard');
     const emailSubject = `${emailTitle} ${dashboardTitle}`;
     const emailBody = t('Check out this dashboard: ');
-    const url = getDashboardUrl(
-      window.location.pathname,
-      getActiveFilters(),
-      window.location.hash,
-    );
+
+    const url = getDashboardUrl({
+      dataMask,
+      pathname: window.location.pathname,
+      filters: getActiveFilters(),
+      hash: window.location.hash,
+    });
 
     const menu = (
       <Menu
@@ -290,7 +317,9 @@ class HeaderActionsDropdown extends React.PureComponent {
 
         {!editMode && (
           <Menu.Item key={MENU_KEYS.TOGGLE_FULLSCREEN}>
-            {t('Toggle fullscreen')}
+            {getUrlParam(URL_PARAMS.standalone)
+              ? t('Exit fullscreen')
+              : t('Enter fullscreen')}
           </Menu.Item>
         )}
       </Menu>
@@ -304,7 +333,7 @@ class HeaderActionsDropdown extends React.PureComponent {
         }
       >
         <DropdownButton id="save-dash-split-button" role="button">
-          <Icon name="more-horiz" />
+          <Icons.MoreHoriz />
         </DropdownButton>
       </NoAnimationDropdown>
     );

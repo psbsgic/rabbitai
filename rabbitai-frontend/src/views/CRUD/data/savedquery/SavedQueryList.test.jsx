@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import thunk from 'redux-thunk';
 import configureStore from 'redux-mock-store';
@@ -9,7 +26,6 @@ import { render, screen, cleanup, waitFor } from 'spec/helpers/testing-library';
 import userEvent from '@testing-library/user-event';
 import { QueryParamProvider } from 'use-query-params';
 import { act } from 'react-dom/test-utils';
-import { handleBulkSavedQueryExport } from 'src/views/CRUD/utils';
 import * as featureFlags from 'src/featureFlags';
 import SavedQueryList from 'src/views/CRUD/data/savedquery/SavedQueryList';
 import SubMenu from 'src/components/Menu/SubMenu';
@@ -268,14 +284,6 @@ describe('RTL', () => {
     expect(exportTooltip).toBeInTheDocument();
   });
 
-  it('runs handleBulkSavedQueryExport when export is clicked', () => {
-    // Grab Export action button and mock mouse clicking it
-    const exportActionButton = screen.getAllByRole('button')[18];
-    userEvent.click(exportActionButton);
-
-    expect(handleBulkSavedQueryExport).toHaveBeenCalled();
-  });
-
   it('renders an import button in the submenu', () => {
     // Grab and assert that import saved query button is visible
     const importButton = screen.getByTestId('import-button');
@@ -313,7 +321,7 @@ describe('RTL', () => {
     userEvent.click(importButton);
 
     // Grab "Choose File" input from import modal
-    const chooseFileInput = screen.getByLabelText(/file\*/i);
+    const chooseFileInput = screen.getByTestId('model-file-input');
     // Upload mocked import file
     userEvent.upload(chooseFileInput, mockImportFile);
 

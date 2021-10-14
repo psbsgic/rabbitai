@@ -1,7 +1,24 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import shortid from 'shortid';
 import JSONbig from 'json-bigint';
-import { t, RabbitaiClient } from '@rabbitai-ui/core';
+import { t, SupersetClient } from '@superset-ui/core';
 import invert from 'lodash/invert';
 import mapKeys from 'lodash/mapKeys';
 import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
@@ -131,7 +148,7 @@ export function updateQueryEditor(alterations) {
 
 export function scheduleQuery(query) {
   return dispatch =>
-    RabbitaiClient.post({
+    SupersetClient.post({
       endpoint: '/savedqueryviewapi/api/create',
       postPayload: query,
       stringify: false,
@@ -154,12 +171,12 @@ export function estimateQueryCost(query) {
   const { dbId, schema, sql, templateParams } = query;
   const endpoint =
     schema === null
-      ? `/rabbitai/estimate_query_cost/${dbId}/`
-      : `/rabbitai/estimate_query_cost/${dbId}/${schema}/`;
+      ? `/superset/estimate_query_cost/${dbId}/`
+      : `/superset/estimate_query_cost/${dbId}/${schema}/`;
   return dispatch =>
     Promise.all([
       dispatch({ type: COST_ESTIMATE_STARTED, query }),
-      RabbitaiClient.post({
+      SupersetClient.post({
         endpoint,
         postPayload: {
           sql,
@@ -201,7 +218,7 @@ export function querySuccess(query, results) {
     const sync =
       !query.isDataPreview &&
       isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-        ? RabbitaiClient.put({
+        ? SupersetClient.put({
             endpoint: encodeURI(`/tabstateview/${results.query.sqlEditorId}`),
             postPayload: { latest_query_id: query.id },
           })
@@ -227,24 +244,28 @@ export function queryFailed(query, msg, link, errors) {
     const sync =
       !query.isDataPreview &&
       isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-        ? RabbitaiClient.put({
+        ? SupersetClient.put({
             endpoint: encodeURI(`/tabstateview/${query.sqlEditorId}`),
             postPayload: { latest_query_id: query.id },
           })
         : Promise.resolve();
 
-    return sync
-      .then(() => dispatch({ type: QUERY_FAILED, query, msg, link, errors }))
-      .catch(() =>
-        dispatch(
-          addDangerToast(
-            t(
-              'An error occurred while storing the latest query id in the backend. ' +
-                'Please contact your administrator if this problem persists.',
+    return (
+      sync
+        .catch(() =>
+          dispatch(
+            addDangerToast(
+              t(
+                'An error occurred while storing the latest query id in the backend. ' +
+                  'Please contact your administrator if this problem persists.',
+              ),
             ),
           ),
-        ),
-      );
+        )
+        // We should always show the error message, even if we couldn't sync the
+        // state to the backend
+        .then(() => dispatch({ type: QUERY_FAILED, query, msg, link, errors }))
+    );
   };
 }
 
@@ -268,8 +289,8 @@ export function fetchQueryResults(query, displayLimit) {
   return function (dispatch) {
     dispatch(requestQueryResults(query));
 
-    return RabbitaiClient.get({
-      endpoint: `/rabbitai/results/${query.resultsKey}/?rows=${displayLimit}`,
+    return SupersetClient.get({
+      endpoint: `/superset/results/${query.resultsKey}/?rows=${displayLimit}`,
       parseMethod: 'text',
     })
       .then(({ text = '{}' }) => {
@@ -311,8 +332,8 @@ export function runQuery(query) {
       expand_data: true,
     };
 
-    return RabbitaiClient.post({
-      endpoint: '/rabbitai/sql_json/',
+    return SupersetClient.post({
+      endpoint: '/superset/sql_json/',
       body: JSON.stringify(postPayload),
       headers: { 'Content-Type': 'application/json' },
       parseMethod: 'text',
@@ -357,8 +378,8 @@ export function validateQuery(query) {
       validate_only: true,
     };
 
-    return RabbitaiClient.post({
-      endpoint: `/rabbitai/validate_sql_json/${window.location.search}`,
+    return SupersetClient.post({
+      endpoint: `/superset/validate_sql_json/${window.location.search}`,
       postPayload,
       stringify: false,
     })
@@ -377,8 +398,8 @@ export function validateQuery(query) {
 
 export function postStopQuery(query) {
   return function (dispatch) {
-    return RabbitaiClient.post({
-      endpoint: '/rabbitai/stop_query/',
+    return SupersetClient.post({
+      endpoint: '/superset/stop_query/',
       postPayload: { client_id: query.id },
       stringify: false,
     })
@@ -397,7 +418,7 @@ export function setDatabases(databases) {
 }
 
 function migrateTable(table, queryEditorId, dispatch) {
-  return RabbitaiClient.post({
+  return SupersetClient.post({
     endpoint: encodeURI('/tableschemaview/'),
     postPayload: { table: { ...table, queryEditorId } },
   })
@@ -413,7 +434,7 @@ function migrateTable(table, queryEditorId, dispatch) {
       dispatch(
         addWarningToast(
           t(
-            'Unable to migrate table schema state to backend. Rabbitai will retry ' +
+            'Unable to migrate table schema state to backend. Superset will retry ' +
               'later. Please contact your administrator if this problem persists.',
           ),
         ),
@@ -422,7 +443,7 @@ function migrateTable(table, queryEditorId, dispatch) {
 }
 
 function migrateQuery(queryId, queryEditorId, dispatch) {
-  return RabbitaiClient.post({
+  return SupersetClient.post({
     endpoint: encodeURI(`/tabstateview/${queryEditorId}/migrate_query`),
     postPayload: { queryId },
   })
@@ -431,7 +452,7 @@ function migrateQuery(queryId, queryEditorId, dispatch) {
       dispatch(
         addWarningToast(
           t(
-            'Unable to migrate query state to backend. Rabbitai will retry later. ' +
+            'Unable to migrate query state to backend. Superset will retry later. ' +
               'Please contact your administrator if this problem persists.',
           ),
         ),
@@ -445,7 +466,7 @@ export function migrateQueryEditorFromLocalStorage(
   queries,
 ) {
   return function (dispatch) {
-    return RabbitaiClient.post({
+    return SupersetClient.post({
       endpoint: '/tabstateview/',
       postPayload: { queryEditor },
     })
@@ -477,7 +498,7 @@ export function migrateQueryEditorFromLocalStorage(
         dispatch(
           addWarningToast(
             t(
-              'Unable to migrate query editor state to backend. Rabbitai will retry ' +
+              'Unable to migrate query editor state to backend. Superset will retry ' +
                 'later. Please contact your administrator if this problem persists.',
             ),
           ),
@@ -489,7 +510,7 @@ export function migrateQueryEditorFromLocalStorage(
 export function addQueryEditor(queryEditor) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.post({
+      ? SupersetClient.post({
           endpoint: '/tabstateview/',
           postPayload: { queryEditor },
         })
@@ -542,7 +563,7 @@ export function cloneQueryToNewTab(query, autorun) {
 export function setActiveQueryEditor(queryEditor) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.post({
+      ? SupersetClient.post({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}/activate`),
         })
       : Promise.resolve();
@@ -607,7 +628,7 @@ export function switchQueryEditor(queryEditor, displayLimit) {
       isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE) &&
       !queryEditor.loaded
     ) {
-      RabbitaiClient.get({
+      SupersetClient.get({
         endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
       })
         .then(({ json }) => {
@@ -659,7 +680,7 @@ export function toggleLeftBar(queryEditor) {
   const hideLeftBar = !queryEditor.hideLeftBar;
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { hide_left_bar: hideLeftBar },
         })
@@ -688,7 +709,7 @@ export function toggleLeftBar(queryEditor) {
 export function removeQueryEditor(queryEditor) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.delete({
+      ? SupersetClient.delete({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
         })
       : Promise.resolve();
@@ -710,7 +731,7 @@ export function removeQueryEditor(queryEditor) {
 export function removeQuery(query) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.delete({
+      ? SupersetClient.delete({
           endpoint: encodeURI(
             `/tabstateview/${query.sqlEditorId}/query/${query.id}`,
           ),
@@ -734,7 +755,7 @@ export function removeQuery(query) {
 export function queryEditorSetDb(queryEditor, dbId) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { database_id: dbId },
         })
@@ -757,7 +778,7 @@ export function queryEditorSetDb(queryEditor, dbId) {
 export function queryEditorSetSchema(queryEditor, schema) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { schema },
         })
@@ -790,7 +811,7 @@ export function queryEditorSetTableOptions(queryEditor, options) {
 export function queryEditorSetAutorun(queryEditor, autorun) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { autorun },
         })
@@ -815,7 +836,7 @@ export function queryEditorSetAutorun(queryEditor, autorun) {
 export function queryEditorSetTitle(queryEditor, title) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { label: title },
         })
@@ -839,7 +860,7 @@ export function queryEditorSetTitle(queryEditor, title) {
 
 export function saveQuery(query) {
   return dispatch =>
-    RabbitaiClient.post({
+    SupersetClient.post({
       endpoint: '/savedqueryviewapi/api/create',
       postPayload: convertQueryToServer(query),
       stringify: false,
@@ -860,7 +881,7 @@ export function saveQuery(query) {
 
 export function updateSavedQuery(query) {
   return dispatch =>
-    RabbitaiClient.put({
+    SupersetClient.put({
       endpoint: `/savedqueryviewapi/api/update/${query.remoteId}`,
       postPayload: convertQueryToServer(query),
       stringify: false,
@@ -878,7 +899,7 @@ export function updateSavedQuery(query) {
 export function queryEditorSetSql(queryEditor, sql) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { sql, latest_query_id: queryEditor.latestQueryId },
         })
@@ -903,7 +924,7 @@ export function queryEditorSetSql(queryEditor, sql) {
 export function queryEditorSetQueryLimit(queryEditor, queryLimit) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { query_limit: queryLimit },
         })
@@ -932,7 +953,7 @@ export function queryEditorSetQueryLimit(queryEditor, queryLimit) {
 export function queryEditorSetTemplateParams(queryEditor, templateParams) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.put({
+      ? SupersetClient.put({
           endpoint: encodeURI(`/tabstateview/${queryEditor.id}`),
           postPayload: { template_params: templateParams },
         })
@@ -968,7 +989,7 @@ export function mergeTable(table, query) {
 }
 
 function getTableMetadata(table, query, dispatch) {
-  return RabbitaiClient.get({
+  return SupersetClient.get({
     endpoint: encodeURI(
       `/api/v1/database/${query.dbId}/table/${encodeURIComponent(
         table.name,
@@ -1016,9 +1037,9 @@ function getTableMetadata(table, query, dispatch) {
 }
 
 function getTableExtendedMetadata(table, query, dispatch) {
-  return RabbitaiClient.get({
+  return SupersetClient.get({
     endpoint: encodeURI(
-      `/rabbitai/extra_table_metadata/${query.dbId}/` +
+      `/superset/extra_table_metadata/${query.dbId}/` +
         `${encodeURIComponent(table.name)}/${encodeURIComponent(
           table.schema,
         )}/`,
@@ -1062,7 +1083,7 @@ export function addTable(query, tableName, schemaName) {
       getTableExtendedMetadata(table, query, dispatch),
     ]).then(([newTable, json]) => {
       const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-        ? RabbitaiClient.post({
+        ? SupersetClient.post({
             endpoint: encodeURI('/tableschemaview/'),
             postPayload: { table: { ...newTable, ...json } },
           })
@@ -1112,7 +1133,7 @@ export function reFetchQueryResults(query) {
 export function expandTable(table) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.post({
+      ? SupersetClient.post({
           endpoint: encodeURI(`/tableschemaview/${table.id}/expanded`),
           postPayload: { expanded: true },
         })
@@ -1136,7 +1157,7 @@ export function expandTable(table) {
 export function collapseTable(table) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.post({
+      ? SupersetClient.post({
           endpoint: encodeURI(`/tableschemaview/${table.id}/expanded`),
           postPayload: { expanded: false },
         })
@@ -1160,7 +1181,7 @@ export function collapseTable(table) {
 export function removeTable(table) {
   return function (dispatch) {
     const sync = isFeatureEnabled(FeatureFlag.SQLLAB_BACKEND_PERSISTENCE)
-      ? RabbitaiClient.delete({
+      ? SupersetClient.delete({
           endpoint: encodeURI(`/tableschemaview/${table.id}`),
         })
       : Promise.resolve();
@@ -1199,7 +1220,7 @@ export function persistEditorHeight(queryEditor, northPercent, southPercent) {
 
 export function popStoredQuery(urlId) {
   return function (dispatch) {
-    return RabbitaiClient.get({ endpoint: `/kv/${urlId}` })
+    return SupersetClient.get({ endpoint: `/kv/${urlId}` })
       .then(({ json }) =>
         dispatch(
           addQueryEditor({
@@ -1216,7 +1237,7 @@ export function popStoredQuery(urlId) {
 }
 export function popSavedQuery(saveQueryId) {
   return function (dispatch) {
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: `/savedqueryviewapi/api/get/${saveQueryId}`,
     })
       .then(({ json }) => {
@@ -1231,7 +1252,7 @@ export function popSavedQuery(saveQueryId) {
 }
 export function popQuery(queryId) {
   return function (dispatch) {
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: `/api/v1/query/${queryId}`,
     })
       .then(({ json }) => {
@@ -1250,8 +1271,8 @@ export function popQuery(queryId) {
 }
 export function popDatasourceQuery(datasourceKey, sql) {
   return function (dispatch) {
-    return RabbitaiClient.get({
-      endpoint: `/rabbitai/fetch_datasource_metadata?datasourceKey=${datasourceKey}`,
+    return SupersetClient.get({
+      endpoint: `/superset/fetch_datasource_metadata?datasourceKey=${datasourceKey}`,
     })
       .then(({ json }) =>
         dispatch(
@@ -1283,8 +1304,8 @@ export function createDatasourceFailed(err) {
 export function createDatasource(vizOptions) {
   return dispatch => {
     dispatch(createDatasourceStarted());
-    return RabbitaiClient.post({
-      endpoint: '/rabbitai/sqllab_viz/',
+    return SupersetClient.post({
+      endpoint: '/superset/sqllab_viz/',
       postPayload: { data: vizOptions },
     })
       .then(({ json }) => {
@@ -1307,8 +1328,8 @@ export function createDatasource(vizOptions) {
 export function createCtasDatasource(vizOptions) {
   return dispatch => {
     dispatch(createDatasourceStarted());
-    return RabbitaiClient.post({
-      endpoint: '/rabbitai/get_or_create_table/',
+    return SupersetClient.post({
+      endpoint: '/superset/get_or_create_table/',
       postPayload: { data: vizOptions },
     })
       .then(({ json }) => {
@@ -1326,7 +1347,7 @@ export function createCtasDatasource(vizOptions) {
 
 export function queryEditorSetFunctionNames(queryEditor, dbId) {
   return function (dispatch) {
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: encodeURI(`/api/v1/database/${dbId}/function_names/`),
     })
       .then(({ json }) =>

@@ -1,8 +1,25 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { render, screen } from 'spec/helpers/testing-library';
 import userEvent from '@testing-library/user-event';
-import { rabbitaiTheme } from '@rabbitai-ui/core';
+import { supersetTheme } from '@superset-ui/core';
 import { hexToRgb } from 'src/utils/colorUtils';
 import Collapse, { CollapseProps } from '.';
 
@@ -83,11 +100,11 @@ test('renders with custom properties', () => {
   const arrowStyle = window.getComputedStyle(arrow);
 
   expect(headerStyle.fontWeight).toBe(
-    rabbitaiTheme.typography.weights.bold.toString(),
+    supersetTheme.typography.weights.bold.toString(),
   );
-  expect(headerStyle.fontSize).toBe(`${rabbitaiTheme.gridUnit * 4}px`);
+  expect(headerStyle.fontSize).toBe(`${supersetTheme.gridUnit * 4}px`);
   expect(headerStyle.color).toBe(
-    hexToRgb(rabbitaiTheme.colors.grayscale.light4),
+    hexToRgb(supersetTheme.colors.grayscale.light4),
   );
   expect(arrowStyle.transition).toBe('transform 0.24s');
 });

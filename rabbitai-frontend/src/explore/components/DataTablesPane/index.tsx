@@ -1,6 +1,23 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { useCallback, useEffect, useState } from 'react';
-import { JsonObject, styled, t } from '@rabbitai-ui/core';
+import { JsonObject, styled, t } from '@superset-ui/core';
 import Collapse from 'src/components/Collapse';
 import Tabs from 'src/components/Tabs';
 import Loading from 'src/components/Loading';
@@ -84,18 +101,24 @@ const CollapseWrapper = styled.div`
   }
 `;
 
+const Error = styled.pre`
+  margin-top: ${({ theme }) => `${theme.gridUnit * 4}px`};
+`;
+
 export const DataTablesPane = ({
   queryFormData,
   tableSectionHeight,
   onCollapseChange,
   chartStatus,
   ownState,
+  errorMessage,
 }: {
   queryFormData: Record<string, any>;
   tableSectionHeight: number;
   chartStatus: string;
   ownState?: JsonObject;
   onCollapseChange: (openPanelName: string) => void;
+  errorMessage?: JSX.Element;
 }) => {
   const [data, setData] = useState<{
     [RESULT_TYPES.results]?: Record<string, any>[];
@@ -130,10 +153,30 @@ export const DataTablesPane = ({
         resultType,
         ownState,
       })
-        .then(response => {
+        .then(({ json }) => {
           // Only displaying the first query is currently supported
-          const result = response.result[0];
-          setData(prevData => ({ ...prevData, [resultType]: result.data }));
+          if (json.result.length > 1) {
+            const data: any[] = [];
+            json.result.forEach((item: { data: any[] }) => {
+              item.data.forEach((row, i) => {
+                if (data[i] !== undefined) {
+                  data[i] = { ...data[i], ...row };
+                } else {
+                  data[i] = row;
+                }
+              });
+            });
+            setData(prevData => ({
+              ...prevData,
+              [resultType]: data,
+            }));
+          } else {
+            setData(prevData => ({
+              ...prevData,
+              [resultType]: json.result[0].data,
+            }));
+          }
+
           setIsLoading(prevIsLoading => ({
             ...prevIsLoading,
             [resultType]: false,
@@ -179,6 +222,17 @@ export const DataTablesPane = ({
 
   useEffect(() => {
     if (panelOpen && isRequestPending[RESULT_TYPES.results]) {
+      if (errorMessage) {
+        setIsRequestPending(prevState => ({
+          ...prevState,
+          [RESULT_TYPES.results]: false,
+        }));
+        setIsLoading(prevIsLoading => ({
+          ...prevIsLoading,
+          [RESULT_TYPES.results]: false,
+        }));
+        return;
+      }
       if (chartStatus === 'loading') {
         setIsLoading(prevIsLoading => ({
           ...prevIsLoading,
@@ -203,7 +257,14 @@ export const DataTablesPane = ({
       }));
       getData(RESULT_TYPES.samples);
     }
-  }, [panelOpen, isRequestPending, getData, activeTabKey, chartStatus]);
+  }, [
+    panelOpen,
+    isRequestPending,
+    getData,
+    activeTabKey,
+    chartStatus,
+    errorMessage,
+  ]);
 
   const filteredData = {
     [RESULT_TYPES.results]: useFilteredTableData(
@@ -226,7 +287,7 @@ export const DataTablesPane = ({
       return <Loading />;
     }
     if (error[type]) {
-      return <pre>{error[type]}</pre>;
+      return <Error>{error[type]}</Error>;
     }
     if (data[type]) {
       if (data[type]?.length === 0) {
@@ -242,8 +303,12 @@ export const DataTablesPane = ({
           className="table-condensed"
           isPaginationSticky
           showRowCount={false}
+          small
         />
       );
+    }
+    if (errorMessage) {
+      return <Error>{errorMessage}</Error>;
     }
     return null;
   };

@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { WORLD_HEALTH_DASHBOARD, drag } from './dashboard.helper';
 
 describe('Dashboard edit mode', () => {
@@ -6,7 +23,7 @@ describe('Dashboard edit mode', () => {
     cy.login();
     cy.visit(WORLD_HEALTH_DASHBOARD);
     cy.get('[data-test="dashboard-header"]')
-      .find('[data-test=edit-alt]')
+      .find('[aria-label=edit-alt]')
       .click();
   });
 
@@ -79,7 +96,7 @@ describe('Dashboard edit mode', () => {
       .click();
     cy.get('[data-test="dashboard-header"]').within(() => {
       cy.get('[data-test="dashboard-edit-actions"]').should('not.be.visible');
-      cy.get('[data-test="edit-alt"]').should('be.visible');
+      cy.get('[aria-label="edit-alt"]').should('be.visible');
     });
   });
 });

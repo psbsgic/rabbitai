@@ -1,9 +1,26 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { NativeSelect as Select } from 'src/components/Select';
 import { Input } from 'src/common/components';
-import { t, RabbitaiClient, styled } from '@rabbitai-ui/core';
+import { t, SupersetClient, styled } from '@superset-ui/core';
 
 import adhocMetricType from 'src/explore/components/controls/MetricControl/adhocMetricType';
 import {
@@ -22,6 +39,7 @@ import AdhocFilter, {
   CLAUSES,
 } from 'src/explore/components/controls/FilterControl/AdhocFilter';
 import columnType from 'src/explore/components/controls/FilterControl/columnType';
+import Icons from 'src/components/Icons';
 
 const SelectWithLabel = styled(Select)`
   .ant-select-selector {
@@ -203,9 +221,9 @@ export default class AdhocFilterEditPopoverSimpleTabContent extends React.Compon
       const { signal } = controller;
       this.setState({ abortActiveRequest: controller.abort, loading: true });
 
-      RabbitaiClient.get({
+      SupersetClient.get({
         signal,
-        endpoint: `/rabbitai/filter/${datasource.type}/${datasource.id}/${col}/`,
+        endpoint: `/superset/filter/${datasource.type}/${datasource.id}/${col}/`,
       })
         .then(({ json }) => {
           this.setState(() => ({
@@ -351,6 +369,8 @@ export default class AdhocFilterEditPopoverSimpleTabContent extends React.Compon
       labelText: comparator?.length > 0 && this.createSuggestionsPlaceholder(),
       autoFocus: focusComparator,
     };
+    const Icon =
+      operator === 'NOT IN' ? Icons.StopOutlined : Icons.CheckOutlined;
 
     return (
       <>
@@ -400,6 +420,7 @@ export default class AdhocFilterEditPopoverSimpleTabContent extends React.Compon
             onSearch={val => this.setState({ currentSuggestionSearch: val })}
             onSelect={this.clearSuggestionSearch}
             onBlur={this.clearSuggestionSearch}
+            menuItemSelectedIcon={<Icon iconSize="m" />}
           >
             {this.state.suggestions.map(suggestion => (
               <Select.Option value={suggestion} key={suggestion}>
@@ -413,7 +434,7 @@ export default class AdhocFilterEditPopoverSimpleTabContent extends React.Compon
                 suggestion => suggestion === currentSuggestionSearch,
               ) && (
                 <Select.Option value={currentSuggestionSearch}>
-                  {currentSuggestionSearch}
+                  {`${t('Create "%s"', currentSuggestionSearch)}`}
                 </Select.Option>
               )}
           </SelectWithLabel>

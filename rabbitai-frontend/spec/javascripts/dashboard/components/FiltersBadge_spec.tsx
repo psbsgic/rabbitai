@@ -1,12 +1,34 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { shallow } from 'enzyme';
-import { rabbitaiTheme } from '@rabbitai-ui/core';
+import { supersetTheme } from '@superset-ui/core';
 import { Provider } from 'react-redux';
-import * as RabbitaiUI from '@rabbitai-ui/core';
-import { CHART_UPDATE_SUCCEEDED } from 'src/chart/chartAction';
+import { Store } from 'redux';
+import * as SupersetUI from '@superset-ui/core';
+import { styledMount as mount } from 'spec/helpers/theming';
+import {
+  CHART_RENDERING_SUCCEEDED,
+  CHART_UPDATE_SUCCEEDED,
+} from 'src/chart/chartAction';
 import { buildActiveFilters } from 'src/dashboard/util/activeDashboardFilters';
-import FiltersBadge from 'src/dashboard/containers/FiltersBadge';
+import { FiltersBadge } from 'src/dashboard/components/FiltersBadge';
 import {
   getMockStoreWithFilters,
   getMockStoreWithNativeFilters,
@@ -16,6 +38,15 @@ import { dashboardFilters } from 'spec/fixtures/mockDashboardFilters';
 import { dashboardWithFilter } from 'spec/fixtures/mockDashboardLayout';
 import Icons from 'src/components/Icons';
 import { FeatureFlag } from 'src/featureFlags';
+
+const defaultStore = getMockStoreWithFilters();
+function setup(store: Store = defaultStore) {
+  return mount(
+    <Provider store={store}>
+      <FiltersBadge chartId={sliceId} />
+    </Provider>,
+  );
+}
 
 describe('FiltersBadge', () => {
   // there's this bizarre "active filters" thing
@@ -30,7 +61,7 @@ describe('FiltersBadge', () => {
     // shallow rendering in enzyme doesn't propagate contexts correctly,
     // so we have to mock the hook.
     // See https://medium.com/7shifts-engineering-blog/testing-usecontext-react-hook-with-enzyme-shallow-da062140fc83
-    jest.spyOn(RabbitaiUI, 'useTheme').mockImplementation(() => rabbitaiTheme);
+    jest.spyOn(SupersetUI, 'useTheme').mockImplementation(() => supersetTheme);
   });
 
   describe('for dashboard filters', () => {
@@ -54,9 +85,7 @@ describe('FiltersBadge', () => {
           <FiltersBadge chartId={sliceId} />,
         </Provider>,
       );
-      expect(
-        wrapper.dive().find('[data-test="applied-filter-count"]'),
-      ).not.toExist();
+      expect(wrapper.find('[data-test="applied-filter-count"]')).not.toExist();
     });
 
     it('shows the indicator when filters have been applied', () => {
@@ -74,14 +103,13 @@ describe('FiltersBadge', () => {
         ],
         dashboardFilters,
       });
-      const wrapper = shallow(
-        <FiltersBadge {...{ store }} chartId={sliceId} />,
-      ).dive();
-      expect(wrapper.dive().find('DetailsPanelPopover')).toExist();
-      expect(
-        wrapper.dive().find('[data-test="applied-filter-count"]'),
-      ).toHaveText('1');
-      expect(wrapper.dive().find('WarningFilled')).not.toExist();
+      store.dispatch({ type: CHART_RENDERING_SUCCEEDED, key: sliceId });
+      const wrapper = setup(store);
+      expect(wrapper.find('DetailsPanelPopover')).toExist();
+      expect(wrapper.find('[data-test="applied-filter-count"]')).toHaveText(
+        '1',
+      );
+      expect(wrapper.find('WarningFilled')).not.toExist();
     });
 
     it("shows a warning when there's a rejected filter", () => {
@@ -101,19 +129,18 @@ describe('FiltersBadge', () => {
         ],
         dashboardFilters,
       });
-      const wrapper = shallow(
-        <FiltersBadge {...{ store }} chartId={sliceId} />,
-      ).dive();
-      expect(wrapper.dive().find('DetailsPanelPopover')).toExist();
+      store.dispatch({ type: CHART_RENDERING_SUCCEEDED, key: sliceId });
+      const wrapper = setup(store);
+      expect(wrapper.find('DetailsPanelPopover')).toExist();
+      expect(wrapper.find('[data-test="applied-filter-count"]')).toHaveText(
+        '0',
+      );
       expect(
-        wrapper.dive().find('[data-test="applied-filter-count"]'),
-      ).toHaveText('0');
-      expect(
-        wrapper.dive().find('[data-test="incompatible-filter-count"]'),
+        wrapper.find('[data-test="incompatible-filter-count"]'),
       ).toHaveText('1');
       // to look at the shape of the wrapper use:
-      // console.log(wrapper.dive().debug())
-      expect(wrapper.dive().find(Icons.AlertSolid)).toExist();
+      // console.log(wrapper.debug())
+      expect(wrapper.find(Icons.AlertSolid)).toExist();
     });
   });
 
@@ -132,14 +159,9 @@ describe('FiltersBadge', () => {
           },
         ],
       });
-      const wrapper = shallow(
-        <Provider store={store}>
-          <FiltersBadge chartId={sliceId} />,
-        </Provider>,
-      );
-      expect(
-        wrapper.dive().find('[data-test="applied-filter-count"]'),
-      ).not.toExist();
+      store.dispatch({ type: CHART_RENDERING_SUCCEEDED, key: sliceId });
+      const wrapper = setup(store);
+      expect(wrapper.find('[data-test="applied-filter-count"]')).not.toExist();
     });
 
     it('shows the indicator when filters have been applied', () => {
@@ -160,14 +182,13 @@ describe('FiltersBadge', () => {
           },
         ],
       });
-      const wrapper = shallow(
-        <FiltersBadge {...{ store }} chartId={sliceId} />,
-      ).dive();
-      expect(wrapper.dive().find('DetailsPanelPopover')).toExist();
-      expect(
-        wrapper.dive().find('[data-test="applied-filter-count"]'),
-      ).toHaveText('1');
-      expect(wrapper.dive().find('WarningFilled')).not.toExist();
+      store.dispatch({ type: CHART_RENDERING_SUCCEEDED, key: sliceId });
+      const wrapper = setup(store);
+      expect(wrapper.find('DetailsPanelPopover')).toExist();
+      expect(wrapper.find('[data-test="applied-filter-count"]')).toHaveText(
+        '1',
+      );
+      expect(wrapper.find('WarningFilled')).not.toExist();
     });
 
     it("shows a warning when there's a rejected filter", () => {
@@ -190,17 +211,16 @@ describe('FiltersBadge', () => {
           },
         ],
       });
-      const wrapper = shallow(
-        <FiltersBadge {...{ store }} chartId={sliceId} />,
-      ).dive();
-      expect(wrapper.dive().find('DetailsPanelPopover')).toExist();
+      store.dispatch({ type: CHART_RENDERING_SUCCEEDED, key: sliceId });
+      const wrapper = setup(store);
+      expect(wrapper.find('DetailsPanelPopover')).toExist();
+      expect(wrapper.find('[data-test="applied-filter-count"]')).toHaveText(
+        '0',
+      );
       expect(
-        wrapper.dive().find('[data-test="applied-filter-count"]'),
-      ).toHaveText('0');
-      expect(
-        wrapper.dive().find('[data-test="incompatible-filter-count"]'),
+        wrapper.find('[data-test="incompatible-filter-count"]'),
       ).toHaveText('1');
-      expect(wrapper.dive().find(Icons.AlertSolid)).toExist();
+      expect(wrapper.find(Icons.AlertSolid)).toExist();
     });
   });
 });

@@ -1,23 +1,40 @@
-// @ts-ignore
-import { JsonObject, RabbitaiClientResponse, t } from '@rabbitai-ui/core';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { JsonObject, SupersetClientResponse, t } from '@superset-ui/core';
 import {
-  RabbitaiError,
+  SupersetError,
   ErrorTypeEnum,
 } from 'src/components/ErrorMessage/types';
 import COMMON_ERR_MESSAGES from './errorMessages';
 
 // The response always contains an error attribute, can contain anything from the
-// RabbitaiClientResponse object, and can contain a spread JSON blob
+// SupersetClientResponse object, and can contain a spread JSON blob
 export type ClientErrorObject = {
   error: string;
-  errors?: RabbitaiError[];
+  errors?: SupersetError[];
   link?: string;
   // marshmallow field validation returns the error mssage in the format
   // of { field: [msg1, msg2] }
   message?: string;
   severity?: string;
   stacktrace?: string;
-} & Partial<RabbitaiClientResponse>;
+} & Partial<SupersetClientResponse>;
 
 interface ResponseWithTimeout extends Response {
   timeout: number;
@@ -50,9 +67,9 @@ export function parseErrorJson(responseObject: JsonObject): ClientErrorObject {
 }
 
 export function getClientErrorObject(
-  response: RabbitaiClientResponse | ResponseWithTimeout | string,
+  response: SupersetClientResponse | ResponseWithTimeout | string,
 ): Promise<ClientErrorObject> {
-  // takes a RabbitaiClientResponse as input, attempts to read response as Json if possible,
+  // takes a SupersetClientResponse as input, attempts to read response as Json if possible,
   // and returns a Promise that resolves to a plain object with error key and text value.
   return new Promise(resolve => {
     if (typeof response === 'string') {
@@ -66,7 +83,7 @@ export function getClientErrorObject(
         responseObject
           .clone()
           .json()
-          .then((errorJson: any) => {
+          .then(errorJson => {
             const error = { ...responseObject, ...errorJson };
             resolve(parseErrorJson(error));
           })

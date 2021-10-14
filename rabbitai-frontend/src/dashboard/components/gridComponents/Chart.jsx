@@ -1,23 +1,43 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import cx from 'classnames';
 import React from 'react';
 import PropTypes from 'prop-types';
-import { styled } from '@rabbitai-ui/core';
+import { styled } from '@superset-ui/core';
+import { isEqual } from 'lodash';
 
-import { exploreChart, exportChart } from '../../../explore/exploreUtils';
-import SliceHeader from '../SliceHeader';
-import ChartContainer from '../../../chart/ChartContainer';
-import MissingChart from '../MissingChart';
-import { slicePropShape, chartPropShape } from '../../util/propShapes';
+import { exportChart, getExploreLongUrl } from 'src/explore/exploreUtils';
+import ChartContainer from 'src/chart/ChartContainer';
 import {
   LOG_ACTIONS_CHANGE_DASHBOARD_FILTER,
   LOG_ACTIONS_EXPLORE_DASHBOARD_CHART,
   LOG_ACTIONS_EXPORT_CSV_DASHBOARD_CHART,
   LOG_ACTIONS_FORCE_REFRESH_CHART,
-} from '../../../logger/LogUtils';
+} from 'src/logger/LogUtils';
+import { areObjectsEqual } from 'src/reduxUtils';
+
+import SliceHeader from '../SliceHeader';
+import MissingChart from '../MissingChart';
+import { slicePropShape, chartPropShape } from '../../util/propShapes';
+
 import { isFilterBox } from '../../util/activeDashboardFilters';
 import getFilterValuesByFilterId from '../../util/getFilterValuesByFilterId';
-import { areObjectsEqual } from '../../../reduxUtils';
 
 const propTypes = {
   id: PropTypes.number.isRequired,
@@ -32,10 +52,11 @@ const propTypes = {
   // from redux
   chart: chartPropShape.isRequired,
   formData: PropTypes.object.isRequired,
-  datasource: PropTypes.object.isRequired,
+  datasource: PropTypes.object,
   slice: slicePropShape.isRequired,
   sliceName: PropTypes.string.isRequired,
   timeout: PropTypes.number.isRequired,
+  maxRows: PropTypes.number.isRequired,
   // all active filter fields in dashboard
   filters: PropTypes.object.isRequired,
   refreshChart: PropTypes.func.isRequired,
@@ -47,9 +68,9 @@ const propTypes = {
   editMode: PropTypes.bool.isRequired,
   isExpanded: PropTypes.bool.isRequired,
   isCached: PropTypes.bool,
-  rabbitaiCanExplore: PropTypes.bool.isRequired,
-  rabbitaiCanShare: PropTypes.bool.isRequired,
-  rabbitaiCanCSV: PropTypes.bool.isRequired,
+  supersetCanExplore: PropTypes.bool.isRequired,
+  supersetCanShare: PropTypes.bool.isRequired,
+  supersetCanCSV: PropTypes.bool.isRequired,
   sliceCanEdit: PropTypes.bool.isRequired,
   addSuccessToast: PropTypes.func.isRequired,
   addDangerToast: PropTypes.func.isRequired,
@@ -90,8 +111,8 @@ export default class Chart extends React.Component {
     this.changeFilter = this.changeFilter.bind(this);
     this.handleFilterMenuOpen = this.handleFilterMenuOpen.bind(this);
     this.handleFilterMenuClose = this.handleFilterMenuClose.bind(this);
-    this.exploreChart = this.exploreChart.bind(this);
     this.exportCSV = this.exportCSV.bind(this);
+    this.exportFullCSV = this.exportFullCSV.bind(this);
     this.forceRefresh = this.forceRefresh.bind(this);
     this.resize = this.resize.bind(this);
     this.setDescriptionRef = this.setDescriptionRef.bind(this);
@@ -105,7 +126,8 @@ export default class Chart extends React.Component {
     if (
       nextState.width !== this.state.width ||
       nextState.height !== this.state.height ||
-      nextState.descriptionHeight !== this.state.descriptionHeight
+      nextState.descriptionHeight !== this.state.descriptionHeight ||
+      !isEqual(nextProps.datasource, this.props.datasource)
     ) {
       return true;
     }
@@ -200,24 +222,31 @@ export default class Chart extends React.Component {
     this.props.unsetFocusedFilterField(chartId, column);
   }
 
-  exploreChart() {
+  logExploreChart = () => {
     this.props.logEvent(LOG_ACTIONS_EXPLORE_DASHBOARD_CHART, {
       slice_id: this.props.slice.slice_id,
       is_cached: this.props.isCached,
     });
-    exploreChart(this.props.formData);
-  }
+  };
 
-  exportCSV() {
+  getChartUrl = () => getExploreLongUrl(this.props.formData);
+
+  exportCSV(isFullCSV = false) {
     this.props.logEvent(LOG_ACTIONS_EXPORT_CSV_DASHBOARD_CHART, {
       slice_id: this.props.slice.slice_id,
       is_cached: this.props.isCached,
     });
     exportChart({
-      formData: this.props.formData,
+      formData: isFullCSV
+        ? { ...this.props.formData, row_limit: this.props.maxRows }
+        : this.props.formData,
       resultType: 'results',
       resultFormat: 'csv',
     });
+  }
+
+  exportFullCSV() {
+    this.exportCSV(true);
   }
 
   forceRefresh() {
@@ -248,9 +277,9 @@ export default class Chart extends React.Component {
       sliceName,
       toggleExpandSlice,
       timeout,
-      rabbitaiCanExplore,
-      rabbitaiCanShare,
-      rabbitaiCanCSV,
+      supersetCanExplore,
+      supersetCanShare,
+      supersetCanCSV,
       sliceCanEdit,
       addSuccessToast,
       addDangerToast,
@@ -261,7 +290,6 @@ export default class Chart extends React.Component {
     } = this.props;
 
     const { width } = this.state;
-
     // this prevents throwing in the case that a gridComponent
     // references a chart that is not associated with the dashboard
     if (!chart || !slice) {
@@ -301,13 +329,15 @@ export default class Chart extends React.Component {
           forceRefresh={this.forceRefresh}
           editMode={editMode}
           annotationQuery={chart.annotationQuery}
-          exploreChart={this.exploreChart}
+          logExploreChart={this.logExploreChart}
+          exploreUrl={this.getChartUrl()}
           exportCSV={this.exportCSV}
+          exportFullCSV={this.exportFullCSV}
           updateSliceName={updateSliceName}
           sliceName={sliceName}
-          rabbitaiCanExplore={rabbitaiCanExplore}
-          rabbitaiCanShare={rabbitaiCanShare}
-          rabbitaiCanCSV={rabbitaiCanCSV}
+          supersetCanExplore={supersetCanExplore}
+          supersetCanShare={supersetCanShare}
+          supersetCanCSV={supersetCanCSV}
           sliceCanEdit={sliceCanEdit}
           componentId={componentId}
           dashboardId={dashboardId}
@@ -323,9 +353,9 @@ export default class Chart extends React.Component {
         {/*
           This usage of dangerouslySetInnerHTML is safe since it is being used to render
           markdown that is sanitized with bleach. See:
-             https://github.com/apache/rabbitai/pull/4390
+             https://github.com/apache/superset/pull/4390
           and
-             https://github.com/apache/rabbitai/commit/b6fcc22d5a2cb7a5e92599ed5795a0169385a825
+             https://github.com/apache/superset/commit/b6fcc22d5a2cb7a5e92599ed5795a0169385a825
         */}
         {isExpanded && slice.description_markeddown && (
           <div

@@ -1,6 +1,23 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { useState } from 'react';
-import { t, RabbitaiClient, styled } from '@rabbitai-ui/core';
+import { t, SupersetClient, styled, useTheme } from '@superset-ui/core';
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/light';
 import sql from 'react-syntax-highlighter/dist/cjs/languages/hljs/sql';
 import github from 'react-syntax-highlighter/dist/cjs/styles/hljs/github';
@@ -10,14 +27,17 @@ import { Dropdown, Menu } from 'src/common/components';
 import { useListViewResource, copyQueryLink } from 'src/views/CRUD/hooks';
 import ListViewCard from 'src/components/ListViewCard';
 import DeleteModal from 'src/components/DeleteModal';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 import SubMenu from 'src/components/Menu/SubMenu';
 import EmptyState from './EmptyState';
-import { CardContainer, createErrorHandler, shortenSQL } from '../utils';
+import {
+  CardContainer,
+  createErrorHandler,
+  shortenSQL,
+  PAGE_SIZE,
+} from '../utils';
 
 SyntaxHighlighter.registerLanguage('sql', sql);
-
-const PAGE_SIZE = 3;
 
 interface Query {
   id?: number;
@@ -119,8 +139,10 @@ const SavedQueries = ({
   const canEdit = hasPerm('can_edit');
   const canDelete = hasPerm('can_delete');
 
+  const theme = useTheme();
+
   const handleQueryDelete = ({ id, label }: Query) => {
-    RabbitaiClient.delete({
+    SupersetClient.delete({
       endpoint: `/api/v1/saved_query/${id}`,
     }).then(
       () => {
@@ -190,7 +212,7 @@ const SavedQueries = ({
       {canEdit && (
         <Menu.Item
           onClick={() => {
-            window.location.href = `/rabbitai/sqllab?savedQueryId=${query.id}`;
+            window.location.href = `/superset/sqllab?savedQueryId=${query.id}`;
           }}
         >
           {t('Edit')}
@@ -266,7 +288,7 @@ const SavedQueries = ({
             ),
             buttonStyle: 'tertiary',
             onClick: () => {
-              window.location.href = '/rabbitai/sqllab';
+              window.location.href = '/superset/sqllab?new=true';
             },
           },
           {
@@ -279,20 +301,20 @@ const SavedQueries = ({
         ]}
       />
       {queries.length > 0 ? (
-        <CardContainer>
+        <CardContainer showThumbnails={showThumbnails}>
           {queries.map(q => (
             <CardStyles
               onClick={() => {
-                window.location.href = `/rabbitai/sqllab?savedQueryId=${q.id}`;
+                window.location.href = `/superset/sqllab?savedQueryId=${q.id}`;
               }}
               key={q.id}
             >
               <ListViewCard
                 imgURL=""
-                url={`/rabbitai/sqllab?savedQueryId=${q.id}`}
+                url={`/superset/sqllab?savedQueryId=${q.id}`}
                 title={q.label}
                 imgFallbackURL="/static/assets/images/empty-query.svg"
-                description={t('Last run %s', q.changed_on_delta_humanized)}
+                description={t('Ran %s', q.changed_on_delta_humanized)}
                 cover={
                   q?.sql?.length && showThumbnails && featureFlag ? (
                     <QueryContainer>
@@ -330,7 +352,9 @@ const SavedQueries = ({
                       }}
                     >
                       <Dropdown overlay={renderMenu(q)}>
-                        <Icon name="more-horiz" />
+                        <Icons.MoreVert
+                          iconColor={theme.colors.grayscale.base}
+                        />
                       </Dropdown>
                     </ListViewCard.Actions>
                   </QueryData>

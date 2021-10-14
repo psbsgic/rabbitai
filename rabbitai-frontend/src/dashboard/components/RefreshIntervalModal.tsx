@@ -1,7 +1,24 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { RefObject } from 'react';
-import Select from 'src/components/Select';
-import { t, styled } from '@rabbitai-ui/core';
+import { Select } from 'src/components';
+import { t, styled } from '@superset-ui/core';
 import Alert from 'src/components/Alert';
 import Button from 'src/components/Button';
 
@@ -19,7 +36,7 @@ export const options = [
   [21600, t('6 hours')],
   [43200, t('12 hours')],
   [86400, t('24 hours')],
-].map(o => ({ value: o[0], label: o[1] }));
+].map(o => ({ value: o[0] as number, label: o[1] }));
 
 const StyledModalTrigger = styled(ModalTrigger)`
   .ant-modal-body {
@@ -78,10 +95,9 @@ class RefreshIntervalModal extends React.PureComponent<
     this.modalRef.current?.close();
   }
 
-  handleFrequencyChange(opt: Record<string, any>) {
-    const value = opt ? opt.value : options[0].value;
+  handleFrequencyChange(value: number) {
     this.setState({
-      refreshFrequency: value,
+      refreshFrequency: value || options[0].value,
     });
   }
 
@@ -100,10 +116,10 @@ class RefreshIntervalModal extends React.PureComponent<
           <div>
             <FormLabel>{t('Refresh frequency')}</FormLabel>
             <Select
+              ariaLabel={t('Refresh interval')}
               options={options}
-              value={{ value: refreshFrequency }}
+              value={refreshFrequency}
               onChange={this.handleFrequencyChange}
-              forceOverflow
             />
             {showRefreshWarning && (
               <RefreshWarningContainer>

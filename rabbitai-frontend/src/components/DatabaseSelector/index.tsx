@@ -1,11 +1,28 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { ReactNode, useEffect, useState } from 'react';
-import { styled, RabbitaiClient, t } from '@rabbitai-ui/core';
+import { styled, SupersetClient, t } from '@superset-ui/core';
 import rison from 'rison';
 import { Select } from 'src/components/Select';
 import Label from 'src/components/Label';
 import RefreshLabel from 'src/components/RefreshLabel';
-import RabbitaiAsyncSelect from 'src/components/AsyncSelect';
+import SupersetAsyncSelect from 'src/components/AsyncSelect';
 
 const FieldTitle = styled.p`
   color: ${({ theme }) => theme.colors.secondary.light2};
@@ -55,7 +72,7 @@ interface DatabaseSelectorProps {
   readOnly?: boolean;
   schema?: string;
   sqlLabMode?: boolean;
-  onChange?: ({
+  onUpdate?: ({
     dbId,
     schema,
   }: {
@@ -72,7 +89,7 @@ export default function DatabaseSelector({
   getTableList,
   handleError,
   isDatabaseSelectEnabled = true,
-  onChange,
+  onUpdate,
   onDbChange,
   onSchemaChange,
   onSchemasLoad,
@@ -95,7 +112,7 @@ export default function DatabaseSelector({
         force: Boolean(forceRefresh),
       });
       const endpoint = `/api/v1/database/${actualDbId}/schemas/?q=${queryParams}`;
-      return RabbitaiClient.get({ endpoint })
+      return SupersetClient.get({ endpoint })
         .then(({ json }) => {
           const options = json.result.map((s: string) => ({
             value: s,
@@ -126,8 +143,8 @@ export default function DatabaseSelector({
   function onSelectChange({ dbId, schema }: { dbId: number; schema?: string }) {
     setCurrentDbId(dbId);
     setCurrentSchema(schema);
-    if (onChange) {
-      onChange({ dbId, schema, tableName: undefined });
+    if (onUpdate) {
+      onUpdate({ dbId, schema, tableName: undefined });
     }
   }
 
@@ -207,7 +224,7 @@ export default function DatabaseSelector({
     });
 
     return renderSelectRow(
-      <RabbitaiAsyncSelect
+      <SupersetAsyncSelect
         data-test="select-database"
         dataEndpoint={`/api/v1/database/?q=${queryParams}`}
         onChange={(db: any) => changeDataBase(db)}

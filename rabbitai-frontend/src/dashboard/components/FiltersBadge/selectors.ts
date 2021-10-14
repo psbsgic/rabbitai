@@ -1,12 +1,26 @@
-
-import { TIME_FILTER_MAP } from 'src/explore/constants';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { NO_TIME_RANGE, TIME_FILTER_MAP } from 'src/explore/constants';
 import { getChartIdsInFilterScope } from 'src/dashboard/util/activeDashboardFilters';
-import {
-  ChartConfiguration,
-  NativeFiltersState,
-} from 'src/dashboard/reducers/types';
+import { ChartConfiguration, Filters } from 'src/dashboard/reducers/types';
 import { DataMaskStateWithId, DataMaskType } from 'src/dataMask/types';
-import { FeatureFlag, isFeatureEnabled } from '@rabbitai-ui/core';
+import { FeatureFlag, isFeatureEnabled } from '@superset-ui/core';
 import { Layout } from '../../types';
 import { getTreeCheckedItems } from '../nativeFilters/FiltersConfigModal/FiltersConfigForm/FilterScope/utils';
 
@@ -19,7 +33,7 @@ export enum IndicatorStatus {
 
 const TIME_GRANULARITY_FIELDS = new Set(Object.values(TIME_FILTER_MAP));
 
-// As of 2020-09-28, the DatasourceMeta type in rabbitai-ui is incorrect.
+// As of 2020-09-28, the DatasourceMeta type in superset-ui is incorrect.
 // Should patch it here until the DatasourceMeta type is updated.
 type Datasource = {
   time_grain_sqla?: [string, string][];
@@ -46,7 +60,7 @@ const selectIndicatorValue = (
 
   if (
     values == null ||
-    (filter.isDateFilter && values === 'No filter') ||
+    (filter.isDateFilter && values === NO_TIME_RANGE) ||
     arrValues.length === 0
   ) {
     return [];
@@ -130,12 +144,8 @@ export const selectIndicatorsForChart = (
   chartId: number,
   filters: { [key: number]: Filter },
   datasources: { [key: string]: Datasource },
-  charts: any,
+  chart: any,
 ): Indicator[] => {
-  const chart = charts[chartId];
-  // no indicators if chart is loading
-  if (chart.chartStatus === 'loading') return [];
-
   // for now we only need to know which columns are compatible/incompatible,
   // so grab the columns from the applied/rejected filters
   const appliedColumns = getAppliedColumns(chart);
@@ -161,15 +171,13 @@ export const selectIndicatorsForChart = (
 };
 
 export const selectNativeIndicatorsForChart = (
-  nativeFilters: NativeFiltersState,
+  nativeFilters: Filters,
   dataMask: DataMaskStateWithId,
   chartId: number,
-  charts: any,
+  chart: any,
   dashboardLayout: Layout,
   chartConfiguration: ChartConfiguration = {},
 ): Indicator[] => {
-  const chart = charts[chartId];
-
   const appliedColumns = getAppliedColumns(chart);
   const rejectedColumns = getRejectedColumns(chart);
 
@@ -201,26 +209,32 @@ export const selectNativeIndicatorsForChart = (
 
   let nativeFilterIndicators: any = [];
   if (isFeatureEnabled(FeatureFlag.DASHBOARD_NATIVE_FILTERS)) {
-    nativeFilterIndicators = Object.values(nativeFilters.filters)
-      .filter(nativeFilter =>
-        getTreeCheckedItems(nativeFilter.scope, dashboardLayout).some(
-          layoutItem => dashboardLayout[layoutItem]?.meta?.chartId === chartId,
-        ),
-      )
-      .map(nativeFilter => {
-        const column = nativeFilter.targets[0]?.column?.name;
-        let value = dataMask[nativeFilter.id]?.filterState?.value ?? null;
-        if (!Array.isArray(value) && value !== null) {
-          value = [value];
-        }
-        return {
-          column,
-          name: nativeFilter.name,
-          path: [nativeFilter.id],
-          status: getStatus({ value, column }),
-          value,
-        };
-      });
+    nativeFilterIndicators =
+      nativeFilters &&
+      Object.values(nativeFilters)
+        .filter(nativeFilter =>
+          getTreeCheckedItems(nativeFilter.scope, dashboardLayout).some(
+            layoutItem =>
+              dashboardLayout[layoutItem]?.meta?.chartId === chartId,
+          ),
+        )
+        .map(nativeFilter => {
+          const column = nativeFilter.targets[0]?.column?.name;
+          let value =
+            dataMask[nativeFilter.id]?.filterState?.label ??
+            dataMask[nativeFilter.id]?.filterState?.value ??
+            null;
+          if (!Array.isArray(value) && value !== null) {
+            value = [value];
+          }
+          return {
+            column,
+            name: nativeFilter.name,
+            path: [nativeFilter.id],
+            status: getStatus({ value, column }),
+            value,
+          };
+        });
   }
 
   let crossFilterIndicators: any = [];
@@ -235,7 +249,10 @@ export const selectNativeIndicatorsForChart = (
         ),
       )
       .map(chartConfig => {
-        let value = dataMask[chartConfig.id]?.filterState?.value ?? null;
+        let value =
+          dataMask[chartConfig.id]?.filterState?.label ??
+          dataMask[chartConfig.id]?.filterState?.value ??
+          null;
         if (!Array.isArray(value) && value !== null) {
           value = [value];
         }

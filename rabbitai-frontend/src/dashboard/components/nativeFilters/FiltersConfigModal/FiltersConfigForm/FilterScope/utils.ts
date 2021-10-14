@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import { Charts, Layout, LayoutItem } from 'src/dashboard/types';
 import {
   CHART_TYPE,
@@ -6,7 +23,8 @@ import {
   TAB_TYPE,
 } from 'src/dashboard/util/componentTypes';
 import { DASHBOARD_ROOT_ID } from 'src/dashboard/util/constants';
-import { TreeItem } from './types';
+import { t } from '@superset-ui/core';
+import { BuildTreeLeafTitle, TreeItem } from './types';
 import { Scope } from '../../../types';
 
 export const isShowTypeInTree = ({ type, meta }: LayoutItem, charts?: Charts) =>
@@ -19,6 +37,8 @@ export const buildTree = (
   layout: Layout,
   charts: Charts,
   validNodes: string[],
+  initiallyExcludedCharts: number[],
+  buildTreeLeafTitle: BuildTreeLeafTitle,
 ) => {
   let itemToPass: TreeItem = treeItem;
   if (
@@ -26,16 +46,36 @@ export const buildTree = (
     node.type !== DASHBOARD_ROOT_TYPE &&
     validNodes.includes(node.id)
   ) {
+    const title = buildTreeLeafTitle(
+      node.meta.sliceNameOverride ||
+        node.meta.sliceName ||
+        node.meta.text ||
+        node.meta.defaultText ||
+        node.id.toString(),
+      initiallyExcludedCharts.includes(node.meta?.chartId),
+      t(
+        "This chart might be incompatible with the filter (datasets don't match)",
+      ),
+    );
+
     const currentTreeItem = {
       key: node.id,
-      title: node.meta.sliceName || node.meta.text || node.id.toString(),
+      title,
       children: [],
     };
     treeItem.children.push(currentTreeItem);
     itemToPass = currentTreeItem;
   }
   node.children.forEach(child =>
-    buildTree(layout[child], itemToPass, layout, charts, validNodes),
+    buildTree(
+      layout[child],
+      itemToPass,
+      layout,
+      charts,
+      validNodes,
+      initiallyExcludedCharts,
+      buildTreeLeafTitle,
+    ),
   );
 };
 
@@ -127,9 +167,14 @@ export const findFilterScope = (
   };
 };
 
-export const getDefaultScopeValue = (chartId?: number): Scope => ({
+export const getDefaultScopeValue = (
+  chartId?: number,
+  initiallyExcludedCharts: number[] = [],
+): Scope => ({
   rootPath: [DASHBOARD_ROOT_ID],
-  excluded: chartId ? [chartId] : [],
+  excluded: chartId
+    ? [chartId, ...initiallyExcludedCharts]
+    : initiallyExcludedCharts,
 });
 
 export const isScopingAll = (scope: Scope, chartId?: number) =>

@@ -1,7 +1,25 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 /* eslint no-undef: 'error' */
 /* eslint no-param-reassign: ["error", { "props": false }] */
 import moment from 'moment';
-import { t, RabbitaiClient } from '@rabbitai-ui/core';
+import { t, SupersetClient } from '@superset-ui/core';
 import { getControlsState } from 'src/explore/store';
 import { isFeatureEnabled, FeatureFlag } from '../featureFlags';
 import {
@@ -125,13 +143,14 @@ const legacyChartDataRequest = async (
 
   const clientMethod =
     'GET' && isFeatureEnabled(FeatureFlag.CLIENT_CACHE)
-      ? RabbitaiClient.get
-      : RabbitaiClient.post;
-  return clientMethod(querySettings).then(({ json }) =>
+      ? SupersetClient.get
+      : SupersetClient.post;
+  return clientMethod(querySettings).then(({ json, response }) =>
     // Make the legacy endpoint return a payload that corresponds to the
     // V1 chart data endpoint response signature.
     ({
-      result: [json],
+      response,
+      json: { result: [json] },
     }),
   );
 };
@@ -178,7 +197,8 @@ const v1ChartDataRequest = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   };
-  return RabbitaiClient.post(querySettings).then(({ json }) => json);
+
+  return SupersetClient.post(querySettings);
 };
 
 export async function getChartDataRequest({
@@ -280,7 +300,7 @@ export function runAnnotationQuery(
 
     dispatch(annotationQueryStarted(annotation, controller, sliceKey));
 
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       url,
       signal,
       timeout: timeout * 1000,
@@ -372,14 +392,25 @@ export function exploreJSON(
     dispatch(chartUpdateStarted(controller, formData, key));
 
     const chartDataRequestCaught = chartDataRequest
-      .then(response => {
-        const queriesResponse = response.result;
+      .then(({ response, json }) => {
         if (isFeatureEnabled(FeatureFlag.GLOBAL_ASYNC_QUERIES)) {
           // deal with getChartDataRequest transforming the response data
-          const result = 'result' in response ? response.result[0] : response;
-          return waitForAsyncData(result);
+          const result = 'result' in json ? json.result[0] : json;
+          switch (response.status) {
+            case 200:
+              // Query results returned synchronously, meaning query was already cached.
+              return Promise.resolve([result]);
+            case 202:
+              // Query is running asynchronously and we must await the results
+              return waitForAsyncData(result);
+            default:
+              throw new Error(
+                `Received unexpected response status (${response.status}) while fetching chart data`,
+              );
+          }
         }
-        return queriesResponse;
+
+        return json.result;
       })
       .then(queriesResponse => {
         queriesResponse.forEach(resultItem =>
@@ -523,11 +554,11 @@ export function postChartFormData(
 export function redirectSQLLab(formData) {
   return dispatch => {
     getChartDataRequest({ formData, resultFormat: 'json', resultType: 'query' })
-      .then(({ result }) => {
-        const redirectUrl = '/rabbitai/sqllab/';
+      .then(({ json }) => {
+        const redirectUrl = '/superset/sqllab/';
         const payload = {
           datasourceKey: formData.datasource,
-          sql: result[0].query,
+          sql: json.result[0].query,
         };
         postForm(redirectUrl, payload);
       })
@@ -541,7 +572,7 @@ export function refreshChart(chartKey, force, dashboardId) {
   return (dispatch, getState) => {
     const chart = (getState().charts || {})[chartKey];
     const timeout = getState().dashboardInfo.common.conf
-      .RABBITAI_WEBSERVER_TIMEOUT;
+      .SUPERSET_WEBSERVER_TIMEOUT;
 
     if (
       !chart.latestQueryFormData ||

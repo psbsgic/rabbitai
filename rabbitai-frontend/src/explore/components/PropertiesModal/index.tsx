@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import Modal from 'src/components/Modal';
 import { Row, Col, Input, TextArea } from 'src/common/components';
@@ -6,7 +23,7 @@ import Button from 'src/components/Button';
 import { OptionsType } from 'react-select/src/types';
 import { AsyncSelect } from 'src/components/Select';
 import rison from 'rison';
-import { t, RabbitaiClient } from '@rabbitai-ui/core';
+import { t, SupersetClient } from '@superset-ui/core';
 import Chart, { Slice } from 'src/types/Chart';
 import { Form, FormItem } from 'src/components/Form';
 import { getClientErrorObject } from 'src/utils/getClientErrorObject';
@@ -54,7 +71,7 @@ export default function PropertiesModal({
   const fetchChartData = useCallback(
     async function fetchChartData() {
       try {
-        const response = await RabbitaiClient.get({
+        const response = await SupersetClient.get({
           endpoint: `/api/v1/chart/${slice.slice_id}`,
         });
         const chart = response.json.result;
@@ -86,7 +103,7 @@ export default function PropertiesModal({
     const query = rison.encode({
       filter: input,
     });
-    return RabbitaiClient.get({
+    return SupersetClient.get({
       endpoint: `/api/v1/chart/related/owners?q=${query}`,
     }).then(
       response => {
@@ -116,7 +133,7 @@ export default function PropertiesModal({
       payload.owners = owners.map(o => o.value);
     }
     try {
-      const res = await RabbitaiClient.put({
+      const res = await SupersetClient.put({
         endpoint: `/api/v1/chart/${slice.slice_id}`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

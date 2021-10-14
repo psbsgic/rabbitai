@@ -1,6 +1,24 @@
-
-import { t, validateNonEmpty } from '@rabbitai-ui/core';
-import { ControlPanelConfig, sections } from '@rabbitai-ui/chart-controls';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import { t, validateNonEmpty } from '@superset-ui/core';
+import { ControlPanelConfig, sections } from '@superset-ui/chart-controls';
+import { sharedControls } from '@superset-ui/chart-controls/lib';
 import { DEFAULT_FORM_DATA } from './types';
 
 const {
@@ -19,7 +37,18 @@ const config: ControlPanelConfig = {
     {
       label: t('Query'),
       expanded: true,
-      controlSetRows: [['groupby']],
+      controlSetRows: [
+        [
+          {
+            name: 'groupby',
+            config: {
+              ...sharedControls.groupby,
+              label: 'Column',
+              required: true,
+            },
+          },
+        ],
+      ],
     },
     {
       label: t('UI Configuration'),
@@ -60,8 +89,7 @@ const config: ControlPanelConfig = {
               default: enableEmptyFilter,
               renderTrigger: true,
               description: t(
-                'User must select a value for this filter when filter is in single select mode. ' +
-                  'If selection is empty, an always false filter is emitted.',
+                'User must select a value before applying the filter',
               ),
             },
           },
@@ -76,7 +104,10 @@ const config: ControlPanelConfig = {
               resetConfig: true,
               affectsDataMask: true,
               renderTrigger: true,
-              description: t('Select first item by default'),
+              requiredFirst: true,
+              description: t(
+                'Select first item by default (when using this option, default value can’t be set)',
+              ),
             },
           },
         ],

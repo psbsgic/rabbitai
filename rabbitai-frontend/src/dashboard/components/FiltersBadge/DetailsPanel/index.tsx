@@ -1,7 +1,24 @@
-
-import React, { useState } from 'react';
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+import React, { useEffect, useState } from 'react';
 import { Global, css } from '@emotion/react';
-import { t, useTheme } from '@rabbitai-ui/core';
+import { t, useTheme } from '@superset-ui/core';
 import {
   MinusCircleFilled,
   CheckCircleFilled,
@@ -9,7 +26,7 @@ import {
 } from '@ant-design/icons';
 import Popover from 'src/components/Popover';
 import Collapse from 'src/components/Collapse';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 import {
   Indent,
   Panel,
@@ -36,7 +53,17 @@ const DetailsPanelPopover = ({
   onHighlightFilterSource,
   children,
 }: DetailsPanelProps) => {
+  const [visible, setVisible] = useState(false);
   const theme = useTheme();
+
+  // we don't need to clean up useEffect, setting { once: true } removes the event listener after handle function is called
+  useEffect(() => {
+    if (visible) {
+      window.addEventListener('resize', () => setVisible(false), {
+        once: true,
+      });
+    }
+  }, [visible]);
 
   const getDefaultActivePanel = () => {
     const result = [];
@@ -60,6 +87,7 @@ const DetailsPanelPopover = ({
   ]);
 
   function handlePopoverStatus(isOpen: boolean) {
+    setVisible(isOpen);
     // every time the popover opens, make sure the most relevant panel is active
     if (isOpen) {
       setActivePanels(getDefaultActivePanel());
@@ -124,6 +152,7 @@ const DetailsPanelPopover = ({
             }
             &.ant-popover {
               color: ${theme.colors.grayscale.light4};
+              z-index: 99;
             }
           }
         `}
@@ -140,9 +169,9 @@ const DetailsPanelPopover = ({
               key="appliedCrossFilters"
               header={
                 <Title bold color={theme.colors.primary.light1}>
-                  <Icon
-                    name="cross-filter-badge"
+                  <Icons.CursorTarget
                     css={{ fill: theme.colors.primary.light1 }}
+                    iconSize="xl"
                   />
                   {t(
                     'Applied Cross Filters (%d)',
@@ -238,6 +267,7 @@ const DetailsPanelPopover = ({
     <Popover
       overlayClassName="filterStatusPopover"
       content={content}
+      visible={visible}
       onVisibleChange={handlePopoverStatus}
       placement="bottom"
       trigger="click"

@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { render, screen } from 'spec/helpers/testing-library';
 import userEvent from '@testing-library/user-event';
@@ -15,7 +32,7 @@ const createProps = () => ({
     id: 1,
     dash_edit_perm: true,
     dash_save_perm: true,
-    userId: 1,
+    userId: '1',
     metadata: {},
     common: {
       conf: {},
@@ -95,7 +112,7 @@ test('should render the menu items', async () => {
   expect(screen.getByText('Refresh dashboard')).toBeInTheDocument();
   expect(screen.getByText('Set auto-refresh interval')).toBeInTheDocument();
   expect(screen.getByText('Download as image')).toBeInTheDocument();
-  expect(screen.getByText('Toggle fullscreen')).toBeInTheDocument();
+  expect(screen.getByText('Enter fullscreen')).toBeInTheDocument();
 });
 
 test('should render the menu items in edit mode', async () => {

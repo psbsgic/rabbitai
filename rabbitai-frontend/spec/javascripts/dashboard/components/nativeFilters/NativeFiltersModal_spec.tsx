@@ -1,4 +1,21 @@
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import { styledMount as mount } from 'spec/helpers/theming';
 import { act } from 'react-dom/test-utils';
@@ -23,9 +40,9 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-jest.mock('@rabbitai-ui/core', () => ({
+jest.mock('@superset-ui/core', () => ({
   // @ts-ignore
-  ...jest.requireActual('@rabbitai-ui/core'),
+  ...jest.requireActual('@superset-ui/core'),
   getChartMetadataRegistry: () => ({
     items: {
       filter_select: {
@@ -102,22 +119,12 @@ describe('FiltersConfigModal', () => {
       expect(onCancel.mock.calls).toHaveLength(1);
     });
 
-    it('shows correct alert message for an unsaved filter', async () => {
+    it('shows correct alert message for unsaved filters', async () => {
       addFilter();
       await clickCancel();
       expect(onCancel.mock.calls).toHaveLength(0);
       expect(wrapper.find(Alert).text()).toContain(
-        'Are you sure you want to cancel? "New filter" will not be saved.',
-      );
-    });
-
-    it('shows correct alert message for 2 unsaved filters', async () => {
-      addFilter();
-      addFilter();
-      await clickCancel();
-      expect(onCancel.mock.calls).toHaveLength(0);
-      expect(wrapper.find(Alert).text()).toContain(
-        'Are you sure you want to cancel? "New filter" and "New filter" will not be saved.',
+        'There are unsaved changes.',
       );
     });
   });
