@@ -1,6 +1,6 @@
 include NOTICE
 include LICENSE.txt
-graft licenses/
+graft licenses
 include README.md
 include rabbitai-frontend/package.json
 recursive-include rabbitai/examples *

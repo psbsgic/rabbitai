@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Contains the logic to create cohesive forms on the explore view"""
 
 from typing import List
@@ -22,8 +24,6 @@ config = app.config
 
 
 class CsvToDatabaseForm(DynamicForm):
-    """CVS到数据库窗口，扩展 DynamicForm，定义CSV上传到数据库的表单所需字段。"""
-
     def csv_allowed_dbs(self) -> List[Database]:
         csv_enabled_dbs = (
             db.session.query(Database).filter_by(allow_csv_upload=True).all()
@@ -60,7 +60,6 @@ class CsvToDatabaseForm(DynamicForm):
                 b) if database supports schema
                     user is able to upload to schema in schemas_allowed_for_csv_upload
         """
-
         if security_manager.can_access_database(database):
             return True
         schemas = database.get_schema_access_for_csv_upload()
@@ -212,7 +211,6 @@ class CsvToDatabaseForm(DynamicForm):
 
 
 class ExcelToDatabaseForm(DynamicForm):
-    """Excel到数据库窗口，扩展 DynamicForm，定义Excel上传到数据库的表单所需字段。"""
 
     def excel_allowed_dbs(self) -> List[Database]:
         # TODO: change allow_csv_upload to allow_file_upload

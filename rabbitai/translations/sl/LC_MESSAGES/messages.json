@@ -67,11 +67,11 @@
       "Issue 1009 - The host might be down, and can't be reached on the provided port.": [
         "Težava 1009 - Gostitelj mogoče ne deluje in ga ni mogoče doseči preko podanih vrat."
       ],
-      "Issue 1010 - Superset encountered an error while running a command.": [
-        "Težava 1010 - Superset je naletel na napako pri izvajanju ukaza."
+      "Issue 1010 - Rabbitai encountered an error while running a command.": [
+        "Težava 1010 - Rabbitai je naletel na napako pri izvajanju ukaza."
       ],
-      "Issue 1011 - Superset encountered an unexpected error.": [
-        "Težava 1011 - Superset je naletel na nepričakovano napako."
+      "Issue 1011 - Rabbitai encountered an unexpected error.": [
+        "Težava 1011 - Rabbitai je naletel na nepričakovano napako."
       ],
       "Issue 1012 - The username provided when connecting to a database is not valid.": [
         "Težava 1012 - Uporabniško ime za povezavo s podatkovno bazo je neveljavno."
@@ -564,8 +564,8 @@
       "Schema, as used only in some databases like Postgres, Redshift and DB2": [
         "Shema, ki se uporablja pri nekaterih podatkovnih bazah, kot so Postgres, Redshift in DB2"
       ],
-      "This fields acts a Superset view, meaning that Superset will run a query against this string as a subquery.": [
-        "To polje se obnaša kot Supersetov pogled, kar pomeni, da bo Superset izvedel poizvedbo za ta niz kot podpoizvedbo."
+      "This fields acts a Rabbitai view, meaning that Rabbitai will run a query against this string as a subquery.": [
+        "To polje se obnaša kot Rabbitaiov pogled, kar pomeni, da bo Rabbitai izvedel poizvedbo za ta niz kot podpoizvedbo."
       ],
       "Predicate applied when fetching distinct value to populate the filter control component. Supports jinja template syntax. Applies only when `Enable Filter Select` is on.": [
         "Privzeta vrednost za pridobivanje različnih vrednost pri oblikovanju filtrov. Podpira sintakso za jinja predloge. Potrebno le, ko je vključeno `Omogoči izbiro filtra`."
@@ -971,31 +971,31 @@
       "\n            Error: %(text)s\n            ": [
         "\n            Napaka: %(text)s\n            "
       ],
-      "\n            <p>%(description)s</p>\n            <b><a href=\"%(url)s\">Explore in Superset</a></b><p></p>\n            %(img_tag)s\n            ": [
-        "\n            <p>%(description)s</p>\n            <b><a href=\"%(url)s\">Razišči v Supersetu</a></b><p></p>\n            %(img_tag)s\n            "
+      "\n            <p>%(description)s</p>\n            <b><a href=\"%(url)s\">Explore in Rabbitai</a></b><p></p>\n            %(img_tag)s\n            ": [
+        "\n            <p>%(description)s</p>\n            <b><a href=\"%(url)s\">Razišči v Rabbitaiu</a></b><p></p>\n            %(img_tag)s\n            "
       ],
       "%(name)s.csv": ["%(name)s.csv"],
       "%(prefix)s %(title)s": ["%(prefix)s %(title)s"],
       "\n            *%(name)s*\n\n            %(description)s\n\n            Error: %(text)s\n            ": [
         "\n            *%(name)s*\n\n            %(description)s\n\n            Napaka: %(text)s\n            "
       ],
-      "\n            *%(name)s*\n\n            %(description)s\n\n            <%(url)s|Explore in Superset>\n            ": [
-        "\n            *%(name)s*\n\n            %(description)s\n\n            <%(url)s|Razišči v Supersetu>\n            "
+      "\n            *%(name)s*\n\n            %(description)s\n\n            <%(url)s|Explore in Rabbitai>\n            ": [
+        "\n            *%(name)s*\n\n            %(description)s\n\n            <%(url)s|Razišči v Rabbitaiu>\n            "
       ],
       "%(dialect)s cannot be used as a data source for security reasons.": [
         "%(dialect)s ni mogoče uporabiti kot podatkovni vir zaradi varnostnih razlogov."
       ],
-      "\n        *%(name)s*\n\n        <%(url)s|Explore in Superset>\n        ": [
-        "\n        *%(name)s*\n\n        <%(url)s|Razišči v Supersetu>\n        "
+      "\n        *%(name)s*\n\n        <%(url)s|Explore in Rabbitai>\n        ": [
+        "\n        *%(name)s*\n\n        <%(url)s|Razišči v Rabbitaiu>\n        "
       ],
-      "<b><a href=\"%(url)s\">Explore in Superset</a></b><p></p>": [
-        "<b><a href=\"%(url)s\">Razišči v Supersetu</a></b><p></p>"
+      "<b><a href=\"%(url)s\">Explore in Rabbitai</a></b><p></p>": [
+        "<b><a href=\"%(url)s\">Razišči v Rabbitaiu</a></b><p></p>"
       ],
-      "\n            <b><a href=\"%(url)s\">Explore in Superset</a></b><p></p>\n            <img src=\"cid:%(msgid)s\">\n            ": [
-        "\n            <b><a href=\"%(url)s\">Razišči v Supersetu</a></b><p></p>\n            <img src=\"cid:%(msgid)s\">\n            "
+      "\n            <b><a href=\"%(url)s\">Explore in Rabbitai</a></b><p></p>\n            <img src=\"cid:%(msgid)s\">\n            ": [
+        "\n            <b><a href=\"%(url)s\">Razišči v Rabbitaiu</a></b><p></p>\n            <img src=\"cid:%(msgid)s\">\n            "
       ],
-      "\n        *%(slice_name)s*\n\n        <%(slice_url_user_friendly)s|Explore in Superset>\n        ": [
-        "\n        *%(slice_name)s*\n\n        <%(slice_url_user_friendly)s|Razišči v Supersetu>\n        "
+      "\n        *%(slice_name)s*\n\n        <%(slice_url_user_friendly)s|Explore in Rabbitai>\n        ": [
+        "\n        *%(slice_name)s*\n\n        <%(slice_url_user_friendly)s|Razišči v Rabbitaiu>\n        "
       ],
       "[Alert] %(label)s": ["[Alert] %(label)s"],
       "New": ["Nov"],
@@ -1026,8 +1026,8 @@
         "Za spreminjanje tega polja uporabite gumb za urejanje"
       ],
       "Test Connection": ["Preizkusi povezavo"],
-      "[Superset] Access to the datasource %(name)s was granted": [
-        "[Superset] dostop do podatkovnega vira %(name)s je odobren"
+      "[Rabbitai] Access to the datasource %(name)s was granted": [
+        "[Rabbitai] dostop do podatkovnega vira %(name)s je odobren"
       ],
       "Unable to find such a holiday: [%(holiday)s]": [
         "Ni mogoče najti takšnega praznika: [%(holiday)s]"
@@ -1104,14 +1104,14 @@
       "How long to keep the logs around for this alert": [
         "Kako dolgo ohraniti dnevnike za to opozorilo"
       ],
-      "Once an alert is triggered, how long, in seconds, before Superset nags you again.": [
-        "Kako dolgo naj traja (v sekundah), da vas Superset ponovno opomni, ko je opozorilo sproženo."
+      "Once an alert is triggered, how long, in seconds, before Rabbitai nags you again.": [
+        "Kako dolgo naj traja (v sekundah), da vas Rabbitai ponovno opomni, ko je opozorilo sproženo."
       ],
       "A SQL statement that defines whether the alert should get triggered or not. The query is expected to return either NULL or a number value.": [
         "SQL izraz, ki definira ali naj se opozorilo sproži ali ne. Od poizvedbe se pričakuje, da vrne bodisi NULL bodisi številsko vrednost."
       ],
-      "This feature is deprecated and will be removed on 2.0. Take a look at the replacement feature <a href='https://superset.apache.org/docs/installation/alerts-reports'>Alerts & Reports documentation</a>": [
-        "Ta funkcija je zastarela in bo odstranjena v verziji 2.0. Oglejte si zamenjavo <a href='https://superset.apache.org/docs/installation/alerts-reports'>Dokumentacija za Opozorila & Poročila</a>"
+      "This feature is deprecated and will be removed on 2.0. Take a look at the replacement feature <a href='https://rabbitai.apache.org/docs/installation/alerts-reports'>Alerts & Reports documentation</a>": [
+        "Ta funkcija je zastarela in bo odstranjena v verziji 2.0. Oglejte si zamenjavo <a href='https://rabbitai.apache.org/docs/installation/alerts-reports'>Dokumentacija za Opozorila & Poročila</a>"
       ],
       "annotation start time or end time is required.": [
         "začetni in končni čas oznake je obvezen."
@@ -1165,8 +1165,8 @@
       "Cannot import dashboard: %(db_error)s.\nMake sure to create the database before importing the dashboard.": [
         "Nadzorne plošče ni mogoče uvoziti: %(db_error)s.\nPred uvozom poskrbite za ustvarjenje podatkovne baze."
       ],
-      "An unknown error occurred. Please contact your Superset administrator": [
-        "Zgodila se je neznana napaka. Kontaktirajte svojega administratorja za Superset"
+      "An unknown error occurred. Please contact your Rabbitai administrator": [
+        "Zgodila se je neznana napaka. Kontaktirajte svojega administratorja za Rabbitai"
       ],
       "[Missing Dataset]": ["[Manjka podatkovni set]"],
       "alter this ": ["spreminjanje tega "],
@@ -1468,8 +1468,8 @@
       "CSV to Database configuration": [
         "Nastavitve pretvorbe CSV v podatkovno bazo"
       ],
-      "Database \"%(database_name)s\" schema \"%(schema_name)s\" is not allowed for csv uploads. Please contact your Superset Admin.": [
-        "Shema \"%(schema_name)s\" podatkovne baze \"%(database_name)s\" ni dovoljena za nalaganje CSV. Kontaktirajte administratorja za Superset."
+      "Database \"%(database_name)s\" schema \"%(schema_name)s\" is not allowed for csv uploads. Please contact your Rabbitai Admin.": [
+        "Shema \"%(schema_name)s\" podatkovne baze \"%(database_name)s\" ni dovoljena za nalaganje CSV. Kontaktirajte administratorja za Rabbitai."
       ],
       "You cannot specify a namespace both in the name of the table: \"%(csv_table.table)s\" and in the schema field: \"%(csv_table.schema)s\". Please remove one": [
         "Imenskega prostora ni mogoče podati hkrati v tabeli: \"%(csv_table.table)s\" in polju sheme: \"%(csv_table.schema)s\". Odstranite enega"
@@ -1483,8 +1483,8 @@
       "Excel to Database configuration": [
         "Nastavitve pretvorbe Excel v Podatkovno bazo"
       ],
-      "Database \"%(database_name)s\" schema \"%(schema_name)s\" is not allowed for excel uploads. Please contact your Superset Admin.": [
-        "Shema \"%(schema_name)s\" podatkovne baze \"%(database_name)s\" ni dovoljena za nalaganje Excel datotek. Kontaktirajte administratorja za Superset."
+      "Database \"%(database_name)s\" schema \"%(schema_name)s\" is not allowed for excel uploads. Please contact your Rabbitai Admin.": [
+        "Shema \"%(schema_name)s\" podatkovne baze \"%(database_name)s\" ni dovoljena za nalaganje Excel datotek. Kontaktirajte administratorja za Rabbitai."
       ],
       "You cannot specify a namespace both in the name of the table: \"%(excel_table.table)s\" and in the schema field: \"%(excel_table.schema)s\". Please remove one": [
         "Imenskega prostora ni mogoče podati hkrati v tabeli: \"%(excel_table.table)s\" in polju sheme: \"%(excel_table.schema)s\". Odstranite enega"
@@ -1515,14 +1515,14 @@
       ],
       "Unknown error": ["Neznana napaka"],
       "Query was stopped.": ["Poizvedba je bila ustavljena."],
-      "Unable to migrate table schema state to backend. Superset will retry later. Please contact your administrator if this problem persists.": [
-        "Stanja sheme tabele ni mogoče prenesti v sistem. Superset bo ponovil poskus kasneje. Če se težava ponavlja, kontaktirajte administratorja."
+      "Unable to migrate table schema state to backend. Rabbitai will retry later. Please contact your administrator if this problem persists.": [
+        "Stanja sheme tabele ni mogoče prenesti v sistem. Rabbitai bo ponovil poskus kasneje. Če se težava ponavlja, kontaktirajte administratorja."
       ],
-      "Unable to migrate query state to backend. Superset will retry later. Please contact your administrator if this problem persists.": [
-        "Stanja poizvedbe ni mogoče prenesti v sistem. Superset bo ponovil poskus kasneje. Če se težava ponavlja, kontaktirajte administratorja."
+      "Unable to migrate query state to backend. Rabbitai will retry later. Please contact your administrator if this problem persists.": [
+        "Stanja poizvedbe ni mogoče prenesti v sistem. Rabbitai bo ponovil poskus kasneje. Če se težava ponavlja, kontaktirajte administratorja."
       ],
-      "Unable to migrate query editor state to backend. Superset will retry later. Please contact your administrator if this problem persists.": [
-        "Stanja urejevalnika poizvedb ni mogoče prenesti v sistem. Superset bo ponovil poskus kasneje. Če se težava ponavlja, kontaktirajte administratorja."
+      "Unable to migrate query editor state to backend. Rabbitai will retry later. Please contact your administrator if this problem persists.": [
+        "Stanja urejevalnika poizvedb ni mogoče prenesti v sistem. Rabbitai bo ponovil poskus kasneje. Če se težava ponavlja, kontaktirajte administratorja."
       ],
       "Unable to add a new tab to the backend. Please contact your administrator.": [
         "Novega zavihka ni mogoče dodati v sistem. Kontaktirajte administratorja."
@@ -1774,8 +1774,8 @@
       "Query history": ["Zgodovina poizvedb"],
       "Create a new chart": ["Ustvari nov grafikon"],
       "Choose a dataset": ["Izberite podatkovni set"],
-      "If the dataset you are looking for is not available in the list, follow the instructions on how to add it in the Superset tutorial.": [
-        "Če podatkovnega seta, ki ga iščete, ni na seznamu, sledite navodilom za dodajanje v navodilih za Superset."
+      "If the dataset you are looking for is not available in the list, follow the instructions on how to add it in the Rabbitai tutorial.": [
+        "Če podatkovnega seta, ki ga iščete, ni na seznamu, sledite navodilom za dodajanje v navodilih za Rabbitai."
       ],
       "Choose a visualization type": ["Izberite tip vizualizacije"],
       "Create new chart": ["Ustvari nov grafikon"],
@@ -1792,7 +1792,7 @@
       "Click to see difference": ["Kliknite za prikaz razlike"],
       "Altered": ["Spremenjeno"],
       "Chart changes": ["Spremembe grafikona"],
-      "Superset chart": ["Superset grafikon"],
+      "Rabbitai chart": ["Rabbitai grafikon"],
       "Check out this chart in dashboard:": [
         "Preizkusite ta grafikon v nadzorni plošči:"
       ],
@@ -2033,7 +2033,7 @@
       "An error occurred while fetching available CSS templates": [
         "Pri pridobivanju CSS predlog je prišlo do napake"
       ],
-      "Superset dashboard": ["Superset nadzorna plošča"],
+      "Rabbitai dashboard": ["Rabbitai nadzorna plošča"],
       "Check out this dashboard: ": ["Preizkusite to nadzorno ploščo: "],
       "Copy dashboard URL": ["Kopiraj URL nadzorne plošče"],
       "Share dashboard by email": ["Deli nadzorno ploščo po e-pošti"],
@@ -2281,15 +2281,15 @@
       "Spatial": ["Prostorski"],
       "virtual": ["virtualni"],
       "Dataset name": ["Ime podatkovnega seta"],
-      "When specifying SQL, the datasource acts as a view. Superset will use this statement as a subquery while grouping and filtering on the generated parent queries.": [
-        "Ko podajate SQL, se podatkovni vir obnaša kot pogled (view). Superset bo to izjavo uporabil kot podpoizvedbo, pri čemer bo grupiral in filtriral na podlagi ustvarjenih starševskih poizvedb."
+      "When specifying SQL, the datasource acts as a view. Rabbitai will use this statement as a subquery while grouping and filtering on the generated parent queries.": [
+        "Ko podajate SQL, se podatkovni vir obnaša kot pogled (view). Rabbitai bo to izjavo uporabil kot podpoizvedbo, pri čemer bo grupiral in filtriral na podlagi ustvarjenih starševskih poizvedb."
       ],
       "The JSON metric or post aggregation definition.": [
         "JSON mera ali po-agregacijska definicija."
       ],
       "Physical": ["Fizičen"],
-      "The pointer to a physical table (or view). Keep in mind that the chart is associated to this Superset logical table, and this logical table points the physical table referenced here.": [
-        "Kazalec na fizično tabelo (ali pogled). Grafikon je povezan s to Supersetovo logično tabelo, ki kaže na tukaj referencirano fizično tabelo."
+      "The pointer to a physical table (or view). Keep in mind that the chart is associated to this Rabbitai logical table, and this logical table points the physical table referenced here.": [
+        "Kazalec na fizično tabelo (ali pogled). Grafikon je povezan s to Rabbitaiovo logično tabelo, ki kaže na tukaj referencirano fizično tabelo."
       ],
       "Click the lock to make changes.": [
         "Kliknite ključavnico, da omogočite spreminjanje."
@@ -2363,8 +2363,8 @@
       "The time column for the visualization. Note that you can define arbitrary expression that return a DATETIME column in the table. Also note that the filter below is applied against this column or expression": [
         "Časovni stolpec za vizualizacijo. Določite lahko poljuben izraz, ki vrne DATETIME stolpec v tabeli. Spodnji filter se nanaša na ta stolpec ali izraz"
       ],
-      "The time granularity for the visualization. This applies a date transformation to alter your time column and defines a new time granularity. The options here are defined on a per database engine basis in the Superset source code.": [
-        "Granulacija časa za to vizualizacijo. Izvede transformacijo podatkov, ki spremeni vaš časovni stolpec in določi novo časovno granulacija. Ta možnost je definirana na ravni sistema podatkovne baze v izvorni kodi Superseta."
+      "The time granularity for the visualization. This applies a date transformation to alter your time column and defines a new time granularity. The options here are defined on a per database engine basis in the Rabbitai source code.": [
+        "Granulacija časa za to vizualizacijo. Izvede transformacijo podatkov, ki spremeni vaš časovni stolpec in določi novo časovno granulacija. Ta možnost je definirana na ravni sistema podatkovne baze v izvorni kodi Rabbitaia."
       ],
       "No filter": ["Brez filtra"],
       "The time range for the visualization. All relative times, e.g. \"Last month\", \"Last 7 days\", \"now\", etc. are evaluated on the server using the server's local time (sans timezone). All tooltips and placeholder times are expressed in UTC (sans timezone). The timestamps are then evaluated by the database using the engine's local timezone. Note one can explicitly set the timezone per the ISO 8601 format if specifying either the start and/or end time.": [
@@ -2412,7 +2412,7 @@
       "Width": ["Širina"],
       "Copy chart URL to clipboard": ["Kopiraj URL grafikona na odložišče"],
       "Loading...": ["Nalagam ..."],
-      "Superset Chart": ["Superset grafikon"],
+      "Rabbitai Chart": ["Rabbitai grafikon"],
       "Export to .JSON format": ["Izvozi v .json format"],
       "Export to .CSV format": ["Izvozi v .csv format"],
       "%s - untitled": ["%s - neimenovan"],
@@ -3685,7 +3685,7 @@
         "Ciljno razmerje za razdelke drevesnega grafikona."
       ],
       "Country Field Type": ["Tip polja za države"],
-      "The country code standard that Superset should expect to find in the [country] column": [
+      "The country code standard that Rabbitai should expect to find in the [country] column": [
         "Standard za oznake držav, ki bodo podane v stolpcu z državami"
       ],
       "Show Bubbles": ["Prikaži mehurčke"],
@@ -4367,8 +4367,8 @@
       "For more information about objects are in context in the scope of this function, refer to the": [
         "Za dodatne informacije o objektih v kontekstu te funkcije si oglejte"
       ],
-      " source code of Superset's sandboxed parser": [
-        " izvorno kodo za Supersetov \"sandboxed parser\""
+      " source code of Rabbitai's sandboxed parser": [
+        " izvorno kodo za Rabbitaiov \"sandboxed parser\""
       ],
       "This functionality is disabled in your environment for security reasons.": [
         "Ta funkcionalnost je v vašem okolju onemogočena zaradi varnosti."

@@ -1,26 +1,13 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 /* eslint camelcase: 0 */
 import { getChartControlPanelRegistry } from '@superset-ui/core';
 import { getAllControlsState, getFormDataFromControls } from './controlUtils';
 import { controls } from './controls';
 
+/**
+ * 处理弃用控件。
+ *
+ * @param formData
+ */
 function handleDeprecatedControls(formData) {
   // Reacffectation / handling of deprecated controls
   /* eslint-disable no-param-reassign */
@@ -31,6 +18,15 @@ function handleDeprecatedControls(formData) {
   }
 }
 
+/**
+ * 获取控件状态。获取设置到状态中的控件对象。控件对象类似于配置控件，仅与当前可视类型相关，实现 mapStateToProps 函数，
+ * 添加来自输入数据表单的值键。这还不能成为操作创建者，因为它在“浏览”和“仪表板”视图中都有使用。
+ *
+ * @param state 状态对象。
+ * @param inputFormData 输入数据表单。
+ *
+ * @returns {{}|*}
+ */
 export function getControlsState(state, inputFormData) {
   /*
    * Gets a new controls object to put in the state. The controls object
@@ -39,6 +35,7 @@ export function getControlsState(state, inputFormData) {
    * adds value keys coming from inputFormData passed here. This can't be an action creator
    * just yet because it's used in both the explore and dashboard views.
    * */
+
   // Getting a list of active control names for the current viz
   const formData = { ...inputFormData };
   const vizType =
@@ -61,6 +58,12 @@ export function getControlsState(state, inputFormData) {
   return controlsState;
 }
 
+/**
+ * 将指定表单数据设置为默认表单数据。
+ *
+ * @param inputFormData 表单数据。
+ * @returns {{}}
+ */
 export function applyDefaultFormData(inputFormData) {
   const datasourceType = inputFormData.datasource.split('__')[1];
   const vizType = inputFormData.viz_type;

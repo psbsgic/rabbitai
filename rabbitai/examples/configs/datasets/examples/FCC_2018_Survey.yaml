@@ -1,4 +1,4 @@
-table_name: FCC 2018 Survey
+table_name: FCC Survey Results
 main_dttm_col: null
 description: null
 default_endpoint: null
@@ -8,7 +8,7 @@ schema: null
 sql: ''
 params: null
 template_params: null
-filter_select_enabled: false
+filter_select_enabled: true
 fetch_values_predicate: null
 extra: null
 uuid: d95a2865-53ce-1f82-a53d-8e3c89331469
@@ -1496,4 +1496,4 @@ columns:
   python_date_format: null
 version: 1.0.0
 database_uuid: a2dc77af-e654-49bb-b321-40f6b559a1ee
-data: https://github.com/apache-superset/examples-data/raw/master/datasets/examples/fcc_survey_2018.csv.gz
+data: https://github.com/apache-rabbitai/examples-data/raw/master/datasets/examples/fcc_survey_2018.csv.gz

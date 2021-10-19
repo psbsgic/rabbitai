@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import rison from 'rison';
-import { RabbitaiClient } from '@rabbitai-ui/core';
+import { SupersetClient } from '@superset-ui/core';
 import { AsyncSelect } from 'src/components/Select';
 import {
   ClientErrorObject,
@@ -38,7 +38,7 @@ export interface RabbitaiResourceSelectProps<T = unknown, V = string> {
 const localCache = new Map<string, any>();
 
 export const cachedRabbitaiGet = cacheWrapper(
-  RabbitaiClient.get,
+  SupersetClient.get,
   localCache,
   ({ endpoint }) => endpoint || '',
 );

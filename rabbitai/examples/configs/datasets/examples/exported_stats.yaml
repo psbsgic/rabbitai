@@ -1,4 +1,4 @@
-table_name: exported_stats
+table_name: Slack Exported Metrics
 main_dttm_col: Date
 description: null
 default_endpoint: null
@@ -8,7 +8,7 @@ schema: null
 sql: ''
 params: null
 template_params: null
-filter_select_enabled: false
+filter_select_enabled: true
 fetch_values_predicate: null
 extra: null
 uuid: 0bd5d01c-b7d8-471b-b3a5-366ce6c920d4
@@ -244,4 +244,4 @@ columns:
   python_date_format: null
 version: 1.0.0
 database_uuid: a2dc77af-e654-49bb-b321-40f6b559a1ee
-data: https://raw.githubusercontent.com/apache-superset/examples-data/master/datasets/examples/slack/exported_stats.csv
+data: https://raw.githubusercontent.com/apache-rabbitai/examples-data/master/datasets/examples/slack/exported_stats.csv

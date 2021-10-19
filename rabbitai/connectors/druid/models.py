@@ -27,9 +27,12 @@ from sqlalchemy import (
     Table,
     Text,
     UniqueConstraint,
+    update,
 )
+from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, Session
+from sqlalchemy.orm.mapper import Mapper
 from sqlalchemy.sql import expression
 
 from rabbitai import conf, db, security_manager
@@ -39,9 +42,16 @@ from rabbitai.exceptions import RabbitaiException
 from rabbitai.extensions import encrypted_field_factory
 from rabbitai.models.core import Database
 from rabbitai.models.helpers import AuditMixinNullable, ImportExportMixin, QueryResult
-from rabbitai.typing import FilterValues, Granularity, Metric, QueryObjectDict
+from rabbitai.typing import (
+    AdhocMetric,
+    FilterValues,
+    Granularity,
+    Metric,
+    QueryObjectDict,
+)
 from rabbitai.utils import core as utils
 from rabbitai.utils.date_parser import parse_human_datetime, parse_human_timedelta
+from rabbitai.utils.memoized import memoized
 
 try:
     import requests
@@ -176,7 +186,7 @@ class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
         return json.loads(requests.get(endpoint, auth=auth).text)["version"]
 
     @property  # type: ignore
-    @utils.memoized
+    @memoized
     def druid_version(self) -> str:
         return self.get_druid_version()
 
@@ -994,7 +1004,7 @@ class DruidDatasource(Model, BaseDatasource):
         return ret
 
     @staticmethod
-    def druid_type_from_adhoc_metric(adhoc_metric: Dict[str, Any]) -> str:
+    def druid_type_from_adhoc_metric(adhoc_metric: AdhocMetric) -> str:
         column_type = adhoc_metric["column"]["type"].lower()
         aggregate = adhoc_metric["aggregate"].lower()
 
@@ -1009,7 +1019,7 @@ class DruidDatasource(Model, BaseDatasource):
     def get_aggregations(
         metrics_dict: Dict[str, Any],
         saved_metrics: Set[str],
-        adhoc_metrics: Optional[List[Dict[str, Any]]] = None,
+        adhoc_metrics: Optional[List[AdhocMetric]] = None,
     ) -> "OrderedDict[str, Any]":
         """
         Returns a dictionary of aggregation metric names to aggregation json objects
@@ -1664,6 +1674,25 @@ class DruidDatasource(Model, BaseDatasource):
         latest_metadata = self.latest_metadata() or {}
         return [{"name": k, "type": v.get("type")} for k, v in latest_metadata.items()]
 
+    @staticmethod
+    def update_datasource(
+        _mapper: Mapper, _connection: Connection, obj: Union[DruidColumn, DruidMetric]
+    ) -> None:
+        """
+        Forces an update to the datasource's changed_on value when a metric or column on
+        the datasource is updated. This busts the cache key for all charts that use the
+        datasource.
+
+        :param _mapper: Unused.
+        :param _connection: Unused.
+        :param obj: The metric or column that was updated.
+        """
+        db.session.execute(
+            update(DruidDatasource).where(DruidDatasource.id == obj.datasource.id)
+        )
+
 
 sa.event.listen(DruidDatasource, "after_insert", security_manager.set_perm)
 sa.event.listen(DruidDatasource, "after_update", security_manager.set_perm)
+sa.event.listen(DruidMetric, "after_update", DruidDatasource.update_datasource)
+sa.event.listen(DruidColumn, "after_update", DruidDatasource.update_datasource)

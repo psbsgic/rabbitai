@@ -1,21 +1,5 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-# from superset import db
-# from superset.models.dashboard import Dashboard
+# from rabbitai import db
+# from rabbitai.models.dashboard import Dashboard
 import urllib.request
 from io import BytesIO
 from unittest import skipUnless
@@ -24,13 +8,13 @@ from unittest.mock import ANY, call, patch
 from flask_testing import LiveServerTestCase
 from sqlalchemy.sql import func
 
-from superset import db, is_feature_enabled, security_manager
-from superset.extensions import machine_auth_provider_factory
-from superset.models.dashboard import Dashboard
-from superset.models.slice import Slice
-from superset.utils.screenshots import ChartScreenshot, DashboardScreenshot
-from superset.utils.urls import get_url_host, get_url_path
-from superset.utils.webdriver import WebDriverProxy
+from rabbitai import db, is_feature_enabled, security_manager
+from rabbitai.extensions import machine_auth_provider_factory
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.slice import Slice
+from rabbitai.utils.screenshots import ChartScreenshot, DashboardScreenshot
+from rabbitai.utils.urls import get_url_host, get_url_path
+from rabbitai.utils.webdriver import WebDriverProxy
 from tests.integration_tests.conftest import with_feature_flags
 from tests.integration_tests.test_app import app
 
@@ -54,7 +38,7 @@ class TestThumbnailsSeleniumLive(LiveServerTestCase):
         Thumbnails: Simple get async dashboard screenshot
         """
         dashboard = db.session.query(Dashboard).all()[0]
-        with patch("superset.dashboards.api.DashboardRestApi.get") as mock_get:
+        with patch("rabbitai.dashboards.api.DashboardRestApi.get") as mock_get:
             response = self.url_open_auth(
                 "admin",
                 f"api/v1/dashboard/{dashboard.id}/thumbnail/{dashboard.digest}/",
@@ -63,9 +47,9 @@ class TestThumbnailsSeleniumLive(LiveServerTestCase):
 
 
 class TestWebDriverProxy(SupersetTestCase):
-    @patch("superset.utils.webdriver.WebDriverWait")
-    @patch("superset.utils.webdriver.firefox")
-    @patch("superset.utils.webdriver.sleep")
+    @patch("rabbitai.utils.webdriver.WebDriverWait")
+    @patch("rabbitai.utils.webdriver.firefox")
+    @patch("rabbitai.utils.webdriver.sleep")
     def test_screenshot_selenium_headstart(
         self, mock_sleep, mock_webdriver, mock_webdriver_wait
     ):
@@ -78,8 +62,8 @@ class TestWebDriverProxy(SupersetTestCase):
         webdriver.get_screenshot(url, "chart-container", user=user)
         assert mock_sleep.call_args_list[0] == call(5)
 
-    @patch("superset.utils.webdriver.WebDriverWait")
-    @patch("superset.utils.webdriver.firefox")
+    @patch("rabbitai.utils.webdriver.WebDriverWait")
+    @patch("rabbitai.utils.webdriver.firefox")
     def test_screenshot_selenium_locate_wait(self, mock_webdriver, mock_webdriver_wait):
         app.config["SCREENSHOT_LOCATE_WAIT"] = 15
         webdriver = WebDriverProxy("firefox")
@@ -90,8 +74,8 @@ class TestWebDriverProxy(SupersetTestCase):
         webdriver.get_screenshot(url, "chart-container", user=user)
         assert mock_webdriver_wait.call_args_list[0] == call(ANY, 15)
 
-    @patch("superset.utils.webdriver.WebDriverWait")
-    @patch("superset.utils.webdriver.firefox")
+    @patch("rabbitai.utils.webdriver.WebDriverWait")
+    @patch("rabbitai.utils.webdriver.firefox")
     def test_screenshot_selenium_load_wait(self, mock_webdriver, mock_webdriver_wait):
         app.config["SCREENSHOT_LOAD_WAIT"] = 15
         webdriver = WebDriverProxy("firefox")
@@ -102,9 +86,9 @@ class TestWebDriverProxy(SupersetTestCase):
         webdriver.get_screenshot(url, "chart-container", user=user)
         assert mock_webdriver_wait.call_args_list[1] == call(ANY, 15)
 
-    @patch("superset.utils.webdriver.WebDriverWait")
-    @patch("superset.utils.webdriver.firefox")
-    @patch("superset.utils.webdriver.sleep")
+    @patch("rabbitai.utils.webdriver.WebDriverWait")
+    @patch("rabbitai.utils.webdriver.firefox")
+    @patch("rabbitai.utils.webdriver.sleep")
     def test_screenshot_selenium_animation_wait(
         self, mock_sleep, mock_webdriver, mock_webdriver_wait
     ):
@@ -153,12 +137,12 @@ class TestThumbnails(SupersetTestCase):
         self.login(username="admin")
         uri = f"api/v1/dashboard/{dashboard.id}/thumbnail/{dashboard.digest}/"
         with patch(
-            "superset.tasks.thumbnails.cache_dashboard_thumbnail.delay"
+            "rabbitai.tasks.thumbnails.cache_dashboard_thumbnail.delay"
         ) as mock_task:
             rv = self.client.get(uri)
             self.assertEqual(rv.status_code, 202)
 
-            expected_uri = f"{get_url_host()}superset/dashboard/{dashboard.id}/"
+            expected_uri = f"{get_url_host()}rabbitai/dashboard/{dashboard.id}/"
             expected_digest = dashboard.digest
             expected_kwargs = {"force": True}
             mock_task.assert_called_with(
@@ -196,11 +180,11 @@ class TestThumbnails(SupersetTestCase):
         self.login(username="admin")
         uri = f"api/v1/chart/{chart.id}/thumbnail/{chart.digest}/"
         with patch(
-            "superset.tasks.thumbnails.cache_chart_thumbnail.delay"
+            "rabbitai.tasks.thumbnails.cache_chart_thumbnail.delay"
         ) as mock_task:
             rv = self.client.get(uri)
             self.assertEqual(rv.status_code, 202)
-            expected_uri = f"{get_url_host()}superset/slice/{chart.id}/?standalone=true"
+            expected_uri = f"{get_url_host()}rabbitai/slice/{chart.id}/?standalone=true"
             expected_digest = chart.digest
             expected_kwargs = {"force": True}
             mock_task.assert_called_with(

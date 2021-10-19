@@ -5,7 +5,6 @@ from ..base import check_ownership
 
 
 class DashboardMixin:
-    """定义仪表盘视图相关的属性。"""
 
     list_title = _("Dashboards")
     show_title = _("Show Dashboard")

@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 import json
 from datetime import datetime
 from typing import Any
@@ -22,10 +6,10 @@ from unittest import mock
 import pytest
 
 import tests.integration_tests.test_app
-from superset import app
-from superset.exceptions import SupersetTemplateException
-from superset.jinja_context import ExtraCache, get_template_processor, safe_proxy
-from superset.utils import core as utils
+from rabbitai import app
+from rabbitai.exceptions import SupersetTemplateException
+from rabbitai.jinja_context import ExtraCache, get_template_processor, safe_proxy
+from rabbitai.utils import core as utils
 from tests.integration_tests.base_tests import SupersetTestCase
 
 
@@ -304,7 +288,7 @@ class TestJinja2Context(SupersetTestCase):
         with pytest.raises(SupersetTemplateException):
             tp.process_template(s, foo={"bar": datetime})
 
-    @mock.patch("superset.jinja_context.HiveTemplateProcessor.latest_partition")
+    @mock.patch("rabbitai.jinja_context.HiveTemplateProcessor.latest_partition")
     def test_template_hive(self, lp_mock) -> None:
         lp_mock.return_value = "the_latest"
         db = mock.Mock()
@@ -314,7 +298,7 @@ class TestJinja2Context(SupersetTestCase):
         rendered = tp.process_template(s)
         self.assertEqual("the_latest", rendered)
 
-    @mock.patch("superset.jinja_context.context_addons")
+    @mock.patch("rabbitai.jinja_context.context_addons")
     def test_template_context_addons(self, addons_mock) -> None:
         addons_mock.return_value = {"datetime": datetime}
         maindb = utils.get_example_database()
@@ -324,7 +308,7 @@ class TestJinja2Context(SupersetTestCase):
         self.assertEqual("SELECT '2017-01-01T00:00:00'", rendered)
 
     @mock.patch(
-        "tests.integration_tests.superset_test_custom_template_processors.datetime"
+        "tests.integration_tests.rabbitai_test_custom_template_processors.datetime"
     )
     def test_custom_process_template(self, mock_dt) -> None:
         """Test macro defined in custom template processor works."""

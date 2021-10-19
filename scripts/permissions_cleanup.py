@@ -3,7 +3,7 @@ from collections import defaultdict
 from rabbitai import security_manager
 
 
-def cleanup_permissions():
+def cleanup_permissions() -> None:
     # 1. Clean up duplicates.
     pvms = security_manager.get_session.query(
         security_manager.permissionview_model

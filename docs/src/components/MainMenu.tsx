@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Drawer, Layout, Menu } from 'antd';
 import { Link } from 'gatsby';

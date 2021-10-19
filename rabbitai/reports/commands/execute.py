@@ -1,9 +1,11 @@
 import json
 import logging
 from datetime import datetime, timedelta
+from io import BytesIO
 from typing import Any, List, Optional
 from uuid import UUID
 
+import pandas as pd
 from celery.exceptions import SoftTimeLimitExceeded
 from flask_appbuilder.security.sqla.models import User
 from sqlalchemy.orm import Session
@@ -46,6 +48,7 @@ from rabbitai.reports.notifications import create_notification
 from rabbitai.reports.notifications.base import NotificationContent
 from rabbitai.reports.notifications.exceptions import NotificationError
 from rabbitai.utils.celery import session_scope
+from rabbitai.utils.core import ChartDataResultFormat, ChartDataResultType
 from rabbitai.utils.csv import get_chart_csv_data
 from rabbitai.utils.screenshots import (
     BaseScreenshot,
@@ -126,9 +129,10 @@ class BaseReportState:
         if self._report_schedule.chart:
             if csv:
                 return get_url_path(
-                    "Rabbitai.explore_json",
-                    csv="true",
-                    form_data=json.dumps({"slice_id": self._report_schedule.chart_id}),
+                    "ChartRestApi.get_data",
+                    pk=self._report_schedule.chart_id,
+                    format=ChartDataResultFormat.CSV.value,
+                    type=ChartDataResultType.POST_PROCESSED.value,
                 )
             return get_url_path(
                 "Rabbitai.slice",
@@ -162,6 +166,7 @@ class BaseReportState:
         screenshot: Optional[BaseScreenshot] = None
         if self._report_schedule.chart:
             url = self._get_url(standalone="true")
+            logger.info("Screenshotting chart at %s", url)
             screenshot = ChartScreenshot(
                 url,
                 self._report_schedule.chart.digest,
@@ -170,6 +175,7 @@ class BaseReportState:
             )
         else:
             url = self._get_url()
+            logger.info("Screenshotting dashboard at %s", url)
             screenshot = DashboardScreenshot(
                 url,
                 self._report_schedule.dashboard.digest,
@@ -191,12 +197,31 @@ class BaseReportState:
         return image_data
 
     def _get_csv_data(self) -> bytes:
-        if self._report_schedule.chart:
-            url = self._get_url(csv=True)
-            auth_cookies = machine_auth_provider_factory.instance.get_auth_cookies(
-                self._get_user()
-            )
+        url = self._get_url(csv=True)
+        auth_cookies = machine_auth_provider_factory.instance.get_auth_cookies(
+            self._get_user()
+        )
+
+        # To load CSV data from the endpoint the chart must have been saved
+        # with its query context. For charts without saved query context we
+        # get a screenshot to force the chart to produce and save the query
+        # context.
+        if self._report_schedule.chart.query_context is None:
+            logger.warning("No query context found, taking a screenshot to generate it")
+            try:
+                self._get_screenshot()
+            except (
+                ReportScheduleScreenshotFailedError,
+                ReportScheduleScreenshotTimeout,
+            ) as ex:
+                raise ReportScheduleCsvFailedError(
+                    "Unable to fetch CSV data because the chart has no query context "
+                    "saved, and an error occurred when fetching it via a screenshot. "
+                    "Please try loading the chart and saving it again."
+                ) from ex
+
         try:
+            logger.info("Getting chart from %s", url)
             csv_data = get_chart_csv_data(url, auth_cookies)
         except SoftTimeLimitExceeded:
             raise ReportScheduleCsvTimeout()
@@ -206,6 +231,14 @@ class BaseReportState:
             raise ReportScheduleCsvFailedError()
         return csv_data
 
+    def _get_embedded_data(self) -> pd.DataFrame:
+        """
+        Return data as an HTML table, to embed in the email.
+        """
+        buf = BytesIO(self._get_csv_data())
+        df = pd.read_csv(buf)
+        return df
+
     def _get_notification_content(self) -> NotificationContent:
         """
         Gets a notification content, this is composed by a title and a screenshot
@@ -213,6 +246,7 @@ class BaseReportState:
         :raises: ReportScheduleScreenshotFailedError
         """
         csv_data = None
+        embedded_data = None
         error_text = None
         screenshot_data = None
         url = self._get_url(user_friendly=True)
@@ -236,6 +270,12 @@ class BaseReportState:
                     name=self._report_schedule.name, text=error_text
                 )
 
+        if (
+            self._report_schedule.chart
+            and self._report_schedule.report_format == ReportDataFormat.TEXT
+        ):
+            embedded_data = self._get_embedded_data()
+
         if self._report_schedule.chart:
             name = (
                 f"{self._report_schedule.name}: "
@@ -252,6 +292,7 @@ class BaseReportState:
             screenshot=screenshot_data,
             description=self._report_schedule.description,
             csv=csv_data,
+            embedded_data=embedded_data,
         )
 
     def _send(

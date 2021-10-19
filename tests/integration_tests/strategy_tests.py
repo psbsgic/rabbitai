@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset cache warmup"""
 import datetime
@@ -28,14 +12,14 @@ from sqlalchemy import String, Date, Float
 import pytest
 import pandas as pd
 
-from superset.models.slice import Slice
-from superset.utils.core import get_example_database
+from rabbitai.models.slice import Slice
+from rabbitai.utils.core import get_example_database
 
-from superset import db
+from rabbitai import db
 
-from superset.models.core import Log
-from superset.models.tags import get_tag, ObjectTypes, TaggedObject, TagTypes
-from superset.tasks.cache import (
+from rabbitai.models.core import Log
+from rabbitai.models.tags import get_tag, ObjectTypes, TaggedObject, TagTypes
+from rabbitai.tasks.cache import (
     DashboardTagsStrategy,
     get_form_data,
     TopNDashboardsStrategy,
@@ -194,7 +178,7 @@ class TestCacheWarmUp(SupersetTestCase):
         self.login(username="admin")
         dash = self.get_dash_by_slug("births")
         for _ in range(10):
-            self.client.get(f"/superset/dashboard/{dash.id}/")
+            self.client.get(f"/rabbitai/dashboard/{dash.id}/")
 
         strategy = TopNDashboardsStrategy(1)
         result = sorted(strategy.get_urls())

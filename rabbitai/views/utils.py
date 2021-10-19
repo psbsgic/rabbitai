@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 from collections import defaultdict
 from datetime import date
@@ -40,32 +42,34 @@ stats_logger = app.config["STATS_LOGGER"]
 
 
 REJECTED_FORM_DATA_KEYS: List[str] = []
+"""拒绝的表单数据键列表"""
 if not app.config["ENABLE_JAVASCRIPT_CONTROLS"]:
     REJECTED_FORM_DATA_KEYS = ["js_tooltip", "js_onclick_href", "js_data_mutator"]
 
 
 def bootstrap_user_data(user: User, include_perms: bool = False) -> Dict[str, Any]:
     """
-    返回与指定用户相关的启动数据（用户属性和权限相关数据），包括属性：
-    username、firstName、lastName、userId、isActive、createdOn、email、roles、permissions。
+    返回与指定用户相关的引导数据(username/firstName/lastName/userId/isActive/createdOn/email/roles/permissions)，
+    并指定是否包括权限，默认不包括。
 
     :param user: 用户对象。
-    :param include_perms: 是否包括权限。
+    :param include_perms: 是否包括权限，默认False。
     :return:
     """
 
     if user.is_anonymous:
-        return {}
-
-    payload = {
-        "username": user.username,
-        "firstName": user.first_name,
-        "lastName": user.last_name,
-        "userId": user.id,
-        "isActive": user.is_active,
-        "createdOn": user.created_on.isoformat(),
-        "email": user.email,
-    }
+        payload = {}
+        user.roles = (security_manager.find_role("Public"),)
+    else:
+        payload = {
+            "username": user.username,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
+            "userId": user.id,
+            "isActive": user.is_active,
+            "createdOn": user.created_on.isoformat(),
+            "email": user.email,
+        }
 
     if include_perms:
         roles, permissions = get_permissions(user)
@@ -77,10 +81,10 @@ def bootstrap_user_data(user: User, include_perms: bool = False) -> Dict[str, An
 
 def get_permissions(user: User,) -> Tuple[Dict[str, List[List[str]]], DefaultDict[str, Set[str]]]:
     """
-    获取指定用户对象的权限。
+    获取指定用户的权限，返回角色列表和权限集合。
 
-    :param user:
-    :return:
+    :param user: 用户对象。
+    :return: 角色列表和权限集合。
     """
 
     if not user.roles:
@@ -107,18 +111,20 @@ def get_viz(
     force_cached: bool = False,
 ) -> BaseViz:
     """
-    获取可视化对象，BaseViz的派生类型实例。
+    获取可视类型（BaseViz派生类型实例）。
 
-    :param form_data:
-    :param datasource_type:
-    :param datasource_id:
-    :param force:
-    :param force_cached:
-    :return:
+    :param form_data: 表单数据。
+    :param datasource_type: 数据源类型。
+    :param datasource_id: 数据源标识。
+    :param force: 是否强制。
+    :param force_cached: 是否强制缓存。
+    :return: 可视类型（BaseViz派生类型实例）。
     """
 
     viz_type = form_data.get("viz_type", "table")
-    datasource = ConnectorRegistry.get_datasource(datasource_type, datasource_id, db.session)
+    datasource = ConnectorRegistry.get_datasource(
+        datasource_type, datasource_id, db.session
+    )
     viz_obj = viz.viz_types[viz_type](
         datasource, form_data=form_data, force=force, force_cached=force_cached
     )
@@ -126,7 +132,12 @@ def get_viz(
 
 
 def loads_request_json(request_json_data: str) -> Dict[Any, Any]:
-    """加载请求数据为Json。"""
+    """
+    加载（反序列化）指定请求Json字符串为Json对象。
+
+    :param request_json_data: 请求Json格式字符串数据。
+    :return: Json对象实例。
+    """
 
     try:
         return json.loads(request_json_data)
@@ -134,24 +145,27 @@ def loads_request_json(request_json_data: str) -> Dict[Any, Any]:
         return {}
 
 
-def get_form_data(
+def get_form_data(  # pylint: disable=too-many-locals
     slice_id: Optional[int] = None, use_slice_data: bool = False
 ) -> Tuple[Dict[str, Any], Optional[Slice]]:
     """
-    从Web请求对象中获取表单数据（key=form_data）。
+    获取指定切片的表单数据。
 
     :param slice_id: 切片标识。
     :param use_slice_data: 是否使用切片数据。
     :return:
     """
 
-    form_data = {}
+    form_data: Dict[str, Any] = {}
     # chart data API requests are JSON
     request_json_data = (
         request.json["queries"][0]
         if request.is_json and "queries" in request.json
         else None
     )
+
+    add_sqllab_custom_filters(form_data)
+
     request_form_data = request.form.get("form_data")
     request_args_data = request.args.get("form_data")
     if request_json_data:
@@ -168,7 +182,7 @@ def get_form_data(
     if request_args_data:
         form_data.update(loads_request_json(request_args_data))
 
-    # Fallback to using the Flask globals (used for cache warmup) if defined.
+    # Fallback to using the Flask globals (used for cache warm up) if defined.
     if not form_data and hasattr(g, "form_data"):
         form_data = getattr(g, "form_data")
 
@@ -214,21 +228,43 @@ def get_form_data(
     return form_data, slc
 
 
+def add_sqllab_custom_filters(form_data: Dict[Any, Any]) -> Any:
+    """
+    SQLLab can include a "filters" attribute in the templateParams.
+    The filters attribute is a list of filters to include in the
+    request. Useful for testing templates in SQLLab.
+    """
+
+    try:
+        data = json.loads(request.data)
+        if isinstance(data, dict):
+            params_str = data.get("templateParams")
+            if isinstance(params_str, str):
+                params = json.loads(params_str)
+                if isinstance(params, dict):
+                    filters = params.get("_filters")
+                    if filters:
+                        form_data.update({"filters": filters})
+    except (TypeError, json.JSONDecodeError):
+        data = {}
+
+
 def get_datasource_info(
     datasource_id: Optional[int], datasource_type: Optional[str], form_data: FormData
 ) -> Tuple[int, Optional[str]]:
     """
-    用于处理数据源信息的兼容层
+    Compatibility layer for handling of datasource info
 
-    datasource_id & datasource_type 在URL中传递，它们应该是 form_data 的一部分,
+    datasource_id & datasource_type used to be passed in the URL
+    directory, now they should come as part of the form_data,
 
-    此函数允许在不复制代码的情况下同时支持这两种功能
+    This function allows supporting both without duplicating code
 
-    :param datasource_id: 数据源 ID
-    :param datasource_type: 数据源类型, i.e., 'druid' or 'table'
-    :param form_data: 表单数据地址
-    :returns: 数据源 ID 和 type
-    :raises RabbitaiException: 如果数据源不存在。
+    :param datasource_id: The datasource ID
+    :param datasource_type: The datasource type, i.e., 'druid' or 'table'
+    :param form_data: The URL form data
+    :returns: The datasource ID and type
+    :raises RabbitaiException: If the datasource no longer exists
     """
 
     datasource = form_data.get("datasource", "")
@@ -328,13 +364,16 @@ def get_time_range_endpoints(
     return (TimeRangeEndpoint.INCLUSIVE, TimeRangeEndpoint.EXCLUSIVE)
 
 
-# see all dashboard components type in /rabbitai-frontend/src/dashboard/util/componentTypes.js
+# see all dashboard components type in
+# /rabbitai-frontend/src/dashboard/util/componentTypes.js
 CONTAINER_TYPES = ["COLUMN", "GRID", "TABS", "TAB", "ROW"]
 
 
-def get_dashboard_extra_filters(slice_id: int, dashboard_id: int) -> List[Dict[str, Any]]:
+def get_dashboard_extra_filters(
+    slice_id: int, dashboard_id: int
+) -> List[Dict[str, Any]]:
     """
-    获取附加的过滤器。
+    获取仪表盘提供的额外过滤器。
 
     :param slice_id:
     :param dashboard_id:
@@ -382,16 +421,6 @@ def build_extra_filters(
     default_filters: Dict[str, Dict[str, List[Any]]],
     slice_id: int,
 ) -> List[Dict[str, Any]]:
-    """
-    构建附加过滤器。
-
-    :param layout:
-    :param filter_scopes:
-    :param default_filters:
-    :param slice_id:
-    :return:
-    """
-
     extra_filters = []
 
     # do not apply filters if chart is not in filter's scope or chart is immune to the filter.

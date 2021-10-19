@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""软件包的主模块!"""
+"""Package's main module!"""
 
 from flask import current_app, Flask
 from werkzeug.local import LocalProxy
@@ -20,8 +18,10 @@ from rabbitai.extensions import (
 )
 from rabbitai.security import RabbitaiSecurityManager
 
-# 此处的所有字段都应视为遗留字段。声明“全局（global）”依赖关系的正确方法是在extensions.py中声明,
-# 然后在app.create_app()中初始化它。这些字段将移除。
+#  All of the fields located here should be considered legacy. The correct way
+#  to declare "global" dependencies is to define it in extensions.py,
+#  then initialize it in app.create_app(). These fields will be removed
+#  in subsequent PRs as things are migrated towards the factory pattern
 app: Flask = current_app
 cache = cache_manager.cache
 conf = LocalProxy(lambda: current_app.config)

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask_appbuilder import Model
 from sqlalchemy import Column, ForeignKey, Integer
 from sqlalchemy.orm import relationship
@@ -8,15 +10,14 @@ from rabbitai.models.helpers import AuditMixinNullable
 
 class UserAttribute(Model, AuditMixinNullable):
     """
-    用户属性对象关系模型，附加到用户的自定义属性。
+    附加到用户的自定义属性。
 
-    扩展user属性是很棘手的，因为它依赖于身份验证类型，这是Rabbitai中的循环依赖。
+    扩展用户属性很棘手，因为它依赖于身份验证类型——Rabbitai中的循环依赖。
     相反，我们使用自定义模型来添加属性。
 
     """
 
     __tablename__ = "user_attribute"
-
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("ab_user.id"))
     user = relationship(

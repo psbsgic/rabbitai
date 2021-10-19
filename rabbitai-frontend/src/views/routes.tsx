@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
 import React, { lazy } from 'react';
 
@@ -102,9 +84,12 @@ type Routes = {
   props?: React.ComponentProps<any>;
 }[];
 
+/**
+ * 路由（至少包括路径path和组件Component等属性）对象的列表。
+ */
 export const routes: Routes = [
   {
-    path: '/superset/welcome/',
+    path: '/rabbitai/welcome/',
     Component: Welcome,
   },
   {
@@ -112,7 +97,7 @@ export const routes: Routes = [
     Component: DashboardList,
   },
   {
-    path: '/superset/dashboard/:idOrSlug/',
+    path: '/rabbitai/dashboard/:idOrSlug/',
     Component: DashboardPage,
   },
   {
@@ -144,7 +129,7 @@ export const routes: Routes = [
     Component: AnnotationList,
   },
   {
-    path: '/superset/sqllab/history/',
+    path: '/rabbitai/sqllab/history/',
     Component: QueryList,
   },
   {
@@ -181,6 +166,11 @@ const frontEndRoutes = routes
     {},
   );
 
+/**
+ * 指定路径是否前端路由。
+ *
+ * @param path
+ */
 export function isFrontendRoute(path?: string) {
   if (!isFeatureEnabled(FeatureFlag.ENABLE_REACT_CRUD_VIEWS)) return false;
   if (path) {

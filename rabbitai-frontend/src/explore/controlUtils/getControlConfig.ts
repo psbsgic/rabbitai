@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import memoizeOne from 'memoize-one';
 import { getChartControlPanelRegistry } from '@superset-ui/core';
 import {
@@ -24,7 +6,10 @@ import {
 } from '@superset-ui/chart-controls';
 
 /**
- * Find control item from control panel config.
+ * 从给定控制面板配置查找具有指定名称的控件。
+ *
+ * @param controlPanelSections 控制面板节。
+ * @param controlKey 要查找控件的键（名称）。
  */
 export function findControlItem(
   controlPanelSections: ControlPanelSectionConfig[],
@@ -45,6 +30,9 @@ export function findControlItem(
   );
 }
 
+/**
+ * 获取缓存的控件配置。
+ */
 const getMemoizedControlConfig = memoizeOne(
   (controlKey, controlPanelConfig) => {
     const {
@@ -59,6 +47,12 @@ const getMemoizedControlConfig = memoizeOne(
   },
 );
 
+/**
+ * 获取控件配置。
+ *
+ * @param controlKey 控件名称。
+ * @param vizType 可视类型。
+ */
 export const getControlConfig = function getControlConfig(
   controlKey: string,
   vizType: string,

@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import time
-from functools import wraps
-from typing import Any, Callable, Dict, Iterator, Union
+from __future__ import annotations
 
-from contextlib2 import contextmanager
+import time
+from contextlib import contextmanager
+from functools import wraps
+from typing import Any, Callable, Dict, Iterator, TYPE_CHECKING, Union
+
 from flask import current_app, Response
 
 from rabbitai import is_feature_enabled
 from rabbitai.dashboards.commands.exceptions import DashboardAccessDeniedError
-from rabbitai.stats_logger import BaseStatsLogger
 from rabbitai.utils import core as utils
 from rabbitai.utils.dates import now_as_float
+
+if TYPE_CHECKING:
+    from rabbitai.stats_logger import BaseStatsLogger
 
 
 @contextmanager
@@ -26,7 +30,7 @@ def stats_timing(stats_key: str, stats_logger: BaseStatsLogger) -> Iterator[floa
         stats_logger.timing(stats_key, now_as_float() - start_ts)
 
 
-def arghash(args: Any, kwargs: Dict[str, Any]) -> int:
+def arghash(args: Any, kwargs: Any) -> int:
     """Simple argument hash with kwargs sorted."""
     sorted_args = tuple(
         x if hasattr(x, "__repr__") else x for x in [*args, *sorted(kwargs.items())]

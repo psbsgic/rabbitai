@@ -1,10 +1,10 @@
-<h2 style="color: red;">Alert: {{label}} &#x26A0;</h2>
+<h2 style="color: red;">更改提示: {{label}} &#x26A0;</h2>
 <p><b>Query:</b></p>
 <code><mark style="background-color: LightGrey; font-size: 1.1em">{{sql}}</mark></code></p>
 <p><b>Result</b>: {{observation_value}}</p>
 <p><b>Reason</b>: {{validation_error_message}}</p>
-<p><a href="{{alert_url}}">View Alert Details</a></p>
-<p>Click <a href="{{image_url}}">here</a> or the image below to view the chart related to this alert.</p>
+<p><a href="{{alert_url}}">浏览详细的更改提示</a></p>
+<p>点击 <a href="{{image_url}}">这里</a> 或下面的图像以查看与此更改提示相关的图表。</p>
 <a href="{{image_url}}">
     <img src="cid:screenshot" alt="{{label}}" />
 </a>

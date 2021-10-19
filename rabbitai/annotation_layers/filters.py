@@ -8,9 +8,9 @@ from rabbitai.models.annotations import AnnotationLayer
 from rabbitai.views.base import BaseFilter
 
 
-class AnnotationLayerAllTextFilter(BaseFilter):
-    """注释层文本过滤器。"""
-
+class AnnotationLayerAllTextFilter(
+    BaseFilter
+):  # pylint: disable=too-few-public-methods
     name = _("All Text")
     arg_name = "annotation_layer_all_text"
 

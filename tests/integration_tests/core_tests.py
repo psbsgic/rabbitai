@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 import csv
@@ -39,35 +23,35 @@ from unittest import mock
 import pandas as pd
 import sqlalchemy as sqla
 from sqlalchemy.exc import SQLAlchemyError
-from superset.models.cache import CacheKey
-from superset.utils.core import get_example_database
+from rabbitai.models.cache import CacheKey
+from rabbitai.utils.core import get_example_database
 from tests.integration_tests.conftest import with_feature_flags
 from tests.integration_tests.fixtures.energy_dashboard import (
     load_energy_table_with_slice,
 )
 from tests.integration_tests.test_app import app
-import superset.views.utils
-from superset import (
+import rabbitai.views.utils
+from rabbitai import (
     dataframe,
     db,
     security_manager,
     sql_lab,
 )
-from superset.connectors.sqla.models import SqlaTable
-from superset.db_engine_specs.base import BaseEngineSpec
-from superset.db_engine_specs.mssql import MssqlEngineSpec
-from superset.exceptions import SupersetException
-from superset.extensions import async_query_manager
-from superset.models import core as models
-from superset.models.annotations import Annotation, AnnotationLayer
-from superset.models.dashboard import Dashboard
-from superset.models.datasource_access_request import DatasourceAccessRequest
-from superset.models.slice import Slice
-from superset.models.sql_lab import Query
-from superset.result_set import SupersetResultSet
-from superset.utils import core as utils
-from superset.views import core as views
-from superset.views.database.views import DatabaseView
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.db_engine_specs.base import BaseEngineSpec
+from rabbitai.db_engine_specs.mssql import MssqlEngineSpec
+from rabbitai.exceptions import SupersetException
+from rabbitai.extensions import async_query_manager
+from rabbitai.models import core as models
+from rabbitai.models.annotations import Annotation, AnnotationLayer
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.datasource_access_request import DatasourceAccessRequest
+from rabbitai.models.slice import Slice
+from rabbitai.models.sql_lab import Query
+from rabbitai.result_set import SupersetResultSet
+from rabbitai.utils import core as utils
+from rabbitai.views import core as views
+from rabbitai.views.database.views import DatabaseView
 
 from .base_tests import SupersetTestCase
 from tests.integration_tests.fixtures.world_bank_dashboard import (
@@ -105,22 +89,22 @@ class TestCore(SupersetTestCase):
 
     def test_dashboard_endpoint(self):
         self.login()
-        resp = self.client.get("/superset/dashboard/-1/")
+        resp = self.client.get("/rabbitai/dashboard/-1/")
         assert resp.status_code == 404
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     def test_slice_endpoint(self):
         self.login(username="admin")
         slc = self.get_slice("Girls", db.session)
-        resp = self.get_resp("/superset/slice/{}/".format(slc.id))
+        resp = self.get_resp("/rabbitai/slice/{}/".format(slc.id))
         assert "Original value" in resp
         assert "List Roles" in resp
 
         # Testing overrides
-        resp = self.get_resp("/superset/slice/{}/?standalone=true".format(slc.id))
+        resp = self.get_resp("/rabbitai/slice/{}/?standalone=true".format(slc.id))
         assert '<div class="navbar' not in resp
 
-        resp = self.client.get("/superset/slice/-1/")
+        resp = self.client.get("/rabbitai/slice/-1/")
         assert resp.status_code == 404
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
@@ -149,22 +133,22 @@ class TestCore(SupersetTestCase):
 
         self.assertEqual(cache_key_with_groupby, viz.cache_key(qobj))
 
-    def test_get_superset_tables_not_allowed(self):
+    def test_get_rabbitai_tables_not_allowed(self):
         example_db = utils.get_example_database()
         schema_name = self.default_schema_backend_map[example_db.backend]
         self.login(username="gamma")
-        uri = f"superset/tables/{example_db.id}/{schema_name}/undefined/"
+        uri = f"rabbitai/tables/{example_db.id}/{schema_name}/undefined/"
         rv = self.client.get(uri)
         self.assertEqual(rv.status_code, 404)
 
-    def test_get_superset_tables_substr(self):
+    def test_get_rabbitai_tables_substr(self):
         example_db = utils.get_example_database()
         if example_db.backend in {"presto", "hive"}:
             # TODO: change table to the real table that is in examples.
             return
         self.login(username="admin")
         schema_name = self.default_schema_backend_map[example_db.backend]
-        uri = f"superset/tables/{example_db.id}/{schema_name}/ab_role/"
+        uri = f"rabbitai/tables/{example_db.id}/{schema_name}/ab_role/"
         rv = self.client.get(uri)
         response = json.loads(rv.data.decode("utf-8"))
         self.assertEqual(rv.status_code, 200)
@@ -184,9 +168,9 @@ class TestCore(SupersetTestCase):
         }
         self.assertEqual(response, expected_response)
 
-    def test_get_superset_tables_not_found(self):
+    def test_get_rabbitai_tables_not_found(self):
         self.login(username="admin")
-        uri = f"superset/tables/invalid/public/undefined/"
+        uri = f"rabbitai/tables/invalid/public/undefined/"
         rv = self.client.get(uri)
         self.assertEqual(rv.status_code, 404)
 
@@ -215,7 +199,7 @@ class TestCore(SupersetTestCase):
         self.assertIn("name", resp_annotations["result"][0])
 
         response = self.get_resp(
-            f"/superset/annotation_json/{layer.id}?form_data="
+            f"/rabbitai/annotation_json/{layer.id}?form_data="
             + quote(json.dumps({"time_range": "100 years ago : now"}))
         )
         assert "my_annotation" in response
@@ -260,7 +244,7 @@ class TestCore(SupersetTestCase):
         new_slice_name = f"{copy_name_prefix}[overwrite]{random.random()}"
 
         url = (
-            "/superset/explore/table/{}/?slice_name={}&"
+            "/rabbitai/explore/table/{}/?slice_name={}&"
             "action={}&datasource_name=energy_usage"
         )
 
@@ -326,7 +310,7 @@ class TestCore(SupersetTestCase):
         table = db.session.query(SqlaTable).filter(SqlaTable.id == tbl_id)
         table.filter_select_enabled = True
         url = (
-            "/superset/filter/table/{}/target/?viz_type=sankey&groupby=source"
+            "/rabbitai/filter/table/{}/target/?viz_type=sankey&groupby=source"
             "&metric=sum__value&flt_col_0=source&flt_op_0=in&flt_eq_0=&"
             "slice_id={}&datasource_name=energy_usage&"
             "datasource_id=1&datasource_type=table"
@@ -374,7 +358,7 @@ class TestCore(SupersetTestCase):
         # assert that a table is listed
         table = db.session.query(SqlaTable).first()
         assert table.name in resp
-        assert "/superset/explore/table/{}".format(table.id) in resp
+        assert "/rabbitai/explore/table/{}".format(table.id) in resp
 
     def test_add_slice(self):
         self.login(username="admin")
@@ -390,7 +374,7 @@ class TestCore(SupersetTestCase):
         slice_name = "Girls"
 
         # ensure user is not owner of any slices
-        url = f"/superset/user_slices/{user.id}/"
+        url = f"/rabbitai/user_slices/{user.id}/"
         resp = self.client.get(url)
         data = json.loads(resp.data)
         self.assertEqual(data, [])
@@ -402,7 +386,7 @@ class TestCore(SupersetTestCase):
         slc.owners = [user]
         db.session.merge(slc)
         db.session.commit()
-        url = f"/superset/user_slices/{user.id}/"
+        url = f"/rabbitai/user_slices/{user.id}/"
         resp = self.client.get(url)
         data = json.loads(resp.data)
         self.assertEqual(len(data), 1)
@@ -415,7 +399,7 @@ class TestCore(SupersetTestCase):
         slc.owners = []
         db.session.merge(slc)
         db.session.commit()
-        url = f"/superset/user_slices/{user.id}/"
+        url = f"/rabbitai/user_slices/{user.id}/"
         resp = self.client.get(url)
         data = json.loads(resp.data)
         self.assertEqual(data, [])
@@ -477,7 +461,7 @@ class TestCore(SupersetTestCase):
             }
         )
         response = self.client.post(
-            "/superset/testconn", data=data, content_type="application/json"
+            "/rabbitai/testconn", data=data, content_type="application/json"
         )
         assert response.status_code == 200
         assert response.headers["Content-Type"] == "application/json"
@@ -491,7 +475,7 @@ class TestCore(SupersetTestCase):
             }
         )
         response = self.client.post(
-            "/superset/testconn", data=data, content_type="application/json"
+            "/rabbitai/testconn", data=data, content_type="application/json"
         )
         assert response.status_code == 200
         assert response.headers["Content-Type"] == "application/json"
@@ -503,7 +487,7 @@ class TestCore(SupersetTestCase):
             {"uri": "broken://url", "name": "examples", "impersonate_user": False}
         )
         response = self.client.post(
-            "/superset/testconn", data=data, content_type="application/json"
+            "/rabbitai/testconn", data=data, content_type="application/json"
         )
         assert response.status_code == 400
         assert response.headers["Content-Type"] == "application/json"
@@ -522,7 +506,7 @@ class TestCore(SupersetTestCase):
             }
         )
         response = self.client.post(
-            "/superset/testconn", data=data, content_type="application/json"
+            "/rabbitai/testconn", data=data, content_type="application/json"
         )
         assert response.status_code == 400
         assert response.headers["Content-Type"] == "application/json"
@@ -538,10 +522,10 @@ class TestCore(SupersetTestCase):
         app.config["PREVENT_UNSAFE_DB_CONNECTIONS"] = True
 
         response = self.client.post(
-            "/superset/testconn",
+            "/rabbitai/testconn",
             data=json.dumps(
                 {
-                    "uri": "sqlite:///home/superset/unsafe.db",
+                    "uri": "sqlite:///home/rabbitai/unsafe.db",
                     "name": "unsafe",
                     "impersonate_user": False,
                 }
@@ -595,24 +579,24 @@ class TestCore(SupersetTestCase):
     def test_warm_up_cache(self):
         self.login()
         slc = self.get_slice("Girls", db.session)
-        data = self.get_json_resp("/superset/warm_up_cache?slice_id={}".format(slc.id))
+        data = self.get_json_resp("/rabbitai/warm_up_cache?slice_id={}".format(slc.id))
         self.assertEqual(
             data, [{"slice_id": slc.id, "viz_error": None, "viz_status": "success"}]
         )
 
         data = self.get_json_resp(
-            "/superset/warm_up_cache?table_name=energy_usage&db_name=main"
+            "/rabbitai/warm_up_cache?table_name=energy_usage&db_name=main"
         )
         assert len(data) > 0
 
         dashboard = self.get_dash_by_slug("births")
 
         assert self.get_json_resp(
-            f"/superset/warm_up_cache?dashboard_id={dashboard.id}&slice_id={slc.id}"
+            f"/rabbitai/warm_up_cache?dashboard_id={dashboard.id}&slice_id={slc.id}"
         ) == [{"slice_id": slc.id, "viz_error": None, "viz_status": "success"}]
 
         assert self.get_json_resp(
-            f"/superset/warm_up_cache?dashboard_id={dashboard.id}&slice_id={slc.id}&extra_filters="
+            f"/rabbitai/warm_up_cache?dashboard_id={dashboard.id}&slice_id={slc.id}&extra_filters="
             + quote(json.dumps([{"col": "name", "op": "in", "val": ["Jennifer"]}]))
         ) == [{"slice_id": slc.id, "viz_error": None, "viz_status": "success"}]
 
@@ -622,7 +606,7 @@ class TestCore(SupersetTestCase):
         store_cache_keys = app.config["STORE_CACHE_KEYS_IN_METADATA_DB"]
         app.config["STORE_CACHE_KEYS_IN_METADATA_DB"] = True
         girls_slice = self.get_slice("Girls", db.session)
-        self.get_json_resp("/superset/warm_up_cache?slice_id={}".format(girls_slice.id))
+        self.get_json_resp("/rabbitai/warm_up_cache?slice_id={}".format(girls_slice.id))
         ck = db.session.query(CacheKey).order_by(CacheKey.id.desc()).first()
         assert ck.datasource_uid == f"{girls_slice.table.id}__table"
         app.config["STORE_CACHE_KEYS_IN_METADATA_DB"] = store_cache_keys
@@ -630,7 +614,7 @@ class TestCore(SupersetTestCase):
     def test_shortner(self):
         self.login(username="admin")
         data = (
-            "//superset/explore/table/1/?viz_type=sankey&groupby=source&"
+            "//rabbitai/explore/table/1/?viz_type=sankey&groupby=source&"
             "groupby=target&metric=sum__value&row_limit=5000&where=&having=&"
             "flt_col_0=source&flt_op_0=in&flt_eq_0=&slice_id=78&slice_name="
             "Energy+Sankey&collapsed_fieldsets=&action=&datasource_name="
@@ -716,14 +700,14 @@ class TestCore(SupersetTestCase):
         client_id = "{}".format(random.getrandbits(64))[:10]
         self.run_sql(sql, client_id, raise_on_error=True)
 
-        resp = self.get_resp("/superset/csv/{}".format(client_id))
+        resp = self.get_resp("/rabbitai/csv/{}".format(client_id))
         data = csv.reader(io.StringIO(resp))
         expected_data = csv.reader(io.StringIO(f"name\n{name}\n"))
 
         client_id = "{}".format(random.getrandbits(64))[:10]
         self.run_sql(sql, client_id, raise_on_error=True)
 
-        resp = self.get_resp("/superset/csv/{}".format(client_id))
+        resp = self.get_resp("/rabbitai/csv/{}".format(client_id))
         data = csv.reader(io.StringIO(resp))
         expected_data = csv.reader(io.StringIO(f"name\n{name}\n"))
 
@@ -734,9 +718,9 @@ class TestCore(SupersetTestCase):
     def test_extra_table_metadata(self):
         self.login()
         example_db = utils.get_example_database()
-        schema = "default" if example_db.backend in {"presto", "hive"} else "superset"
+        schema = "default" if example_db.backend in {"presto", "hive"} else "rabbitai"
         self.get_json_resp(
-            f"/superset/extra_table_metadata/{example_db.id}/birth_names/{schema}/"
+            f"/rabbitai/extra_table_metadata/{example_db.id}/birth_names/{schema}/"
         )
 
     def test_templated_sql_json(self):
@@ -749,9 +733,9 @@ class TestCore(SupersetTestCase):
         self.assertEqual(data["data"][0]["test"], "2")
 
     @mock.patch(
-        "tests.integration_tests.superset_test_custom_template_processors.datetime"
+        "tests.integration_tests.rabbitai_test_custom_template_processors.datetime"
     )
-    @mock.patch("superset.sql_lab.get_sql_results")
+    @mock.patch("rabbitai.sql_lab.get_sql_results")
     def test_custom_templated_sql_json(self, sql_lab_mock, mock_dt) -> None:
         """Test sqllab receives macros expanded query."""
         mock_dt.utcnow = mock.Mock(return_value=datetime.datetime(1970, 1, 1))
@@ -767,7 +751,7 @@ class TestCore(SupersetTestCase):
         dbobj = self.create_fake_db_for_macros()
         json_payload = dict(database_id=dbobj.id, sql=sql)
         self.get_json_resp(
-            "/superset/sql_json/", raise_on_error=False, json_=json_payload
+            "/rabbitai/sql_json/", raise_on_error=False, json_=json_payload
         )
         assert sql_lab_mock.called
         self.assertEqual(sql_lab_mock.call_args[0][1], "SELECT '1970-01-01' as test")
@@ -776,7 +760,7 @@ class TestCore(SupersetTestCase):
 
     def test_fetch_datasource_metadata(self):
         self.login(username="admin")
-        url = "/superset/fetch_datasource_metadata?" "datasourceKey=1__table"
+        url = "/rabbitai/fetch_datasource_metadata?" "datasourceKey=1__table"
         resp = self.get_json_resp(url)
         keys = [
             "name",
@@ -795,36 +779,36 @@ class TestCore(SupersetTestCase):
         slc = self.get_slice("Girls", db.session)
 
         # Setting some faves
-        url = f"/superset/favstar/Slice/{slc.id}/select/"
+        url = f"/rabbitai/favstar/Slice/{slc.id}/select/"
         resp = self.get_json_resp(url)
         self.assertEqual(resp["count"], 1)
 
         dash = db.session.query(Dashboard).filter_by(slug="births").first()
-        url = f"/superset/favstar/Dashboard/{dash.id}/select/"
+        url = f"/rabbitai/favstar/Dashboard/{dash.id}/select/"
         resp = self.get_json_resp(url)
         self.assertEqual(resp["count"], 1)
 
         userid = security_manager.find_user("admin").id
-        resp = self.get_resp(f"/superset/profile/{username}/")
+        resp = self.get_resp(f"/rabbitai/profile/{username}/")
         self.assertIn('"app"', resp)
-        data = self.get_json_resp(f"/superset/recent_activity/{userid}/")
+        data = self.get_json_resp(f"/rabbitai/recent_activity/{userid}/")
         self.assertNotIn("message", data)
-        data = self.get_json_resp(f"/superset/created_slices/{userid}/")
+        data = self.get_json_resp(f"/rabbitai/created_slices/{userid}/")
         self.assertNotIn("message", data)
-        data = self.get_json_resp(f"/superset/created_dashboards/{userid}/")
+        data = self.get_json_resp(f"/rabbitai/created_dashboards/{userid}/")
         self.assertNotIn("message", data)
-        data = self.get_json_resp(f"/superset/fave_slices/{userid}/")
+        data = self.get_json_resp(f"/rabbitai/fave_slices/{userid}/")
         self.assertNotIn("message", data)
-        data = self.get_json_resp(f"/superset/fave_dashboards/{userid}/")
+        data = self.get_json_resp(f"/rabbitai/fave_dashboards/{userid}/")
         self.assertNotIn("message", data)
-        data = self.get_json_resp(f"/superset/user_slices/{userid}/")
+        data = self.get_json_resp(f"/rabbitai/user_slices/{userid}/")
         self.assertNotIn("message", data)
-        data = self.get_json_resp(f"/superset/fave_dashboards_by_username/{username}/")
+        data = self.get_json_resp(f"/rabbitai/fave_dashboards_by_username/{username}/")
         self.assertNotIn("message", data)
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     def test_slice_id_is_always_logged_correctly_on_web_request(self):
-        # superset/explore case
+        # rabbitai/explore case
         self.login("admin")
         slc = db.session.query(Slice).filter_by(slice_name="Girls").one()
         qry = db.session.query(models.Log).filter_by(slice_id=slc.id)
@@ -900,7 +884,7 @@ class TestCore(SupersetTestCase):
 
     def test_slice_payload_no_datasource(self):
         self.login(username="admin")
-        data = self.get_json_resp("/superset/explore_json/", raise_on_error=False)
+        data = self.get_json_resp("/rabbitai/explore_json/", raise_on_error=False)
 
         self.assertEqual(
             data["errors"][0]["message"],
@@ -923,7 +907,7 @@ class TestCore(SupersetTestCase):
         }
         self.login(username="admin")
         rv = self.client.post(
-            "/superset/explore_json/", data={"form_data": json.dumps(form_data)},
+            "/rabbitai/explore_json/", data={"form_data": json.dumps(form_data)},
         )
         data = json.loads(rv.data.decode("utf-8"))
 
@@ -989,7 +973,7 @@ class TestCore(SupersetTestCase):
             "groupby": ["name"],
             "columns": [],
             "row_limit": 10,
-            "color_scheme": "supersetColors",
+            "color_scheme": "rabbitaiColors",
             "label_colors": {},
             "show_legend": True,
             "y_axis_format": "SMART_NUMBER",
@@ -999,7 +983,7 @@ class TestCore(SupersetTestCase):
 
         self.login(username="admin")
         rv = self.client.post(
-            "/superset/explore_json/", data={"form_data": json.dumps(form_data)},
+            "/rabbitai/explore_json/", data={"form_data": json.dumps(form_data)},
         )
         data = json.loads(rv.data.decode("utf-8"))
 
@@ -1028,7 +1012,7 @@ class TestCore(SupersetTestCase):
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         GLOBAL_ASYNC_QUERIES=True,
     )
     def test_explore_json_async(self):
@@ -1047,7 +1031,7 @@ class TestCore(SupersetTestCase):
         async_query_manager.init_app(app)
         self.login(username="admin")
         rv = self.client.post(
-            "/superset/explore_json/", data={"form_data": json.dumps(form_data)},
+            "/rabbitai/explore_json/", data={"form_data": json.dumps(form_data)},
         )
         data = json.loads(rv.data.decode("utf-8"))
         keys = list(data.keys())
@@ -1059,7 +1043,7 @@ class TestCore(SupersetTestCase):
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         GLOBAL_ASYNC_QUERIES=True,
     )
     def test_explore_json_async_results_format(self):
@@ -1078,17 +1062,17 @@ class TestCore(SupersetTestCase):
         async_query_manager.init_app(app)
         self.login(username="admin")
         rv = self.client.post(
-            "/superset/explore_json/?results=true",
+            "/rabbitai/explore_json/?results=true",
             data={"form_data": json.dumps(form_data)},
         )
         self.assertEqual(rv.status_code, 200)
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     @mock.patch(
-        "superset.utils.cache_manager.CacheManager.cache",
+        "rabbitai.utils.cache_manager.CacheManager.cache",
         new_callable=mock.PropertyMock,
     )
-    @mock.patch("superset.viz.BaseViz.force_cached", new_callable=mock.PropertyMock)
+    @mock.patch("rabbitai.viz.BaseViz.force_cached", new_callable=mock.PropertyMock)
     def test_explore_json_data(self, mock_force_cached, mock_cache):
         tbl_id = self.table_ids.get("birth_names")
         form_data = dict(
@@ -1118,14 +1102,14 @@ class TestCore(SupersetTestCase):
         mock_force_cached.return_value = False
 
         self.login(username="admin")
-        rv = self.client.get("/superset/explore_json/data/valid-cache-key")
+        rv = self.client.get("/rabbitai/explore_json/data/valid-cache-key")
         data = json.loads(rv.data.decode("utf-8"))
 
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(data["rowcount"], 2)
 
     @mock.patch(
-        "superset.utils.cache_manager.CacheManager.cache",
+        "rabbitai.utils.cache_manager.CacheManager.cache",
         new_callable=mock.PropertyMock,
     )
     def test_explore_json_data_no_login(self, mock_cache):
@@ -1155,23 +1139,23 @@ class TestCore(SupersetTestCase):
 
         mock_cache.return_value = MockCache()
 
-        rv = self.client.get("/superset/explore_json/data/valid-cache-key")
+        rv = self.client.get("/rabbitai/explore_json/data/valid-cache-key")
         self.assertEqual(rv.status_code, 401)
 
     def test_explore_json_data_invalid_cache_key(self):
         self.login(username="admin")
         cache_key = "invalid-cache-key"
-        rv = self.client.get(f"/superset/explore_json/data/{cache_key}")
+        rv = self.client.get(f"/rabbitai/explore_json/data/{cache_key}")
         data = json.loads(rv.data.decode("utf-8"))
 
         self.assertEqual(rv.status_code, 404)
         self.assertEqual(data["error"], "Cached data not found")
 
     @mock.patch(
-        "superset.security.SupersetSecurityManager.get_schemas_accessible_by_user"
+        "rabbitai.security.SupersetSecurityManager.get_schemas_accessible_by_user"
     )
-    @mock.patch("superset.security.SupersetSecurityManager.can_access_database")
-    @mock.patch("superset.security.SupersetSecurityManager.can_access_all_datasources")
+    @mock.patch("rabbitai.security.SupersetSecurityManager.can_access_database")
+    @mock.patch("rabbitai.security.SupersetSecurityManager.can_access_all_datasources")
     def test_schemas_access_for_csv_upload_endpoint(
         self,
         mock_can_access_all_datasources,
@@ -1184,7 +1168,7 @@ class TestCore(SupersetTestCase):
         mock_can_access_database.return_value = False
         mock_schemas_accessible.return_value = ["this_schema_is_allowed_too"]
         data = self.get_json_resp(
-            url="/superset/schemas_access_for_csv_upload?db_id={db_id}".format(
+            url="/rabbitai/schemas_access_for_csv_upload?db_id={db_id}".format(
                 db_id=dbobj.id
             )
         )
@@ -1195,7 +1179,7 @@ class TestCore(SupersetTestCase):
     def test_select_star(self):
         self.login(username="admin")
         examples_db = utils.get_example_database()
-        resp = self.get_resp(f"/superset/select_star/{examples_db.id}/birth_names")
+        resp = self.get_resp(f"/rabbitai/select_star/{examples_db.id}/birth_names")
         self.assertIn("gender", resp)
 
     def test_get_select_star_not_allowed(self):
@@ -1204,11 +1188,11 @@ class TestCore(SupersetTestCase):
         """
         self.login(username="gamma")
         example_db = utils.get_example_database()
-        resp = self.client.get(f"/superset/select_star/{example_db.id}/birth_names")
+        resp = self.client.get(f"/rabbitai/select_star/{example_db.id}/birth_names")
         self.assertEqual(resp.status_code, 403)
 
-    @mock.patch("superset.views.core.results_backend_use_msgpack", False)
-    @mock.patch("superset.views.core.results_backend")
+    @mock.patch("rabbitai.views.core.results_backend_use_msgpack", False)
+    @mock.patch("rabbitai.views.core.results_backend")
     def test_display_limit(self, mock_results_backend):
         self.login()
 
@@ -1231,7 +1215,7 @@ class TestCore(SupersetTestCase):
         query_mock = mock.Mock()
         query_mock.sql = "SELECT *"
         query_mock.database = 1
-        query_mock.schema = "superset"
+        query_mock.schema = "rabbitai"
 
         # do not apply msgpack serialization
         use_msgpack = app.config["RESULTS_BACKEND_USE_MSGPACK"]
@@ -1240,13 +1224,13 @@ class TestCore(SupersetTestCase):
         compressed = utils.zlib_compress(serialized_payload)
         mock_results_backend.get.return_value = compressed
 
-        with mock.patch("superset.views.core.db") as mock_superset_db:
-            mock_superset_db.session.query().filter_by().one_or_none.return_value = (
+        with mock.patch("rabbitai.views.core.db") as mock_rabbitai_db:
+            mock_rabbitai_db.session.query().filter_by().one_or_none.return_value = (
                 query_mock
             )
             # get all results
-            result_key = json.loads(self.get_resp("/superset/results/key/"))
-            result_limited = json.loads(self.get_resp("/superset/results/key/?rows=1"))
+            result_key = json.loads(self.get_resp("/rabbitai/results/key/"))
+            result_limited = json.loads(self.get_resp("/rabbitai/results/key/?rows=1"))
 
         self.assertEqual(result_key, expected_key)
         self.assertEqual(result_limited, expected_limited)
@@ -1294,7 +1278,7 @@ class TestCore(SupersetTestCase):
         self.assertIsInstance(serialized_payload, str)
 
         query_mock = mock.Mock()
-        deserialized_payload = superset.views.utils._deserialize_results_payload(
+        deserialized_payload = rabbitai.views.utils._deserialize_results_payload(
             serialized_payload, query_mock, use_new_deserialization
         )
 
@@ -1347,7 +1331,7 @@ class TestCore(SupersetTestCase):
             query_mock = mock.Mock()
             query_mock.database.db_engine_spec.expand_data = expand_data
 
-            deserialized_payload = superset.views.utils._deserialize_results_payload(
+            deserialized_payload = rabbitai.views.utils._deserialize_results_payload(
                 serialized_payload, query_mock, use_new_deserialization
             )
             df = results.to_pandas_df()
@@ -1357,7 +1341,7 @@ class TestCore(SupersetTestCase):
             expand_data.assert_called_once()
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"FOO": lambda x: 1},
         clear=True,
     )
@@ -1380,18 +1364,18 @@ class TestCore(SupersetTestCase):
         dash_id = db.session.query(Dashboard.id).first()[0]
         tbl_id = self.table_ids.get("wb_health_population")
         urls = [
-            "/superset/sqllab",
-            "/superset/welcome",
-            f"/superset/dashboard/{dash_id}/",
-            "/superset/profile/admin/",
-            f"/superset/explore/table/{tbl_id}",
+            "/rabbitai/sqllab",
+            "/rabbitai/welcome",
+            f"/rabbitai/dashboard/{dash_id}/",
+            "/rabbitai/profile/admin/",
+            f"/rabbitai/explore/table/{tbl_id}",
         ]
         for url in urls:
             data = self.get_resp(url)
             self.assertTrue(html_string in data)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"SQLLAB_BACKEND_PERSISTENCE": True},
         clear=True,
     )
@@ -1494,7 +1478,7 @@ class TestCore(SupersetTestCase):
         ]
 
     @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
-    @mock.patch("superset.models.core.DB_CONNECTION_MUTATOR")
+    @mock.patch("rabbitai.models.core.DB_CONNECTION_MUTATOR")
     def test_explore_injected_exceptions(self, mock_db_connection_mutator):
         """
         Handle injected exceptions from the db mutator
@@ -1503,7 +1487,7 @@ class TestCore(SupersetTestCase):
         exception = SupersetException("Error message")
         mock_db_connection_mutator.side_effect = exception
         slice = db.session.query(Slice).first()
-        url = f"/superset/explore/?form_data=%7B%22slice_id%22%3A%20{slice.id}%7D"
+        url = f"/rabbitai/explore/?form_data=%7B%22slice_id%22%3A%20{slice.id}%7D"
 
         self.login()
         data = self.get_resp(url)
@@ -1513,14 +1497,14 @@ class TestCore(SupersetTestCase):
         exception = SQLAlchemyError("Error message")
         mock_db_connection_mutator.side_effect = exception
         slice = db.session.query(Slice).first()
-        url = f"/superset/explore/?form_data=%7B%22slice_id%22%3A%20{slice.id}%7D"
+        url = f"/rabbitai/explore/?form_data=%7B%22slice_id%22%3A%20{slice.id}%7D"
 
         self.login()
         data = self.get_resp(url)
         self.assertIn("Error message", data)
 
     @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
-    @mock.patch("superset.models.core.DB_CONNECTION_MUTATOR")
+    @mock.patch("rabbitai.models.core.DB_CONNECTION_MUTATOR")
     def test_dashboard_injected_exceptions(self, mock_db_connection_mutator):
         """
         Handle injected exceptions from the db mutator
@@ -1530,7 +1514,7 @@ class TestCore(SupersetTestCase):
         exception = SupersetException("Error message")
         mock_db_connection_mutator.side_effect = exception
         dash = db.session.query(Dashboard).first()
-        url = f"/superset/dashboard/{dash.id}/"
+        url = f"/rabbitai/dashboard/{dash.id}/"
 
         self.login()
         data = self.get_resp(url)
@@ -1540,7 +1524,7 @@ class TestCore(SupersetTestCase):
         exception = SQLAlchemyError("Error message")
         mock_db_connection_mutator.side_effect = exception
         dash = db.session.query(Dashboard).first()
-        url = f"/superset/dashboard/{dash.id}/"
+        url = f"/rabbitai/dashboard/{dash.id}/"
 
         self.login()
         data = self.get_resp(url)

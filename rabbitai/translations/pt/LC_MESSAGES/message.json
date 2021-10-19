@@ -1,8 +1,8 @@
 {
-  "domain": "rabbitai",
+  "domain": "superset",
   "locale_data": {
-    "rabbitai": {
-      "": { "domain": "rabbitai", "lang": "pt" },
+    "superset": {
+      "": { "domain": "superset", "lang": "pt" },
       "Home": [""],
       "Annotation Layers": ["Camadas de anotação"],
       "Manage": ["Gerir"],

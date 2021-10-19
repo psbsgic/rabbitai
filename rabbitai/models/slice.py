@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 from typing import Any, Dict, Optional, Type, TYPE_CHECKING
@@ -7,7 +9,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.mapper import Mapper
@@ -19,13 +21,15 @@ from rabbitai.models.tags import ChartUpdater
 from rabbitai.tasks.thumbnails import cache_chart_thumbnail
 from rabbitai.utils import core as utils
 from rabbitai.utils.hashing import md5_sha_from_str
+from rabbitai.utils.memoized import memoized
 from rabbitai.utils.urls import get_url_path
-from rabbitai.viz import BaseViz, viz_types  # type: ignore
+from rabbitai.viz import BaseViz, viz_types
 
 if TYPE_CHECKING:
     from rabbitai.connectors.base.models import BaseDatasource
 
 metadata = Model.metadata
+
 slice_user = Table(
     "slice_user",
     metadata,
@@ -37,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class Slice(Model, AuditMixinNullable, ImportExportMixin):
-    """切片对象关系模型。"""
+    """切片本质上是一个报告或数据视图。"""
 
     __tablename__ = "slices"
     id = Column(Integer, primary_key=True)
@@ -47,10 +51,18 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
     datasource_name = Column(String(2000))
     viz_type = Column(String(250))
     params = Column(Text)
+    query_context = Column(Text)
     description = Column(Text)
     cache_timeout = Column(Integer)
     perm = Column(String(1000))
     schema_perm = Column(String(1000))
+    # the last time a user has saved the chart, changed_on is referencing
+    # when the database row was last written
+    last_saved_at = Column(DateTime, nullable=True)
+    last_saved_by_fk = Column(Integer, ForeignKey("ab_user.id"), nullable=True,)
+    last_saved_by = relationship(
+        security_manager.user_model, foreign_keys=[last_saved_by_fk]
+    )
     owners = relationship(security_manager.user_model, secondary=slice_user)
     table = relationship(
         "SqlaTable",
@@ -69,6 +81,7 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
         "datasource_name",
         "viz_type",
         "params",
+        "query_context",
         "cache_timeout",
     ]
     export_parent = "table"
@@ -98,7 +111,7 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
 
     # pylint: disable=using-constant-test
     @datasource.getter  # type: ignore
-    @utils.memoized
+    @memoized
     def get_datasource(self) -> Optional["BaseDatasource"]:
         return db.session.query(self.cls_model).filter_by(id=self.datasource_id).first()
 
@@ -137,7 +150,7 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
     # pylint: enable=using-constant-test
 
     @property  # type: ignore
-    @utils.memoized
+    @memoized
     def viz(self) -> Optional[BaseViz]:
         form_data = json.loads(self.params)
         viz_class = viz_types.get(self.viz_type)
@@ -171,6 +184,7 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
             "description_markeddown": self.description_markeddown,
             "edit_url": self.edit_url,
             "form_data": self.form_data,
+            "query_context": self.query_context,
             "modified": self.modified(),
             "owners": [
                 f"{owner.first_name} {owner.last_name}" for owner in self.owners

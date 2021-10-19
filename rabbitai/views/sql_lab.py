@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import simplejson as json
 from flask import g, redirect, request, Response
 from flask_appbuilder import expose
@@ -15,7 +17,7 @@ from .base import BaseRabbitaiView, DeleteMixin, json_success, RabbitaiModelView
 
 
 class SavedQueryView(RabbitaiModelView, DeleteMixin):
-    """保存的查询视图。"""
+    """显示编辑保存的查询视图，对 SavedQuery 模型提供 CRUD 操作。"""
 
     datamodel = SQLAInterface(SavedQuery)
     include_route_methods = RouteMethod.CRUD_SET
@@ -116,9 +118,10 @@ def _get_owner_id(tab_state_id: int) -> int:
 
 class TabStateView(BaseRabbitaiView):
     """选项卡状态视图。"""
+
     @has_access_api
     @expose("/", methods=["POST"])
-    def post(self) -> FlaskResponse:
+    def post(self) -> FlaskResponse:  # pylint: disable=no-self-use
         query_editor = json.loads(request.form["queryEditor"])
         tab_state = TabState(
             user_id=g.user.get_id(),
@@ -141,7 +144,7 @@ class TabStateView(BaseRabbitaiView):
 
     @has_access_api
     @expose("/<int:tab_state_id>", methods=["DELETE"])
-    def delete(self, tab_state_id: int) -> FlaskResponse:
+    def delete(self, tab_state_id: int) -> FlaskResponse:  # pylint: disable=no-self-use
         if _get_owner_id(tab_state_id) != int(g.user.get_id()):
             return Response(status=403)
 
@@ -156,7 +159,7 @@ class TabStateView(BaseRabbitaiView):
 
     @has_access_api
     @expose("/<int:tab_state_id>", methods=["GET"])
-    def get(self, tab_state_id: int) -> FlaskResponse:
+    def get(self, tab_state_id: int) -> FlaskResponse:  # pylint: disable=no-self-use
         if _get_owner_id(tab_state_id) != int(g.user.get_id()):
             return Response(status=403)
 
@@ -210,16 +213,18 @@ class TabStateView(BaseRabbitaiView):
 
     @has_access_api
     @expose("<int:tab_state_id>/query/<client_id>", methods=["DELETE"])
-    def delete_query(self, tab_state_id: str, client_id: str) -> FlaskResponse:
+    def delete_query(self, tab_state_id: int, client_id: str) -> FlaskResponse:
         db.session.query(Query).filter_by(
-            client_id=client_id, user_id=g.user.get_id(), sql_editor_id=tab_state_id
+            client_id=client_id,
+            user_id=g.user.get_id(),
+            sql_editor_id=str(tab_state_id),
         ).delete(synchronize_session=False)
         db.session.commit()
         return json_success(json.dumps("OK"))
 
 
 class TableSchemaView(BaseRabbitaiView):
-    """数据表架构视图。"""
+    """数据表模式视图。"""
 
     @has_access_api
     @expose("/", methods=["POST"])
@@ -270,10 +275,10 @@ class TableSchemaView(BaseRabbitaiView):
 
 
 class SqlLab(BaseRabbitaiView):
-    """SQL工具箱视图。"""
+    """The base views for Rabbitai!"""
 
     @expose("/my_queries/")
     @has_access
-    def my_queries(self) -> FlaskResponse:
+    def my_queries(self) -> FlaskResponse:  # pylint: disable=no-self-use
         """Assigns a list of found users to the given role."""
         return redirect("/savedqueryview/list/?_flt_0_user={}".format(g.user.get_id()))

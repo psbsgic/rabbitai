@@ -44,8 +44,6 @@ logger = logging.getLogger(__name__)
 
 
 class AnnotationRestApi(BaseRabbitaiModelRestApi):
-    """注释REST API，提供针对 Annotation 的 CRUD 访问API。"""
-
     datamodel = SQLAInterface(Annotation)
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
@@ -108,17 +106,9 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     openapi_spec_methods = openapi_spec_methods_override
 
     @staticmethod
-    def _apply_layered_relation_to_rison(
+    def _apply_layered_relation_to_rison(  # pylint: disable=invalid-name
         layer_id: int, rison_parameters: Dict[str, Any]
     ) -> None:
-        """
-        添加注释层相关的过滤器到指定 rison 参数。
-
-        :param layer_id: 层标识。
-        :param rison_parameters: rison参数。
-        :return:
-        """
-
         if "filters" not in rison_parameters:
             rison_parameters["filters"] = []
         rison_parameters["filters"].append(
@@ -130,7 +120,9 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @permission_name("get")
     @rison(get_list_schema)
-    def get_list(self, pk: int, **kwargs: Dict[str, Any]) -> Response:
+    def get_list(  # pylint: disable=arguments-differ
+        self, pk: int, **kwargs: Any
+    ) -> Response:
         """Get a list of annotations
         ---
         get:
@@ -189,7 +181,9 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @permission_name("get")
     @rison(get_item_schema)
-    def get(self, pk: int, annotation_id: int, **kwargs: Dict[str, Any]) -> Response:
+    def get(  # pylint: disable=arguments-differ
+        self, pk: int, annotation_id: int, **kwargs: Any
+    ) -> Response:
         """Get item from Model
         ---
         get:
@@ -244,7 +238,7 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("post")
-    def post(self, pk: int) -> Response:
+    def post(self, pk: int) -> Response:  # pylint: disable=arguments-differ
         """Creates a new Annotation
         ---
         post:
@@ -292,7 +286,6 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
         # This validates custom Schema with custom validations
         except ValidationError as error:
             return self.response_400(message=error.messages)
-
         try:
             new_model = CreateAnnotationCommand(g.user, item).run()
             return self.response(201, id=new_model.id, result=item)
@@ -314,7 +307,9 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("put")
-    def put(self, pk: int, annotation_id: int) -> Response:
+    def put(  # pylint: disable=arguments-differ
+        self, pk: int, annotation_id: int
+    ) -> Response:
         """Updates an Annotation
         ---
         put:
@@ -388,7 +383,9 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("delete")
-    def delete(self, pk: int, annotation_id: int) -> Response:
+    def delete(  # pylint: disable=arguments-differ
+        self, pk: int, annotation_id: int
+    ) -> Response:
         """Deletes an Annotation
         ---
         delete:

@@ -2,7 +2,7 @@ slice_name: Gender
 viz_type: pie
 params:
   adhoc_filters: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 42__table
   donut: true
   granularity_sqla: time_start

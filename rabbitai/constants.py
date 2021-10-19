@@ -1,10 +1,16 @@
 # ATTENTION: If you change any constants, make sure to also change utils/common.js
 
 # string to use when None values *need* to be converted to/from strings
+from enum import Enum
+
 NULL_STRING = "<NULL>"
 
 
-class RouteMethod:
+# UUID for the examples database
+EXAMPLES_DB_UUID = "a2dc77af-e654-49bb-b321-40f6b559a1ee"
+
+
+class RouteMethod:  # pylint: disable=too-few-public-methods
     """
     Route methods are a FAB concept around ModelView and RestModelView
     classes in FAB. Derivatives can define `include_route_method` and
@@ -72,7 +78,7 @@ MODEL_VIEW_RW_METHOD_PERMISSION_MAP = {
     "yaml_export": "read",
     "refresh": "write",
 }
-
+"""模型视图方法的读写权限字典。"""
 MODEL_API_RW_METHOD_PERMISSION_MAP = {
     "bulk_delete": "write",
     "delete": "write",
@@ -102,8 +108,9 @@ MODEL_API_RW_METHOD_PERMISSION_MAP = {
     "get_datasets": "read",
     "function_names": "read",
     "available": "read",
+    "get_data": "read",
 }
-
+"""模型API方法的读写权限字典。"""
 EXTRA_FORM_DATA_APPEND_KEYS = {
     "adhoc_filters",
     "filters",
@@ -112,7 +119,7 @@ EXTRA_FORM_DATA_APPEND_KEYS = {
     "interactive_drilldown",
     "custom_form_data",
 }
-
+"""额外表单数据追加键字典。"""
 EXTRA_FORM_DATA_OVERRIDE_REGULAR_MAPPINGS = {
     "granularity": "granularity",
     "granularity_sqla": "granularity",
@@ -123,13 +130,32 @@ EXTRA_FORM_DATA_OVERRIDE_REGULAR_MAPPINGS = {
     "time_grain_sqla": "time_grain_sqla",
     "time_range_endpoints": "time_range_endpoints",
 }
-
+"""额外表单数据重写常规字段映射字典。"""
 EXTRA_FORM_DATA_OVERRIDE_EXTRA_KEYS = {
     "relative_start",
     "relative_end",
 }
+"""额外表单数据重写额外键字典。"""
 
 EXTRA_FORM_DATA_OVERRIDE_KEYS = (
     set(EXTRA_FORM_DATA_OVERRIDE_REGULAR_MAPPINGS.values())
     | EXTRA_FORM_DATA_OVERRIDE_EXTRA_KEYS
 )
+"""额外表单数据重写键列表。"""
+
+
+class PandasAxis(int, Enum):
+    ROW = 0
+    COLUMN = 1
+
+
+class PandasPostprocessingCompare(str, Enum):
+    ABS = "absolute"
+    PCT = "percentage"
+    RAT = "ratio"
+
+
+class CacheRegion(str, Enum):
+    DEFAULT = "default"
+    DATA = "data"
+    THUMBNAIL = "thumbnail"

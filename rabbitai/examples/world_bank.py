@@ -7,7 +7,7 @@ import pandas as pd
 from sqlalchemy import DateTime, String
 from sqlalchemy.sql import column
 
-from rabbitai import db
+from rabbitai import app, db
 from rabbitai.connectors.sqla.models import SqlMetric
 from rabbitai.models.dashboard import Dashboard
 from rabbitai.models.slice import Slice
@@ -15,13 +15,12 @@ from rabbitai.utils import core as utils
 
 from ..connectors.base.models import BaseDatasource
 from .helpers import (
-    config,
-    EXAMPLES_FOLDER,
     get_example_data,
+    get_examples_folder,
     get_slice_json,
+    get_table_connector_registry,
     merge_slice,
     misc_dash_slices,
-    TBL,
     update_slice_ids,
 )
 
@@ -30,7 +29,7 @@ def load_world_bank_health_n_pop(  # pylint: disable=too-many-locals, too-many-s
     only_metadata: bool = False, force: bool = False, sample: bool = False,
 ) -> None:
     """Loads the world bank health dataset, slices and a dashboard"""
-    tbl_name = "wb_health_population"
+    tbl_name = "World Bank Health Data"
     database = utils.get_example_database()
     table_exists = database.has_table_by_name(tbl_name)
 
@@ -61,11 +60,14 @@ def load_world_bank_health_n_pop(  # pylint: disable=too-many-locals, too-many-s
             index=False,
         )
 
-    print("Creating table [wb_health_population] reference")
-    tbl = db.session.query(TBL).filter_by(table_name=tbl_name).first()
+    print("Creating table [World Bank Health Data] reference")
+    table = get_table_connector_registry()
+    tbl = db.session.query(table).filter_by(table_name=tbl_name).first()
     if not tbl:
-        tbl = TBL(table_name=tbl_name)
-    tbl.description = utils.readfile(os.path.join(EXAMPLES_FOLDER, "countries.md"))
+        tbl = table(table_name=tbl_name)
+    tbl.description = utils.readfile(
+        os.path.join(get_examples_folder(), "countries.md")
+    )
     tbl.main_dttm_col = "year"
     tbl.database = database
     tbl.filter_select_enabled = True
@@ -135,7 +137,7 @@ def create_slices(tbl: BaseDatasource) -> List[Slice]:
         "limit": "25",
         "granularity_sqla": "year",
         "groupby": [],
-        "row_limit": config["ROW_LIMIT"],
+        "row_limit": app.config["ROW_LIMIT"],
         "since": "2014-01-01",
         "until": "2014-01-02",
         "time_range": "2014-01-01 : 2014-01-02",

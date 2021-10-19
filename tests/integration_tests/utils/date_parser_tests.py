@@ -1,29 +1,13 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 
-from superset.charts.commands.exceptions import (
+from rabbitai.charts.commands.exceptions import (
     TimeRangeAmbiguousError,
     TimeRangeParseFailError,
 )
-from superset.utils.date_parser import (
+from rabbitai.utils.date_parser import (
     DateRangeMigration,
     datetime_eval,
     get_past_or_future,
@@ -65,7 +49,7 @@ def mock_parse_human_datetime(s):
 
 
 class TestDateParser(SupersetTestCase):
-    @patch("superset.utils.date_parser.parse_human_datetime", mock_parse_human_datetime)
+    @patch("rabbitai.utils.date_parser.parse_human_datetime", mock_parse_human_datetime)
     def test_get_since_until(self):
         result = get_since_until()
         expected = None, datetime(2016, 11, 7)
@@ -150,7 +134,7 @@ class TestDateParser(SupersetTestCase):
         with self.assertRaises(ValueError):
             get_since_until(time_range="tomorrow : yesterday")
 
-    @patch("superset.utils.date_parser.parse_human_datetime", mock_parse_human_datetime)
+    @patch("rabbitai.utils.date_parser.parse_human_datetime", mock_parse_human_datetime)
     def test_datetime_eval(self):
         result = datetime_eval("datetime('now')")
         expected = datetime(2016, 11, 7, 9, 30, 10)
@@ -261,7 +245,7 @@ class TestDateParser(SupersetTestCase):
         expected = datetime(2018, 2, 28, 0, 0, 0)
         self.assertEqual(result, expected)
 
-    @patch("superset.utils.date_parser.datetime")
+    @patch("rabbitai.utils.date_parser.datetime")
     def test_parse_human_timedelta(self, mock_datetime):
         mock_datetime.now.return_value = datetime(2019, 4, 1)
         mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
@@ -282,7 +266,7 @@ class TestDateParser(SupersetTestCase):
             parse_human_timedelta("-1 month", datetime(2019, 2, 1)), timedelta(-31),
         )
 
-    @patch("superset.utils.date_parser.datetime")
+    @patch("rabbitai.utils.date_parser.datetime")
     def test_parse_past_timedelta(self, mock_datetime):
         mock_datetime.now.return_value = datetime(2019, 4, 1)
         mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)

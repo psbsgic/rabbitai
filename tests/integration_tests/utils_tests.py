@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 import unittest
 import uuid
@@ -36,12 +20,12 @@ import marshmallow
 from sqlalchemy.exc import ArgumentError
 
 import tests.integration_tests.test_app
-from superset import app, db, security_manager
-from superset.exceptions import CertificateException, SupersetException
-from superset.models.core import Database, Log
-from superset.models.dashboard import Dashboard
-from superset.models.slice import Slice
-from superset.utils.core import (
+from rabbitai import app, db, security_manager
+from rabbitai.exceptions import CertificateException, SupersetException
+from rabbitai.models.core import Database, Log
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.slice import Slice
+from rabbitai.utils.core import (
     base_json_conv,
     cast_to_num,
     convert_legacy_filters_into_adhoc,
@@ -70,9 +54,9 @@ from superset.utils.core import (
     zlib_compress,
     zlib_decompress,
 )
-from superset.utils import schema
-from superset.utils.hashing import md5_sha_from_str
-from superset.views.utils import (
+from rabbitai.utils import schema
+from rabbitai.utils.hashing import md5_sha_from_str
+from rabbitai.views.utils import (
     build_extra_filters,
     get_form_data,
     get_time_range_endpoints,
@@ -722,10 +706,10 @@ class TestUtils(SupersetTestCase):
         self.assertEqual(list(split(r'a "b \" c"')), ["a", r'"b \" c"'])
 
     def test_get_or_create_db(self):
-        get_or_create_db("test_db", "sqlite:///superset.db")
+        get_or_create_db("test_db", "sqlite:///rabbitai.db")
         database = db.session.query(Database).filter_by(database_name="test_db").one()
         self.assertIsNotNone(database)
-        self.assertEqual(database.sqlalchemy_uri, "sqlite:///superset.db")
+        self.assertEqual(database.sqlalchemy_uri, "sqlite:///rabbitai.db")
         self.assertIsNotNone(
             security_manager.find_permission_view_menu("database_access", database.perm)
         )
@@ -738,7 +722,7 @@ class TestUtils(SupersetTestCase):
 
     def test_get_or_create_db_invalid_uri(self):
         with self.assertRaises(ArgumentError):
-            get_or_create_db("test_db", "yoursql:superset.db/()")
+            get_or_create_db("test_db", "yoursql:rabbitai.db/()")
 
     def test_get_time_range_endpoints(self):
         self.assertEqual(
@@ -1027,7 +1011,7 @@ class TestUtils(SupersetTestCase):
         dashboard_id = 1
 
         resp = self.get_json_resp(
-            f"/superset/explore_json/{slc.datasource_type}/{slc.datasource_id}/"
+            f"/rabbitai/explore_json/{slc.datasource_type}/{slc.datasource_id}/"
             + f'?form_data={{"slice_id": {slc.id}}}&dashboard_id={dashboard_id}',
             {"form_data": json.dumps(slc.viz.form_data)},
         )

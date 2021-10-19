@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# Release Notes for Rabbitai 0.38
+# Release Notes for Superset 0.38
 
 ## What's new
 - [New features](#new-features)
@@ -38,7 +38,7 @@ under the License.
 Certification of Data Entities ([Roadmap](https://github.com/apache-rabbitai/rabbitai-roadmap/issues/73))
 - feat: add certification to metrics  (#[10630](https://github.com/apache/rabbitai/pull/10630))
 - feat: add extra column to tables and sql_metrics  (#[10592](https://github.com/apache/rabbitai/pull/10592))
-- feat: bump superset-ui for certified tag  (#[10650](https://github.com/apache/rabbitai/pull/10650))
+- feat: bump rabbitai-ui for certified tag  (#[10650](https://github.com/apache/rabbitai/pull/10650))
 
 
 Database CRUD screen refactor/redesign ([Roadmap](https://github.com/apache-rabbitai/rabbitai-roadmap/issues/14))
@@ -99,7 +99,7 @@ Other features
 <kbd><img alt="10297" src="media/10297.gif" width="400"/></kbd>
 
 
-[SIP-34] Proposal to establish a new design direction, system, and process for Rabbitai ([SIP](https://github.com/apache/rabbitai/issues/8976))
+[SIP-34] Proposal to establish a new design direction, system, and process for Superset ([SIP](https://github.com/apache/rabbitai/issues/8976))
 - feat: SIP-34 explore save modal  (#[10355](https://github.com/apache/rabbitai/pull/10355))\
 <kbd><img alt="10355" src="media/10355.gif" width="400"/></kbd>
 
@@ -125,7 +125,7 @@ Improvements to cache handling #74 ([Roadmap](https://github.com/apache-rabbitai
 - feat: Adding extra_filters to warm_up_cache  (#[10675](https://github.com/apache/rabbitai/pull/10675))
 
 
-[SIP-34] Proposal to establish a new design direction, system, and process for Rabbitai ([SIP](https://github.com/apache/rabbitai/issues/8976))
+[SIP-34] Proposal to establish a new design direction, system, and process for Superset ([SIP](https://github.com/apache/rabbitai/issues/8976))
 - feat: add favorite star to dashboard and chart lists  (#[10510](https://github.com/apache/rabbitai/pull/10510))\
 <kbd><img alt="10510" src="media/10510.png" width="400"/></kbd>
 
@@ -153,7 +153,7 @@ Other features
 - feat: add TXT as default CSV extension  (#[10371](https://github.com/apache/rabbitai/pull/10371))
 
 
-[SIP-34] Proposal to establish a new design direction, system, and process for Rabbitai ([SIP](https://github.com/apache/rabbitai/issues/8976))
+[SIP-34] Proposal to establish a new design direction, system, and process for Superset ([SIP](https://github.com/apache/rabbitai/issues/8976))
 - feat: card view bulk select  (#[10607](https://github.com/apache/rabbitai/pull/10607))
 - feat: custom favorite filter for dashboards, charts and saved queries  (#[11083](https://github.com/apache/rabbitai/pull/11083))
 - feat: SIP-34 card/grid views for dashboards and charts   (#[10526](https://github.com/apache/rabbitai/pull/10526))
@@ -170,7 +170,7 @@ Alerts (send notification when a condition is met) ([Roadmap](https://github.com
 - feat: refractored SQL-based alerting framework  (#[10605](https://github.com/apache/rabbitai/pull/10605))
 
 
-[SIP-34] Proposal to establish a new design direction, system, and process for Rabbitai ([SIP](https://github.com/apache/rabbitai/issues/8976))
+[SIP-34] Proposal to establish a new design direction, system, and process for Superset ([SIP](https://github.com/apache/rabbitai/issues/8976))
 - feat: adding all icons from the design system to the codebase  (#[11033](https://github.com/apache/rabbitai/pull/11033))
 - feat: storybook for Icon component  (#[10515](https://github.com/apache/rabbitai/pull/10515))
 
@@ -183,8 +183,8 @@ Alerts (send notification when a condition is met) ([Roadmap](https://github.com
 - feat: updated email format for SQL-based email alerts  (#[10512](https://github.com/apache/rabbitai/pull/10512))
 
 
-Rabbitai Component library - Phase 1 ([Roadmap](https://github.com/apache-rabbitai/rabbitai-roadmap/issues/23))
-- feat: adding Storybook to Rabbitai  (#[10383](https://github.com/apache/rabbitai/pull/10383))
+Superset Component library - Phase 1 ([Roadmap](https://github.com/apache-rabbitai/rabbitai-roadmap/issues/23))
+- feat: adding Storybook to Superset  (#[10383](https://github.com/apache/rabbitai/pull/10383))
 
 
 Other
@@ -300,7 +300,7 @@ Other
 - fix(chart-data-api): ignore missing filters  (#[11112](https://github.com/apache/rabbitai/pull/11112))
 - fix: alembic migration error msg trying to delete constraint on tables  (#[11115](https://github.com/apache/rabbitai/pull/11115))
 - fix: remove extra flash import  (#[11121](https://github.com/apache/rabbitai/pull/11121))
-- fix: Revert "Replace reactable with DataTable from superset-ui in QueryTable (#10981)"  (#[11125](https://github.com/apache/rabbitai/pull/11125))
+- fix: Revert "Replace reactable with DataTable from rabbitai-ui in QueryTable (#10981)"  (#[11125](https://github.com/apache/rabbitai/pull/11125))
 - fix: SpatialControl popover won't open  (#[11127](https://github.com/apache/rabbitai/pull/11127))
 - fix: Alembic migration 18532d70ab98  (#[11136](https://github.com/apache/rabbitai/pull/11136))
 - fix(examples): missing expressions in birth_names  (#[11141](https://github.com/apache/rabbitai/pull/11141))

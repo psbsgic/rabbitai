@@ -12,7 +12,7 @@
 <!--- HINT: Include "Fixes #nnn" if you are fixing an existing issue -->
 - [ ] Has associated issue:
 - [ ] Changes UI
-- [ ] Includes DB Migration (follow approval process in [SIP-59](https://github.com/apache/superset/issues/13351))
+- [ ] Includes DB Migration (follow approval process in [SIP-59](https://github.com/psbsgic/rabbitai/issues/13351))
   - [ ] Migration is atomic, supports rollback & is backwards-compatible
   - [ ] Confirm DB migration upgrade and downgrade tested
   - [ ] Runtime estimates and downtime expectations provided

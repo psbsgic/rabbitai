@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """ Rabbitai wrapper around pyarrow.Table."""
 
 import datetime
@@ -56,12 +58,22 @@ def destringify(obj: str) -> Any:
 
 
 class RabbitaiResultSet:
+    """表示结果集合，存储从数据库中获取的结果。"""
+
     def __init__(
         self,
         data: DbapiResult,
         cursor_description: DbapiDescription,
         db_engine_spec: Type[db_engine_specs.BaseEngineSpec],
     ):
+        """
+        使用指定数据、游标描述和数据库说明，创建新实例。
+
+        :param data: 数据。
+        :param cursor_description: 游标描述。
+        :param db_engine_spec: 数据库说明。
+        """
+
         self.db_engine_spec = db_engine_spec
         data = data or []
         column_names: List[str] = []
@@ -139,7 +151,7 @@ class RabbitaiResultSet:
                 for i, col in enumerate(column_names)
                 if deduped_cursor_desc
             }
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-except
             logger.exception(ex)
 
     @staticmethod
@@ -158,6 +170,7 @@ class RabbitaiResultSet:
 
     @staticmethod
     def convert_table_to_df(table: pa.Table) -> pd.DataFrame:
+        """转换数据表为数据帧。"""
         return table.to_pandas(integer_object_nulls=True)
 
     @staticmethod

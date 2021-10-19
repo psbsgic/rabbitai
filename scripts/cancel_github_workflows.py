@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Manually cancel previous GitHub Action workflow runs in queue.
 
@@ -17,9 +16,8 @@ Example:
   # cancel all jobs of a PR, including the latest runs
   ./cancel_github_workflows.py 1024 --include-last
 """
-
 import os
-from typing import Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
 
 import click
 import requests
@@ -28,10 +26,12 @@ from dateutil import parser
 from typing_extensions import Literal
 
 github_token = os.environ.get("GITHUB_TOKEN")
-github_repo = os.environ.get("GITHUB_REPOSITORY", "pengsongbo2016/rabbitai")
+github_repo = os.environ.get("GITHUB_REPOSITORY", "apache/rabbitai")
 
 
-def request(method: Literal["GET", "POST", "DELETE", "PUT"], endpoint: str, **kwargs):
+def request(
+    method: Literal["GET", "POST", "DELETE", "PUT"], endpoint: str, **kwargs: Any
+) -> Dict[str, Any]:
     resp = requests.request(
         method,
         f"https://api.github.com/{endpoint.lstrip('/')}",
@@ -43,11 +43,14 @@ def request(method: Literal["GET", "POST", "DELETE", "PUT"], endpoint: str, **kw
     return resp
 
 
-def list_runs(repo: str, params=None):
+def list_runs(
+    repo: str, params: Optional[Dict[str, str]] = None,
+) -> Iterator[Dict[str, Any]]:
     """List all github workflow runs.
     Returns:
       An iterator that will iterate through all pages of matching runs."""
-
+    if params is None:
+        params = {}
     page = 1
     total_count = 10000
     while page * 100 < total_count:
@@ -62,11 +65,11 @@ def list_runs(repo: str, params=None):
         page += 1
 
 
-def cancel_run(repo: str, run_id: Union[str, int]):
+def cancel_run(repo: str, run_id: Union[str, int]) -> Dict[str, Any]:
     return request("POST", f"/repos/{repo}/actions/runs/{run_id}/cancel")
 
 
-def get_pull_request(repo: str, pull_number: Union[str, int]):
+def get_pull_request(repo: str, pull_number: Union[str, int]) -> Dict[str, Any]:
     return request("GET", f"/repos/{repo}/pulls/{pull_number}")
 
 
@@ -76,17 +79,8 @@ def get_runs(
     user: Optional[str] = None,
     statuses: Iterable[str] = ("queued", "in_progress"),
     events: Iterable[str] = ("pull_request", "push"),
-):
-    """
-    获取与给定分支关联的工作流运行.
-
-    :param repo:
-    :param branch:
-    :param user:
-    :param statuses:
-    :param events:
-    :return:
-    """
+) -> List[Dict[str, Any]]:
+    """Get workflow runs associated with the given branch"""
     return [
         item
         for event in events
@@ -97,8 +91,8 @@ def get_runs(
     ]
 
 
-def print_commit(commit, branch):
-    """打印提交消息以进行验证"""
+def print_commit(commit: Dict[str, Any], branch: str) -> None:
+    """Print out commit message for verification"""
     indented_message = "    \n".join(commit["message"].split("\n"))
     date_str = (
         parser.parse(commit["timestamp"])
@@ -119,7 +113,7 @@ Date:   {date_str}
 @click.option(
     "--repo",
     default=github_repo,
-    help="The github repository name. For example, pengsongbo2016/rabbitai.",
+    help="The github repository name. For example, apache/rabbitai.",
 )
 @click.option(
     "--event",
@@ -147,7 +141,7 @@ def cancel_github_workflows(
     event: List[str],
     include_last: bool,
     include_running: bool,
-):
+) -> None:
     """Cancel running or queued GitHub workflows by branch or pull request ID"""
     if not github_token:
         raise ClickException("Please provide GITHUB_TOKEN as an env variable")
@@ -227,11 +221,12 @@ def cancel_github_workflows(
         try:
             print(f"[{entry['status']}] {entry['name']}", end="\r")
             cancel_run(repo, entry["id"])
-            print(f"[Cancled] {entry['name']}     ")
+            print(f"[Canceled] {entry['name']}     ")
         except ClickException as error:
             print(f"[Error: {error.message}] {entry['name']}    ")
     print("")
 
 
 if __name__ == "__main__":
+    # pylint: disable=no-value-for-parameter
     cancel_github_workflows()

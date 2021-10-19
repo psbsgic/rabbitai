@@ -1,8 +1,8 @@
 {
     "containerDefinitions": [
         {
-            "name": "superset-ci",
-            "image": "apache/superset:latest",
+            "name": "rabbitai-ci",
+            "image": "psbsgic/rabbitai:latest",
             "cpu": 0,
             "links": [],
             "portMappings": [
@@ -17,11 +17,11 @@
             "command": [],
             "environment": [
                 {
-                    "name": "SUPERSET_LOAD_EXAMPLES",
+                    "name": "RABBITAI_LOAD_EXAMPLES",
                     "value": "yes"
                 },
                 {
-                    "name": "SUPERSET_PORT",
+                    "name": "RABBITAI_PORT",
                     "value": "8080"
                 }
             ],
@@ -30,14 +30,14 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/superset-ci",
+                    "awslogs-group": "/ecs/rabbitai-ci",
                     "awslogs-region": "us-west-2",
                     "awslogs-stream-prefix": "ecs"
                 }
             }
         }
     ],
-    "family": "superset-ci",
+    "family": "rabbitai-ci",
     "taskRoleArn": "ecsTaskExecutionRole",
     "executionRoleArn": "ecsTaskExecutionRole",
     "networkMode": "awsvpc",

@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 import inspect
 import re
@@ -28,18 +12,18 @@ import pytest
 
 from flask import current_app, g
 
-from superset.models.dashboard import Dashboard
+from rabbitai.models.dashboard import Dashboard
 
-from superset import app, appbuilder, db, security_manager, viz, ConnectorRegistry
-from superset.connectors.druid.models import DruidCluster, DruidDatasource
-from superset.connectors.sqla.models import RowLevelSecurityFilter, SqlaTable
-from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.exceptions import SupersetSecurityException
-from superset.models.core import Database
-from superset.models.slice import Slice
-from superset.sql_parse import Table
-from superset.utils.core import get_example_database
-from superset.views.access_requests import AccessRequestsModelView
+from rabbitai import app, appbuilder, db, security_manager, viz, ConnectorRegistry
+from rabbitai.connectors.druid.models import DruidCluster, DruidDatasource
+from rabbitai.connectors.sqla.models import RowLevelSecurityFilter, SqlaTable
+from rabbitai.errors import ErrorLevel, SupersetError, SupersetErrorType
+from rabbitai.exceptions import SupersetSecurityException
+from rabbitai.models.core import Database
+from rabbitai.models.slice import Slice
+from rabbitai.sql_parse import Table
+from rabbitai.utils.core import get_example_database
+from rabbitai.views.access_requests import AccessRequestsModelView
 
 from .base_tests import SupersetTestCase
 from tests.integration_tests.fixtures.birth_names_dashboard import (
@@ -493,7 +477,7 @@ class TestRolePermission(SupersetTestCase):
 
         # TODO test slice permission
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_schemas_accessible_by_user_admin(self, mock_g):
         mock_g.user = security_manager.find_user("admin")
         with self.client.application.test_request_context():
@@ -503,7 +487,7 @@ class TestRolePermission(SupersetTestCase):
             )
             self.assertEqual(schemas, ["1", "2", "3"])  # no changes
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_schemas_accessible_by_user_schema_access(self, mock_g):
         # User has schema access to the schema 1
         create_schema_perm("[examples].[1]")
@@ -517,7 +501,7 @@ class TestRolePermission(SupersetTestCase):
             self.assertEqual(schemas, ["1"])
         delete_schema_perm("[examples].[1]")
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_schemas_accessible_by_user_datasource_access(self, mock_g):
         # User has schema access to the datasource temp_schema.wb_health_population in examples DB.
         mock_g.user = security_manager.find_user("gamma")
@@ -528,7 +512,7 @@ class TestRolePermission(SupersetTestCase):
             )
             self.assertEqual(schemas, ["temp_schema"])
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_schemas_accessible_by_user_datasource_and_schema_access(self, mock_g):
         # User has schema access to the datasource temp_schema.wb_health_population in examples DB.
         create_schema_perm("[examples].[2]")
@@ -553,8 +537,8 @@ class TestRolePermission(SupersetTestCase):
 
         self.login(username="gamma")
         data = str(self.client.get("api/v1/dashboard/").data)
-        self.assertIn("/superset/dashboard/world_health/", data)
-        self.assertNotIn("/superset/dashboard/births/", data)
+        self.assertIn("/rabbitai/dashboard/world_health/", data)
+        self.assertNotIn("/rabbitai/dashboard/births/", data)
 
     def test_gamma_user_schema_access_to_tables(self):
         self.login(username="gamma")
@@ -939,7 +923,7 @@ class TestSecurityManager(SupersetTestCase):
     Testing the Security Manager.
     """
 
-    @patch("superset.security.SupersetSecurityManager.raise_for_access")
+    @patch("rabbitai.security.SupersetSecurityManager.raise_for_access")
     def test_can_access_datasource(self, mock_raise_for_access):
         datasource = self.get_datasource_mock()
 
@@ -956,7 +940,7 @@ class TestSecurityManager(SupersetTestCase):
 
         self.assertFalse(security_manager.can_access_datasource(datasource=datasource))
 
-    @patch("superset.security.SupersetSecurityManager.raise_for_access")
+    @patch("rabbitai.security.SupersetSecurityManager.raise_for_access")
     def test_can_access_table(self, mock_raise_for_access):
         database = get_example_database()
         table = Table("bar", "foo")
@@ -974,8 +958,8 @@ class TestSecurityManager(SupersetTestCase):
 
         self.assertFalse(security_manager.can_access_table(database, table))
 
-    @patch("superset.security.SupersetSecurityManager.can_access")
-    @patch("superset.security.SupersetSecurityManager.can_access_schema")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access_schema")
     def test_raise_for_access_datasource(self, mock_can_access_schema, mock_can_access):
         datasource = self.get_datasource_mock()
 
@@ -988,7 +972,7 @@ class TestSecurityManager(SupersetTestCase):
         with self.assertRaises(SupersetSecurityException):
             security_manager.raise_for_access(datasource=datasource)
 
-    @patch("superset.security.SupersetSecurityManager.can_access")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access")
     def test_raise_for_access_query(self, mock_can_access):
         query = Mock(
             database=get_example_database(), schema="bar", sql="SELECT * FROM foo"
@@ -1002,8 +986,8 @@ class TestSecurityManager(SupersetTestCase):
         with self.assertRaises(SupersetSecurityException):
             security_manager.raise_for_access(query=query)
 
-    @patch("superset.security.SupersetSecurityManager.can_access")
-    @patch("superset.security.SupersetSecurityManager.can_access_schema")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access_schema")
     def test_raise_for_access_query_context(
         self, mock_can_access_schema, mock_can_access
     ):
@@ -1018,7 +1002,7 @@ class TestSecurityManager(SupersetTestCase):
         with self.assertRaises(SupersetSecurityException):
             security_manager.raise_for_access(query_context=query_context)
 
-    @patch("superset.security.SupersetSecurityManager.can_access")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access")
     def test_raise_for_access_table(self, mock_can_access):
         database = get_example_database()
         table = Table("bar", "foo")
@@ -1031,8 +1015,8 @@ class TestSecurityManager(SupersetTestCase):
         with self.assertRaises(SupersetSecurityException):
             security_manager.raise_for_access(database=database, table=table)
 
-    @patch("superset.security.SupersetSecurityManager.can_access")
-    @patch("superset.security.SupersetSecurityManager.can_access_schema")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access_schema")
     def test_raise_for_access_viz(self, mock_can_access_schema, mock_can_access):
         test_viz = viz.TableViz(self.get_datasource_mock(), form_data={})
 
@@ -1232,9 +1216,9 @@ class TestAccessRequestEndpoints(SupersetTestCase):
 
 
 class TestDatasources(SupersetTestCase):
-    @patch("superset.security.manager.g")
-    @patch("superset.security.SupersetSecurityManager.can_access_database")
-    @patch("superset.security.SupersetSecurityManager.get_session")
+    @patch("rabbitai.security.manager.g")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access_database")
+    @patch("rabbitai.security.SupersetSecurityManager.get_session")
     def test_get_user_datasources_admin(
         self, mock_get_session, mock_can_access_database, mock_g
     ):
@@ -1260,9 +1244,9 @@ class TestDatasources(SupersetTestCase):
             Datasource("database2", None, "table1"),
         ]
 
-    @patch("superset.security.manager.g")
-    @patch("superset.security.SupersetSecurityManager.can_access_database")
-    @patch("superset.security.SupersetSecurityManager.get_session")
+    @patch("rabbitai.security.manager.g")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access_database")
+    @patch("rabbitai.security.SupersetSecurityManager.get_session")
     def test_get_user_datasources_gamma(
         self, mock_get_session, mock_can_access_database, mock_g
     ):
@@ -1284,9 +1268,9 @@ class TestDatasources(SupersetTestCase):
 
         assert datasources == []
 
-    @patch("superset.security.manager.g")
-    @patch("superset.security.SupersetSecurityManager.can_access_database")
-    @patch("superset.security.SupersetSecurityManager.get_session")
+    @patch("rabbitai.security.manager.g")
+    @patch("rabbitai.security.SupersetSecurityManager.can_access_database")
+    @patch("rabbitai.security.SupersetSecurityManager.get_session")
     def test_get_user_datasources_gamma_with_schema(
         self, mock_get_session, mock_can_access_database, mock_g
     ):

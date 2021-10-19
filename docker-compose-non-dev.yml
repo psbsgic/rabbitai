@@ -1,4 +1,4 @@
-x-rabbitai-image: &rabbitai-image apache/rabbitai:latest-dev
+x-rabbitai-image: &rabbitai-image rabbitai:latest-dev
 x-rabbitai-depends-on: &rabbitai-depends-on
   - db
   - redis

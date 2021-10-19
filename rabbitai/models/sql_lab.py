@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 """A collection of ORM sqlalchemy models for SQL Lab"""
+
 import enum
 import re
 from datetime import datetime
@@ -6,7 +9,8 @@ from typing import Any, Dict, List
 
 import simplejson as json
 import sqlalchemy as sqla
-from flask import Markup
+from markupsafe import Markup
+# from flask import Markup
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from humanize import naturaltime
@@ -44,10 +48,10 @@ class LimitingFactor(str, enum.Enum):
 
 
 class Query(Model, ExtraJSONMixin):
-    """SQL 查询对象关系模型。
+    """ORM model for SQL query
 
-    既然sqllab支持多语句执行，那么这个表中的一个条目可以表示多个按顺序执行的SQL语句。
-    """
+    Now that SQL Lab support multi-statement execution, an entry in this
+    table may represent multiple SQL statements executed sequentially"""
 
     __tablename__ = "query"
     id = Column(Integer, primary_key=True)
@@ -169,7 +173,7 @@ class Query(Model, ExtraJSONMixin):
 
 
 class SavedQuery(Model, AuditMixinNullable, ExtraJSONMixin, ImportExportMixin):
-    """保存的查询对象关系模型。"""
+    """ORM model for SQL query"""
 
     __tablename__ = "saved_query"
     id = Column(Integer, primary_key=True)
@@ -297,7 +301,7 @@ class TabState(Model, AuditMixinNullable, ExtraJSONMixin):
 
 
 class TableSchema(Model, AuditMixinNullable, ExtraJSONMixin):
-    """数据表结构对象关系模型。"""
+    """数据表模式对象关系模型。"""
 
     __tablename__ = "table_schema"
 

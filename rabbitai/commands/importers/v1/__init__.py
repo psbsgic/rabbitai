@@ -17,7 +17,8 @@ from rabbitai.models.core import Database
 
 
 class ImportModelsCommand(BaseCommand):
-    """导入模型到数据库。"""
+
+    """Import models"""
 
     dao = BaseDAO
     model_name = "model"

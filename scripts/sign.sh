@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 # Use this to sign the tar balls generated from
 # python setup.py sdist --formats=gztar
 # ie. sign.sh <my_tar_ball>

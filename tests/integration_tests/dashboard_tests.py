@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 from datetime import datetime
@@ -26,11 +10,11 @@ from flask import escape, url_for
 from sqlalchemy import func
 
 from tests.integration_tests.test_app import app
-from superset import db, security_manager
-from superset.connectors.sqla.models import SqlaTable
-from superset.models import core as models
-from superset.models.dashboard import Dashboard
-from superset.models.slice import Slice
+from rabbitai import db, security_manager
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.models import core as models
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.slice import Slice
 from tests.integration_tests.fixtures.birth_names_dashboard import (
     load_birth_names_dashboard_with_slices,
 )
@@ -128,7 +112,7 @@ class TestDashboard(SupersetTestCase):
         for title, url in urls.items():
             assert escape(title) in self.client.get(url).data.decode("utf-8")
 
-    def test_superset_dashboard_url(self):
+    def test_rabbitai_dashboard_url(self):
         url_for("Superset.dashboard", dashboard_id_or_slug=1)
 
     def test_new_dashboard(self):
@@ -152,7 +136,7 @@ class TestDashboard(SupersetTestCase):
             # set a further modified_time for unit test
             "last_modified_time": datetime.now().timestamp() + 1000,
         }
-        url = "/superset/save_dash/{}/".format(dash.id)
+        url = "/rabbitai/save_dash/{}/".format(dash.id)
         resp = self.get_resp(url, data=dict(data=json.dumps(data)))
         self.assertIn("SUCCESS", resp)
 
@@ -174,7 +158,7 @@ class TestDashboard(SupersetTestCase):
             "last_modified_time": datetime.now().timestamp() + 1000,
         }
 
-        url = "/superset/save_dash/{}/".format(dash.id)
+        url = "/rabbitai/save_dash/{}/".format(dash.id)
         resp = self.get_resp(url, data=dict(data=json.dumps(data)))
         self.assertIn("SUCCESS", resp)
 
@@ -202,7 +186,7 @@ class TestDashboard(SupersetTestCase):
             "last_modified_time": datetime.now().timestamp() + 1000,
         }
 
-        url = "/superset/save_dash/{}/".format(dash.id)
+        url = "/rabbitai/save_dash/{}/".format(dash.id)
         resp = self.get_resp(url, data=dict(data=json.dumps(data)))
         self.assertIn("SUCCESS", resp)
 
@@ -224,7 +208,7 @@ class TestDashboard(SupersetTestCase):
             # set a further modified_time for unit test
             "last_modified_time": datetime.now().timestamp() + 1000,
         }
-        url = "/superset/save_dash/{}/".format(dash.id)
+        url = "/rabbitai/save_dash/{}/".format(dash.id)
         self.get_resp(url, data=dict(data=json.dumps(data)))
         updatedDash = db.session.query(Dashboard).filter_by(slug="births").first()
         self.assertEqual(updatedDash.dashboard_title, "new title")
@@ -249,7 +233,7 @@ class TestDashboard(SupersetTestCase):
             # set a further modified_time for unit test
             "last_modified_time": datetime.now().timestamp() + 1000,
         }
-        url = "/superset/save_dash/{}/".format(dash.id)
+        url = "/rabbitai/save_dash/{}/".format(dash.id)
         self.get_resp(url, data=dict(data=json.dumps(data)))
         updatedDash = db.session.query(Dashboard).filter_by(slug="births").first()
         self.assertIn("color_namespace", updatedDash.json_metadata)
@@ -286,13 +270,13 @@ class TestDashboard(SupersetTestCase):
 
         # Save changes to Births dashboard and retrieve updated dash
         dash_id = dash.id
-        url = "/superset/save_dash/{}/".format(dash_id)
+        url = "/rabbitai/save_dash/{}/".format(dash_id)
         self.client.post(url, data=dict(data=json.dumps(data)))
         dash = db.session.query(Dashboard).filter_by(id=dash_id).first()
         orig_json_data = dash.data
 
         # Verify that copy matches original
-        url = "/superset/copy_dash/{}/".format(dash_id)
+        url = "/rabbitai/copy_dash/{}/".format(dash_id)
         resp = self.get_json_resp(url, data=dict(data=json.dumps(data)))
         self.assertEqual(resp["dashboard_title"], "Copy Of Births")
         self.assertEqual(resp["position_json"], orig_json_data["position_json"])
@@ -319,7 +303,7 @@ class TestDashboard(SupersetTestCase):
         data = {
             "slice_ids": [new_slice.data["slice_id"], existing_slice.data["slice_id"]]
         }
-        url = "/superset/add_slices/{}/".format(dash.id)
+        url = "/rabbitai/add_slices/{}/".format(dash.id)
         resp = self.client.post(url, data=dict(data=json.dumps(data)))
         assert "SLICES ADDED" in resp.data.decode("utf-8")
 
@@ -360,7 +344,7 @@ class TestDashboard(SupersetTestCase):
 
         # save dash
         dash_id = dash.id
-        url = "/superset/save_dash/{}/".format(dash_id)
+        url = "/rabbitai/save_dash/{}/".format(dash_id)
         self.client.post(url, data=dict(data=json.dumps(data)))
         dash = db.session.query(Dashboard).filter_by(id=dash_id).first()
 
@@ -388,7 +372,7 @@ class TestDashboard(SupersetTestCase):
         self.assertNotIn("birth_names", resp)
 
         resp = self.get_resp("/api/v1/dashboard/")
-        self.assertNotIn("/superset/dashboard/births/", resp)
+        self.assertNotIn("/rabbitai/dashboard/births/", resp)
 
         self.grant_public_access_to_table(table)
 
@@ -396,14 +380,14 @@ class TestDashboard(SupersetTestCase):
         self.assertIn("birth_names", self.get_resp("/api/v1/chart/"))
 
         resp = self.get_resp("/api/v1/dashboard/")
-        self.assertIn("/superset/dashboard/births/", resp)
+        self.assertIn("/rabbitai/dashboard/births/", resp)
 
         # Confirm that public doesn't have access to other datasets.
         resp = self.get_resp("/api/v1/chart/")
         self.assertNotIn("wb_health_population", resp)
 
         resp = self.get_resp("/api/v1/dashboard/")
-        self.assertNotIn("/superset/dashboard/world_health/", resp)
+        self.assertNotIn("/rabbitai/dashboard/world_health/", resp)
 
         # Cleanup
         self.revoke_public_access_to_table(table)
@@ -422,7 +406,7 @@ class TestDashboard(SupersetTestCase):
         db.session.commit()
 
         # this asserts a non-4xx response
-        self.get_resp("/superset/dashboard/births/")
+        self.get_resp("/rabbitai/dashboard/births/")
         # Cleanup
         self.revoke_public_access_to_table(table)
 
@@ -449,8 +433,8 @@ class TestDashboard(SupersetTestCase):
     def test_users_can_list_published_dashboard(self):
         self.login("alpha")
         resp = self.get_resp("/api/v1/dashboard/")
-        assert f"/superset/dashboard/{pytest.hidden_dash_slug}/" not in resp
-        assert f"/superset/dashboard/{pytest.published_dash_slug}/" in resp
+        assert f"/rabbitai/dashboard/{pytest.hidden_dash_slug}/" not in resp
+        assert f"/rabbitai/dashboard/{pytest.published_dash_slug}/" in resp
 
     def test_users_can_view_own_dashboard(self):
         user = security_manager.find_user("gamma")
@@ -477,8 +461,8 @@ class TestDashboard(SupersetTestCase):
         self.login(user.username)
 
         resp = self.get_resp("/api/v1/dashboard/")
-        self.assertIn(f"/superset/dashboard/{my_dash_slug}/", resp)
-        self.assertNotIn(f"/superset/dashboard/{not_my_dash_slug}/", resp)
+        self.assertIn(f"/rabbitai/dashboard/{my_dash_slug}/", resp)
+        self.assertNotIn(f"/rabbitai/dashboard/{not_my_dash_slug}/", resp)
 
     def test_users_can_view_favorited_dashboards(self):
         user = security_manager.find_user("gamma")
@@ -510,7 +494,7 @@ class TestDashboard(SupersetTestCase):
         self.login(user.username)
 
         resp = self.get_resp("/api/v1/dashboard/")
-        self.assertIn(f"/superset/dashboard/{fav_dash_slug}/", resp)
+        self.assertIn(f"/rabbitai/dashboard/{fav_dash_slug}/", resp)
 
     def test_user_can_not_view_unpublished_dash(self):
         admin_user = security_manager.find_user("admin")
@@ -530,7 +514,7 @@ class TestDashboard(SupersetTestCase):
         # list dashboards as a gamma user
         self.login(gamma_user.username)
         resp = self.get_resp("/api/v1/dashboard/")
-        self.assertNotIn(f"/superset/dashboard/{slug}/", resp)
+        self.assertNotIn(f"/rabbitai/dashboard/{slug}/", resp)
 
 
 if __name__ == "__main__":

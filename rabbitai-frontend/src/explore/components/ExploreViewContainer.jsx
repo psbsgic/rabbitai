@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 /* eslint camelcase: 0 */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
@@ -81,7 +63,7 @@ const Styles = styled.div`
   text-align: left;
   position: relative;
   width: 100%;
-  height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -448,6 +430,7 @@ function ExploreViewContainer(props) {
             margin-bottom: 0;
           }
           body {
+            height: 100vh;
             max-height: 100vh;
             overflow: hidden;
           }
@@ -458,7 +441,7 @@ function ExploreViewContainer(props) {
           #app {
             flex-basis: 100%;
             overflow: hidden;
-            height: 100vh;
+            height: 100%;
           }
           #app-menu {
             flex-shrink: 0;
@@ -616,7 +599,7 @@ function mapStateToProps(state) {
     standalone: explore.standalone,
     forcedHeight: explore.forced_height,
     chart,
-    timeout: explore.common.conf.SUPERSET_WEBSERVER_TIMEOUT,
+    timeout: explore.common.conf.RABBITAI_WEBSERVER_TIMEOUT,
     ownState: dataMask[form_data.slice_id ?? 0]?.ownState, // 0 - unsaved chart
     impressionId,
     userId: explore.user_id,

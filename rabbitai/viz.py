@@ -1,7 +1,9 @@
-"""
-此模块包含“可视化（Viz）”对象
+# -*- coding: utf-8 -*-
 
-这些对象表示Rabbitai可以呈现的所有可视化的后端。
+"""This module contains the 'Viz' objects
+
+These objects represent the backend of all the visualizations that
+Rabbitai can render.
 """
 
 import copy
@@ -50,7 +52,7 @@ from rabbitai.exceptions import (
 from rabbitai.extensions import cache_manager, security_manager
 from rabbitai.models.cache import CacheKey
 from rabbitai.models.helpers import QueryResult
-from rabbitai.typing import QueryObjectDict, VizData, VizPayload
+from rabbitai.typing import Metric, QueryObjectDict, VizData, VizPayload
 from rabbitai.utils import core as utils, csv
 from rabbitai.utils.cache import set_and_log_cache
 from rabbitai.utils.core import (
@@ -58,13 +60,14 @@ from rabbitai.utils.core import (
     JS_MAX_INTEGER,
     merge_extra_filters,
     QueryMode,
-    to_adhoc,
+    simple_filter_to_adhoc,
 )
 from rabbitai.utils.date_parser import get_since_until, parse_past_timedelta
 from rabbitai.utils.dates import datetime_to_epoch
 from rabbitai.utils.hashing import md5_sha_from_str
 
 import dataclasses  # isort:skip
+
 
 if TYPE_CHECKING:
     from rabbitai.connectors.base.models import BaseDatasource
@@ -86,51 +89,21 @@ METRIC_KEYS = [
     "size",
 ]
 
+# This regex is to get user defined filter column name, which is the first param in the filter_values function.
+# see the definition of filter_values template:
+# https://github.com/apache/rabbitai/blob/24ad6063d736c1f38ad6f962e586b9b1a21946af/rabbitai/jinja_context.py#L63
 FILTER_VALUES_REGEX = re.compile(r"filter_values\(['\"](\w+)['\"]\,")
 
 
 class BaseViz:
-    """可视对象基类，所有可视化都应继承这个基类，通过 form_data 字典传递相关信息。
-
-    包括属性：
-
-    request ：请求对象。
-
-    datasource：数据源对象。
-
-    form_data：表单数据（字典）。
-
-    viz_type：可视化类型，可以从 form_data 获取。
-
-    verbose_name：显示名称。
-
-    credits：凭证。
-
-    is_timeseries：是否时间序列。
-
-    cache_type：缓存类型，默认df。
-
-    enforce_numerical_metrics：是否强制数值指标。
-
-    query：查询字符串。
-
-    token：令牌，从 form_data 获取。
-
-    groupby：分组列，从 form_data 获取。
-    """
+    """基础可视对象，所有可视对象的基类。"""
 
     viz_type: Optional[str] = None
-    """可视化类型"""
     verbose_name = "Base Viz"
-    """显示名称"""
     credits = ""
-    """凭证"""
     is_timeseries = False
-    """是否时间序列"""
     cache_type = "df"
-    """缓存类型，默认df"""
     enforce_numerical_metrics = True
-    """是否强制数值指标，默认True"""
 
     def __init__(
         self,
@@ -140,9 +113,9 @@ class BaseViz:
         force_cached: bool = False,
     ) -> None:
         """
-        使用指定数据源模型、表单数据等，初始化新实例。
+        使用指定数据源对象、表单数据、是否强制、是否强制缓存，创建新实例。
 
-        :param datasource: 数据源模型。
+        :param datasource: 数据源对象。
         :param form_data: 表单数据。
         :param force: 是否强制。
         :param force_cached: 是否强制缓存。
@@ -179,12 +152,9 @@ class BaseViz:
 
     @property
     def force_cached(self) -> bool:
-        """是否强制缓存。"""
         return self._force_cached
 
     def process_metrics(self) -> None:
-        """处理指标，从 form_data 中获取指标名称和值，建立指标字典。"""
-
         # metrics in Viz is order sensitive, so metric_dict should be OrderedDict
         self.metric_dict = OrderedDict()
         fd = self.form_data
@@ -202,9 +172,7 @@ class BaseViz:
         self.metric_labels = list(self.metric_dict.keys())
 
     @staticmethod
-    def handle_js_int_overflow(
-        data: Dict[str, List[Dict[str, Any]]]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    def handle_js_int_overflow(data: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
         for d in data.get("records", {}):
             for k, v in list(d.items()):
                 if isinstance(v, int):
@@ -238,13 +206,6 @@ class BaseViz:
         pass
 
     def apply_rolling(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        应用移动统计计算（"mean", "std", "sum"）。
-
-        :param df:
-        :return:
-        """
-
         fd = self.form_data
         rolling_type = fd.get("rolling_type")
         rolling_periods = int(fd.get("rolling_periods") or 0)
@@ -273,12 +234,6 @@ class BaseViz:
         return df
 
     def get_samples(self) -> List[Dict[str, Any]]:
-        """
-        获取样本，字典的列表。
-
-        :return:
-        """
-
         query_obj = self.query_obj()
         query_obj.update(
             {
@@ -290,7 +245,7 @@ class BaseViz:
                 "columns": [o.column_name for o in self.datasource.columns],
             }
         )
-        df = self.get_df_payload(query_obj)["df"]
+        df = self.get_df_payload(query_obj)["df"]  # leverage caching logic
         return df.to_dict(orient="records")
 
     def get_df(self, query_obj: Optional[QueryObjectDict] = None) -> pd.DataFrame:
@@ -347,33 +302,7 @@ class BaseViz:
         utils.split_adhoc_filters_into_base_filters(self.form_data)
 
     def query_obj(self) -> QueryObjectDict:
-        """构建并返回一个查询对象，包括以下属性：
-
-        "granularity"：
-
-        "from_dttm": ,
-
-        "to_dttm": ,
-
-        "is_timeseries": ,
-
-        "groupby": ,
-
-        "metrics": ,
-
-        "row_limit": ,
-
-        "filter": ,
-
-        "timeseries_limit": ,
-
-        "extras": ,
-
-        "timeseries_limit_metric": ,
-
-        "order_desc":
-        """
-
+        """Building a query object"""
         form_data = self.form_data
 
         self.process_query_filters()
@@ -479,7 +408,6 @@ class BaseViz:
         different time shifts wil differ only in the `from_dttm`, `to_dttm`,
         `inner_from_dttm`, and `inner_to_dttm` values which are stripped.
         """
-
         cache_dict = copy.copy(query_obj)
         cache_dict.update(extra)
 
@@ -493,7 +421,7 @@ class BaseViz:
         cache_dict["rls"] = (
             security_manager.get_rls_ids(self.datasource)
             if is_feature_enabled("ROW_LEVEL_SECURITY")
-               and self.datasource.is_rls_supported
+            and self.datasource.is_rls_supported
             else []
         )
         cache_dict["changed_on"] = self.datasource.changed_on
@@ -527,26 +455,23 @@ class BaseViz:
         # if using virtual datasource, check filter_values
         if self.datasource.sql:
             filter_values_columns = (
-                                        re.findall(FILTER_VALUES_REGEX,
-                                                   self.datasource.sql)
-                                    ) or []
+                re.findall(FILTER_VALUES_REGEX, self.datasource.sql)
+            ) or []
 
         applied_time_extras = self.form_data.get("applied_time_extras", {})
         applied_time_columns, rejected_time_columns = utils.get_time_filter_status(
             self.datasource, applied_time_extras
         )
         payload["applied_filters"] = [
-                                         {"column": col}
-                                         for col in filter_columns
-                                         if
-                                         col in columns or col in filter_values_columns
-                                     ] + applied_time_columns
+            {"column": col}
+            for col in filter_columns
+            if col in columns or col in filter_values_columns
+        ] + applied_time_columns
         payload["rejected_filters"] = [
-                                          {"reason": "not_in_datasource", "column": col}
-                                          for col in filter_columns
-                                          if
-                                          col not in columns and col not in filter_values_columns
-                                      ] + rejected_time_columns
+            {"reason": "not_in_datasource", "column": col}
+            for col in filter_columns
+            if col not in columns and col not in filter_values_columns
+        ] + rejected_time_columns
 
         return payload
 
@@ -590,12 +515,9 @@ class BaseViz:
                 invalid_columns = [
                     col
                     for col in (query_obj.get("columns") or [])
-                               + (query_obj.get("groupby") or [])
-                               + utils.get_column_names_from_metrics(
-                        cast(
-                            List[Union[str, Dict[str, Any]]],
-                            query_obj.get("metrics") or [],
-                        )
+                    + (query_obj.get("groupby") or [])
+                    + utils.get_column_names_from_metrics(
+                        cast(List[Metric], query_obj.get("metrics") or [],)
                     )
                     if col not in self.datasource.column_names
                 ]
@@ -709,7 +631,7 @@ class BaseViz:
 
 
 class TableViz(BaseViz):
-    """一个Html表格，可以排序和搜索。"""
+    """A basic html table that is sortable and searchable"""
 
     viz_type = "table"
     verbose_name = _("Table View")
@@ -719,14 +641,12 @@ class TableViz(BaseViz):
 
     def process_metrics(self) -> None:
         """Process form data and store parsed column configs.
-
         1. Determine query mode based on form_data params.
              - Use `query_mode` if it has a valid value
              - Set as RAW mode if `all_columns` is set
              - Otherwise defaults to AGG mode
         2. Determine output columns based on query mode.
         """
-
         # Verify form data first: if not specifying query mode, then cannot have both
         # GROUP BY and RAW COLUMNS.
         fd = self.form_data
@@ -815,7 +735,6 @@ class TableViz(BaseViz):
         the union of the metrics representing the non-percent and percent metrics. Note
         the percent metrics have yet to be transformed.
         """
-
         # Transform the data frame to adhere to the UI ordering of the columns and
         # metrics whilst simultaneously computing the percentages (via normalization)
         # for the percent metrics.
@@ -843,7 +762,7 @@ class TableViz(BaseViz):
 
 
 class TimeTableViz(BaseViz):
-    """具有时间关联列的数据表。"""
+    """A data table with rich time-series related columns"""
 
     viz_type = "time_table"
     verbose_name = _("Time Table View")
@@ -1289,13 +1208,15 @@ class NVD3TimeSeriesViz(NVD3Viz):
 
     def query_obj(self) -> QueryObjectDict:
         d = super().query_obj()
-        sort_by = self.form_data.get("timeseries_limit_metric")
+        sort_by = self.form_data.get(
+            "timeseries_limit_metric"
+        ) or utils.get_first_metric_name(d.get("metrics") or [])
+        is_asc = not self.form_data.get("order_desc")
         if sort_by:
             sort_by_label = utils.get_metric_name(sort_by)
             if sort_by_label not in utils.get_metric_names(d["metrics"]):
                 d["metrics"].append(sort_by)
-            if self.form_data.get("order_desc"):
-                d["orderby"] = [(sort_by, not self.form_data.get("order_desc", True))]
+            d["orderby"] = [(sort_by, is_asc)]
         return d
 
     def to_series(
@@ -1460,8 +1381,8 @@ class NVD3TimeSeriesViz(NVD3Viz):
                 combined_index = df.index.union(df2.index)
                 df2 = (
                     df2.reindex(combined_index)
-                        .interpolate(method="time")
-                        .reindex(df.index)
+                    .interpolate(method="time")
+                    .reindex(df.index)
                 )
 
                 if comparison_type == "absolute":
@@ -1476,7 +1397,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
                     )
 
                 # remove leading/trailing NaNs from the time shift difference
-                diff = diff[diff.first_valid_index(): diff.last_valid_index()]
+                diff = diff[diff.first_valid_index() : diff.last_valid_index()]
 
                 chart_data.extend(
                     self.to_series(
@@ -1813,8 +1734,12 @@ class DistributionBarViz(BaseViz):
         df = df.copy()
         df[filled_cols] = df[filled_cols].fillna(value=NULL_STRING)
 
-        row = df.groupby(self.groupby).sum()[metrics[0]].copy()
-        row.sort_values(ascending=False, inplace=True)
+        sortby = utils.get_metric_name(
+            self.form_data.get("timeseries_limit_metric") or metrics[0]
+        )
+        row = df.groupby(self.groupby).sum()[sortby].copy()
+        is_asc = not self.form_data.get("order_desc")
+        row.sort_values(ascending=is_asc, inplace=True)
         pt = df.pivot_table(index=self.groupby, columns=columns, values=metrics)
         if fd.get("contribution"):
             pt = pt.T
@@ -1917,8 +1842,7 @@ class SankeyViz(BaseViz):
         source, target = self.groupby
         (value,) = self.metric_labels
         df.rename(
-            columns={source: "source", target: "target", value: "value", },
-            inplace=True,
+            columns={source: "source", target: "target", value: "value",}, inplace=True,
         )
         df["source"] = df["source"].astype(str)
         df["target"] = df["target"].astype(str)
@@ -2511,7 +2435,9 @@ class BaseDeckGLViz(BaseViz):
             spatial_columns.add(line_column)
 
         for column in sorted(spatial_columns):
-            filter_ = to_adhoc({"col": column, "op": "IS NOT NULL", "val": ""})
+            filter_ = simple_filter_to_adhoc(
+                {"col": column, "op": "IS NOT NULL", "val": ""}
+            )
             fd["adhoc_filters"].append(filter_)
 
     def query_obj(self) -> QueryObjectDict:
@@ -2925,6 +2851,7 @@ class PairedTTestViz(BaseViz):
 
 
 class RoseViz(NVD3TimeSeriesViz):
+
     viz_type = "rose"
     verbose_name = _("Time Series - Nightingale Rose Chart")
     sort_series = False

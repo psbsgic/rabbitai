@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Optional, Type
 
 from flask_babel import lazy_gettext as _

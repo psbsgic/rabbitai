@@ -29,7 +29,7 @@ if [ "$CYPRESS_CONFIG" == "true" ]; then
     export RABBITAI_CONFIG=tests.rabbitai_test_config
     export RABBITAI_TESTENV=true
     export ENABLE_REACT_CRUD_VIEWS=true
-    export RABBITAI__SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://rabbitai:rabbitai@db:5432/rabbitai
+    export RABBITAI__SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://rabbitai:rabbitai@db:5432/rabbitai_db
 fi
 # Initialize the database
 echo_step "1" "Starting" "Applying DB migrations"
@@ -40,9 +40,9 @@ echo_step "1" "Complete" "Applying DB migrations"
 echo_step "2" "Starting" "Setting up admin user ( admin / $ADMIN_PASSWORD )"
 rabbitai fab create-admin \
               --username admin \
-              --firstname Rabbitai \
-              --lastname Admin \
-              --email admin@rabbitai.com \
+              --firstname Peng \
+              --lastname Songbo \
+              --email pengsongbo@hotmail.com \
               --password $ADMIN_PASSWORD
 echo_step "2" "Complete" "Setting up admin user"
 # Create default roles and permissions

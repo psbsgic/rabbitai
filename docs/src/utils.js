@@ -1,5 +1,3 @@
-
-
 /* eslint no-undef: "error" */
 const getPathName = (path) => path.replace(/[/]+/g, '');
 

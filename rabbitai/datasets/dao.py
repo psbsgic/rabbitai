@@ -15,7 +15,7 @@ from rabbitai.views.base import DatasourceFilter
 logger = logging.getLogger(__name__)
 
 
-class DatasetDAO(BaseDAO):
+class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
     model_cls = SqlaTable
     base_filter = DatasourceFilter
 
@@ -127,7 +127,7 @@ class DatasetDAO(BaseDAO):
         return len(dataset_query) == 0
 
     @classmethod
-    def update(
+    def update(  # pylint: disable=arguments-differ
         cls,
         model: SqlaTable,
         properties: Dict[str, Any],

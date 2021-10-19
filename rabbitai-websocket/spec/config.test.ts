@@ -1,4 +1,3 @@
-
 import { buildConfig } from '../src/config';
 
 test('buildConfig() builds configuration and applies env var overrides', () => {

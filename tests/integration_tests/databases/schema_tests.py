@@ -1,27 +1,10 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-
 from unittest import mock
 
 from marshmallow import fields, Schema, ValidationError
 
-from superset.databases.schemas import DatabaseParametersSchemaMixin
-from superset.db_engine_specs.base import BasicParametersMixin
-from superset.models.core import ConfigurationMethod
+from rabbitai.databases.schemas import DatabaseParametersSchemaMixin
+from rabbitai.db_engine_specs.base import BasicParametersMixin
+from rabbitai.models.core import ConfigurationMethod
 
 
 class DummySchema(Schema, DatabaseParametersSchemaMixin):
@@ -37,7 +20,7 @@ class InvalidEngine:
     pass
 
 
-@mock.patch("superset.databases.schemas.get_engine_specs")
+@mock.patch("rabbitai.databases.schemas.get_engine_specs")
 def test_database_parameters_schema_mixin(get_engine_specs):
     get_engine_specs.return_value = {"dummy_engine": DummyEngine}
     payload = {
@@ -81,7 +64,7 @@ def test_database_parameters_schema_mixin_no_engine():
         }
 
 
-@mock.patch("superset.databases.schemas.get_engine_specs")
+@mock.patch("rabbitai.databases.schemas.get_engine_specs")
 def test_database_parameters_schema_mixin_invalid_engine(get_engine_specs):
     get_engine_specs.return_value = {}
     payload = {
@@ -104,7 +87,7 @@ def test_database_parameters_schema_mixin_invalid_engine(get_engine_specs):
         }
 
 
-@mock.patch("superset.databases.schemas.get_engine_specs")
+@mock.patch("rabbitai.databases.schemas.get_engine_specs")
 def test_database_parameters_schema_no_mixin(get_engine_specs):
     get_engine_specs.return_value = {"invalid_engine": InvalidEngine}
     payload = {
@@ -132,7 +115,7 @@ def test_database_parameters_schema_no_mixin(get_engine_specs):
         }
 
 
-@mock.patch("superset.databases.schemas.get_engine_specs")
+@mock.patch("rabbitai.databases.schemas.get_engine_specs")
 def test_database_parameters_schema_mixin_invalid_type(get_engine_specs):
     get_engine_specs.return_value = {"dummy_engine": DummyEngine}
     payload = {

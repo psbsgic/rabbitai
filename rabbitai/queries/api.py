@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -14,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class QueryRestApi(BaseRabbitaiModelRestApi):
+    """查询REST API视图模型。"""
+
     datamodel = SQLAInterface(Query)
 
     resource_name = "query"

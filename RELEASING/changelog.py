@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 import click
+from click.core import Context
 
 try:
     from github import BadCredentialsException, Github, PullRequest, Repository
@@ -15,7 +16,7 @@ except ModuleNotFoundError:
     print("PyGithub is a required package for this script")
     exit(1)
 
-RABBITAI_REPO = "pengsongbo2016/rabbitai"
+RABBITAI_REPO = "apache/rabbitai"
 RABBITAI_PULL_REQUEST_TYPES = r"^(fix|feat|chore|refactor|docs|build|ci|/gmi)"
 RABBITAI_RISKY_LABELS = r"^(blocking|risk|hold|revert|security vulnerability)"
 
@@ -34,7 +35,7 @@ class GitLog:
     author_email: str = ""
 
     def __eq__(self, other: object) -> bool:
-        """ A log entry is considered equal if it has the same PR number """
+        """A log entry is considered equal if it has the same PR number"""
         if isinstance(other, self.__class__):
             return other.pr_number == self.pr_number
         return False
@@ -154,7 +155,7 @@ class GitChangeLog:
 
     def _parse_change_log(
         self, changelog: Dict[str, str], pr_info: Dict[str, str], github_login: str,
-    ):
+    ) -> None:
         formatted_pr = (
             f"- [#{pr_info.get('id')}]"
             f"(https://github.com/{RABBITAI_REPO}/pull/{pr_info.get('id')}) "
@@ -308,8 +309,8 @@ def print_title(message: str) -> None:
 @click.pass_context
 @click.option("--previous_version", help="The previous release version", required=True)
 @click.option("--current_version", help="The current release version", required=True)
-def cli(ctx, previous_version: str, current_version: str) -> None:
-    """ Welcome to change log generator  """
+def cli(ctx: Context, previous_version: str, current_version: str) -> None:
+    """Welcome to change log generator"""
     previous_logs = GitLogs(previous_version)
     current_logs = GitLogs(current_version)
     previous_logs.fetch()
@@ -321,7 +322,7 @@ def cli(ctx, previous_version: str, current_version: str) -> None:
 @cli.command("compare")
 @click.pass_obj
 def compare(base_parameters: BaseParameters) -> None:
-    """ Compares both versions (by PR) """
+    """Compares both versions (by PR)"""
     previous_logs = base_parameters.previous_logs
     current_logs = base_parameters.current_logs
     print_title(
@@ -353,7 +354,7 @@ def compare(base_parameters: BaseParameters) -> None:
 def change_log(
     base_parameters: BaseParameters, csv: str, access_token: str, risk: bool
 ) -> None:
-    """ Outputs a changelog (by PR) """
+    """Outputs a changelog (by PR)"""
     previous_logs = base_parameters.previous_logs
     current_logs = base_parameters.current_logs
     previous_diff_logs = previous_logs.diff(current_logs)

@@ -40,5 +40,5 @@ jobs:
           destination-github-username: 'apache'
           destination-repository-name: 'rabbitai-site'
           target-branch: 'asf-site'
-          commit-message: "deploying docs: ${{ github.event.head_commit.message }} (apache/rabbitai@${{ github.sha }})"
-          user-email: dev@rabbitai.apache.org
+          commit-message: "deploying docs: ${{ github.event.head_commit.message }} (psbsgic/rabbitai@${{ github.sha }})"
+          user-email: pengsongbo@hotmail.com

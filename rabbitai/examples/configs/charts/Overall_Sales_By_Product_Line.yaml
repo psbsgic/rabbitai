@@ -2,7 +2,7 @@ slice_name: Overall Sales (By Product Line)
 viz_type: pie
 params:
   adhoc_filters: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 23__table
   donut: true
   granularity_sqla: order_date

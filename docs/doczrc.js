@@ -1,4 +1,3 @@
-
 export default {
   title: 'rabbitai doc',
   base: '/docs',

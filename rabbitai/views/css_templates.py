@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask_appbuilder.api import expose
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_appbuilder.security.decorators import has_access
@@ -11,8 +13,6 @@ from rabbitai.views.base import DeleteMixin, RabbitaiModelView
 
 
 class CssTemplateModelView(RabbitaiModelView, DeleteMixin):
-    """CSS模板模型视图。"""
-
     datamodel = SQLAInterface(models.CssTemplate)
     include_route_methods = RouteMethod.CRUD_SET
 
@@ -39,8 +39,6 @@ class CssTemplateModelView(RabbitaiModelView, DeleteMixin):
 
 
 class CssTemplateAsyncModelView(CssTemplateModelView):
-    """CSS模板异步模型视图。"""
-
     include_route_methods = {RouteMethod.API_READ}
     class_permission_name = "CssTemplate"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP

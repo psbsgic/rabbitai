@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 import json
@@ -25,7 +9,7 @@ from unittest import mock
 from zipfile import is_zipfile, ZipFile
 
 from tests.integration_tests.conftest import with_feature_flags
-from superset.models.sql_lab import Query
+from rabbitai.models.sql_lab import Query
 from tests.integration_tests.insert_chart_mixin import InsertChartMixin
 from tests.integration_tests.fixtures.birth_names_dashboard import (
     load_birth_names_dashboard_with_slices,
@@ -42,17 +26,17 @@ from tests.integration_tests.fixtures.world_bank_dashboard import (
     load_world_bank_dashboard_with_slices,
 )
 from tests.integration_tests.test_app import app
-from superset.charts.commands.data import ChartDataCommand
-from superset.connectors.sqla.models import SqlaTable, TableColumn
-from superset.errors import SupersetErrorType
-from superset.extensions import async_query_manager, cache_manager, db
-from superset.models.annotations import AnnotationLayer
-from superset.models.core import Database, FavStar, FavStarClassName
-from superset.models.dashboard import Dashboard
-from superset.models.reports import ReportSchedule, ReportScheduleType
-from superset.models.slice import Slice
-from superset.utils import core as utils
-from superset.utils.core import (
+from rabbitai.charts.commands.data import ChartDataCommand
+from rabbitai.connectors.sqla.models import SqlaTable, TableColumn
+from rabbitai.errors import SupersetErrorType
+from rabbitai.extensions import async_query_manager, cache_manager, db
+from rabbitai.models.annotations import AnnotationLayer
+from rabbitai.models.core import Database, FavStar, FavStarClassName
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.reports import ReportSchedule, ReportScheduleType
+from rabbitai.models.slice import Slice
+from rabbitai.utils import core as utils
+from rabbitai.utils.core import (
     AnnotationType,
     ChartDataResultFormat,
     get_example_database,
@@ -364,10 +348,10 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         Chart API: Test delete try not owned
         """
         user_alpha1 = self.create_user(
-            "alpha1", "password", "Alpha", email="alpha1@superset.org"
+            "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
         )
         user_alpha2 = self.create_user(
-            "alpha2", "password", "Alpha", email="alpha2@superset.org"
+            "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
         )
         chart = self.insert_chart("title", [user_alpha1.id], 1)
         self.login(username="alpha2", password="password")
@@ -384,10 +368,10 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         Chart API: Test delete bulk try not owned
         """
         user_alpha1 = self.create_user(
-            "alpha1", "password", "Alpha", email="alpha1@superset.org"
+            "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
         )
         user_alpha2 = self.create_user(
-            "alpha2", "password", "Alpha", email="alpha2@superset.org"
+            "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
         )
 
         chart_count = 4
@@ -631,10 +615,10 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         Chart API: Test update not owned
         """
         user_alpha1 = self.create_user(
-            "alpha1", "password", "Alpha", email="alpha1@superset.org"
+            "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
         )
         user_alpha2 = self.create_user(
-            "alpha2", "password", "Alpha", email="alpha2@superset.org"
+            "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
         )
         chart = self.insert_chart("title", [user_alpha1.id], 1)
 
@@ -1175,7 +1159,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     @mock.patch(
-        "superset.common.query_object.config", {**app.config, "ROW_LIMIT": 7},
+        "rabbitai.common.query_object.config", {**app.config, "ROW_LIMIT": 7},
     )
     def test_chart_data_default_row_limit(self):
         """
@@ -1191,7 +1175,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     @mock.patch(
-        "superset.common.query_actions.config", {**app.config, "SAMPLES_ROW_LIMIT": 5},
+        "rabbitai.common.query_actions.config", {**app.config, "SAMPLES_ROW_LIMIT": 5},
     )
     def test_chart_data_default_sample_limit(self):
         """

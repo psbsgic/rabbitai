@@ -6,11 +6,13 @@ they do prior to doing so.
 
 For coordinating on releases, on operational topics that require more
 synchronous communications, we recommend using the `#apache-releases` channel
-on the Rabbitai Slack. People crafting releases and those interested in
+on the Superset Slack. People crafting releases and those interested in
 partaking in the process should join the channel.
 
 ## Release notes for recent releases
-- [1.0.0](release-notes-1-0/README.md)
+- [1.2](release-notes-1-2/README.md)
+- [1.1](release-notes-1-1/README.md)
+- [1.0](release-notes-1-0/README.md)
 - [0.38](release-notes-0-38/README.md)
 
 ## Release setup (First Time Only)
@@ -36,7 +38,10 @@ need to be done at every release.
 
 
     # Commit the changes
-    svn commit -m "Add PGP keys of new Rabbitai committer"
+    svn commit -m "Add PGP keys of new Superset committer"
+
+    # push the changes
+    svn update
 ```
 
 ## Setting up the release environment (do every time)
@@ -141,7 +146,7 @@ git push upstream ${RABBITAI_VERSION_RC}
 
 The first step of preparing an Apache Release is packaging a release candidate
 to be voted on. Make sure you have correctly prepared and tagged the ready to ship
-release on Rabbitai's repo (MAJOR.MINOR branch), the following script will clone
+release on Superset's repo (MAJOR.MINOR branch), the following script will clone
 the tag and create a signed source tarball from it:
 
 ```bash
@@ -175,6 +180,7 @@ Now let's ship this RC into svn's dev folder
 cd ~/svn/rabbitai_dev/
 svn add ${RABBITAI_VERSION_RC}
 svn commit -m "Release ${RABBITAI_VERSION_RC}"
+svn update
 ```
 
 ### Build and test from SVN source tarball
@@ -192,10 +198,10 @@ Now you're ready to start the [VOTE] thread. Here's an example of a
 previous release vote thread:
 https://lists.apache.org/thread.html/e60f080ebdda26896214f7d3d5be1ccadfab95d48fbe813252762879@<dev.rabbitai.apache.org>
 
-To easily send a voting request to Rabbitai community, still on the `rabbitai/RELEASING` directory:
+To easily send a voting request to Superset community, still on the `rabbitai/RELEASING` directory:
 
 ```bash
-# Note: use Rabbitai's virtualenv
+# Note: use Superset's virtualenv
 (venv)$ python send_email.py vote_pmc
 ```
 
@@ -215,7 +221,7 @@ https://lists.apache.org/thread.html/50a6b134d66b86b237d5d7bc89df1b567246d125a71
 To easily send the result email, still on the `rabbitai/RELEASING` directory:
 
 ```bash
-# Note: use Rabbitai's virtualenv
+# Note: use Superset's virtualenv
 python send_email.py result_pmc
 ```
 
@@ -248,6 +254,7 @@ cd ~/svn/rabbitai/
 for f in ${RABBITAI_VERSION}/*; do mv "$f" "${f/${RABBITAI_VERSION_RC}/${RABBITAI_VERSION}}"; done
 svn add ${RABBITAI_VERSION}
 svn commit -m "Release ${RABBITAI_VERSION}"
+svn update
 ```
 
 Then tag the final release:
@@ -262,7 +269,7 @@ git tag -f ${RABBITAI_VERSION}
 
 ### Update CHANGELOG and UPDATING on rabbitai
 
-Now that we have a final Apache source release we need to open a pull request on Rabbitai
+Now that we have a final Apache source release we need to open a pull request on Superset
 with the changes on `CHANGELOG.md` and `UPDATING.md`.
 
 ### Publishing a Convenience Release to PyPI
@@ -279,7 +286,7 @@ while requesting access to push packages.
 Once it's all done, an [ANNOUNCE] thread announcing the release to the dev@ mailing list is the final step.
 
 ```bash
-# Note use Rabbitai's virtualenv
+# Note use Superset's virtualenv
 python send_email.py announce
 ```
 

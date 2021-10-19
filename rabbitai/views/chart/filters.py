@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Any
 
 from sqlalchemy import or_
@@ -8,8 +10,6 @@ from rabbitai.views.base import BaseFilter
 
 
 class SliceFilter(BaseFilter):
-    """切片过滤器。"""
-
     def apply(self, query: Query, value: Any) -> Query:
         if security_manager.can_access_all_datasources():
             return query

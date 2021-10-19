@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from rabbitai import app, talisman
 from rabbitai.typing import FlaskResponse
 

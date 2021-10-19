@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
 
 from flask import current_app, g
@@ -29,7 +31,6 @@ class BaseRabbitaiSchema(Schema):
     __class_model__: Model = None
 
     def __init__(self, **kwargs: Any) -> None:
-        """模型Model实例"""
         self.instance: Optional[Model] = None
         super().__init__(**kwargs)
 
@@ -41,16 +42,6 @@ class BaseRabbitaiSchema(Schema):
         instance: Optional[Model] = None,
         **kwargs: Any,
     ) -> Any:
-        """
-        反序列化指定数据为该架构的对象实例。
-
-        :param data: 数据（属性名称/值的映射、属性名称/值的映射的迭代器）。
-        :param many: 是否多对象。
-        :param partial: 是否部分。
-        :param instance: 模型实例。
-        :param kwargs: 其它关键字参数。
-        :return:
-        """
         self.instance = instance
         if many is None:
             many = False
@@ -63,25 +54,26 @@ class BaseRabbitaiSchema(Schema):
         self, data: Dict[Any, Any], discard: Optional[List[str]] = None
     ) -> Model:
         """
-        反序列化后要调用的方法，依据 POST 或 PUT 请求创建一个模型对象。PUT 将使用端点处理提取的 self.instance。
+        Creates a Model object from POST or PUT requests. PUT will use self.instance
+        previously fetched from the endpoint handler
 
         :param data: Schema data payload
         :param discard: List of fields to not set on the model
         """
-
         discard = discard or []
         if not self.instance:
             self.instance = self.__class_model__()
-
         for field in data:
             if field not in discard:
                 setattr(self.instance, field, data.get(field))
-
         return self.instance
 
 
 class BaseOwnedSchema(BaseRabbitaiSchema):
-    """基本拥有者架构，反序列化前后进行拥有者验证。"""
+    """
+    Implements owners validation,pre load and post_load
+    (to populate the owners field) on Marshmallow schemas
+    """
 
     owners_field_name = "owners"
 

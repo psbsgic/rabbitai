@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 import textwrap
 import unittest
@@ -26,10 +10,10 @@ import pytest
 from sqlalchemy.engine.url import make_url
 
 import tests.integration_tests.test_app
-from superset import app, db as metadata_db
-from superset.models.core import Database
-from superset.models.slice import Slice
-from superset.utils.core import get_example_database, QueryStatus
+from rabbitai import app, db as metadata_db
+from rabbitai.models.core import Database
+from rabbitai.models.slice import Slice
+from rabbitai.utils.core import get_example_database, QueryStatus
 
 from .base_tests import SupersetTestCase
 from .fixtures.energy_dashboard import load_energy_table_with_slice
@@ -87,11 +71,11 @@ class TestDatabaseModel(SupersetTestCase):
         SupersetTestCase.is_module_installed("MySQLdb"), "mysqlclient not installed"
     )
     def test_database_schema_mysql(self):
-        sqlalchemy_uri = "mysql://root@localhost/superset"
+        sqlalchemy_uri = "mysql://root@localhost/rabbitai"
         model = Database(database_name="test_database", sqlalchemy_uri=sqlalchemy_uri)
 
         db = make_url(model.get_sqla_engine().url).database
-        self.assertEqual("superset", db)
+        self.assertEqual("rabbitai", db)
 
         db = make_url(model.get_sqla_engine(schema="staging").url).database
         self.assertEqual("staging", db)
@@ -112,7 +96,7 @@ class TestDatabaseModel(SupersetTestCase):
         user_name = make_url(model.get_sqla_engine(user_name=example_user).url).username
         self.assertNotEqual(example_user, user_name)
 
-    @mock.patch("superset.models.core.create_engine")
+    @mock.patch("rabbitai.models.core.create_engine")
     def test_impersonate_user_presto(self, mocked_create_engine):
         uri = "presto://localhost"
         principal_user = "logged_in_user"
@@ -158,7 +142,7 @@ class TestDatabaseModel(SupersetTestCase):
             "password": "original_user_password",
         }
 
-    @mock.patch("superset.models.core.create_engine")
+    @mock.patch("rabbitai.models.core.create_engine")
     def test_impersonate_user_trino(self, mocked_create_engine):
         uri = "trino://localhost"
         principal_user = "logged_in_user"
@@ -185,7 +169,7 @@ class TestDatabaseModel(SupersetTestCase):
 
         assert call_args[1]["connect_args"] == {"user": "logged_in_user"}
 
-    @mock.patch("superset.models.core.create_engine")
+    @mock.patch("rabbitai.models.core.create_engine")
     def test_impersonate_user_hive(self, mocked_create_engine):
         uri = "hive://localhost"
         principal_user = "logged_in_user"
@@ -328,10 +312,10 @@ class TestDatabaseModel(SupersetTestCase):
         main_db = get_example_database()
 
         if main_db.backend == "mysql":
-            df = main_db.get_df("USE superset; SELECT 1", None)
+            df = main_db.get_df("USE rabbitai; SELECT 1", None)
             self.assertEqual(df.iat[0, 0], 1)
 
-            df = main_db.get_df("USE superset; SELECT ';';", None)
+            df = main_db.get_df("USE rabbitai; SELECT ';';", None)
             self.assertEqual(df.iat[0, 0], ";")
 
 

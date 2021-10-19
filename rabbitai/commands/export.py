@@ -16,7 +16,6 @@ METADATA_FILE_NAME = "metadata.yaml"
 
 
 class ExportModelsCommand(BaseCommand):
-    """导出模型命令，基于DAO。"""
 
     dao = BaseDAO
     not_found = CommandException

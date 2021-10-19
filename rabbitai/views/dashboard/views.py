@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re
 from typing import List, Union
 
@@ -24,8 +26,6 @@ from rabbitai.views.dashboard.mixin import DashboardMixin
 
 
 class DashboardModelView(DashboardMixin, RabbitaiModelView, DeleteMixin):
-    """仪表盘模型视图。"""
-
     route_base = "/dashboard"
     datamodel = SQLAInterface(DashboardModel)
     # TODO disable api_read and api_delete (used by cypress)
@@ -91,7 +91,7 @@ class DashboardModelView(DashboardMixin, RabbitaiModelView, DeleteMixin):
 
 
 class Dashboard(BaseRabbitaiView):
-    """仪表盘视图基类。"""
+    """The base views for Rabbitai!"""
 
     class_permission_name = "Dashboard"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
@@ -109,8 +109,6 @@ class Dashboard(BaseRabbitaiView):
 
 
 class DashboardModelViewAsync(DashboardModelView):
-    """异步仪表盘视图。"""
-
     route_base = "/dashboardasync"
     class_permission_name = "Dashboard"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP

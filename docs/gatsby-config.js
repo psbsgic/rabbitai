@@ -1,10 +1,8 @@
-
-
 module.exports = {
   siteMetadata: {
     title: `Rabbitai`,
-    description: `Community website for Apache Rabbitai, a data visualization and data exploration platform`,
-    author: `@apache-rabbitai`,
+    description: `Community website for Rabbitai, a data visualization and data exploration platform`,
+    author: `pengsongbo`,
   },
   plugins: [
     `gatsby-plugin-sass`,

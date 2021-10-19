@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import React, { FormEvent, useState } from 'react';
 import { SupersetTheme, JsonObject, t } from '@superset-ui/core';
 import { InputProps } from 'antd/lib/input';
@@ -61,6 +43,8 @@ interface FieldPropTypes {
   onParametersUploadFileChange: (value: any) => string;
   changeMethods: { onParametersChange: (value: any) => string } & {
     onChange: (value: any) => string;
+  } & {
+    onQueryChange: (value: any) => string;
   } & { onParametersUploadFileChange: (value: any) => string } & {
     onAddTableCatalog: () => void;
     onRemoveTableCatalog: (idx: number) => void;
@@ -415,15 +399,15 @@ const queryField = ({
   db,
 }: FieldPropTypes) => (
   <ValidatedInput
-    id="query"
-    name="query"
+    id="query_input"
+    name="query_input"
     required={required}
-    value={db?.parameters?.query}
+    value={db?.query_input || ''}
     validationMethods={{ onBlur: getValidation }}
     errorMessage={validationErrors?.query}
     placeholder="e.g. param1=value1&param2=value2"
     label="Additional Parameters"
-    onChange={changeMethods.onParametersChange}
+    onChange={changeMethods.onQueryChange}
     helpText={t('Add additional custom parameters')}
   />
 );
@@ -475,6 +459,7 @@ const DatabaseConnectionForm = ({
   dbModel: { parameters },
   onParametersChange,
   onChange,
+  onQueryChange,
   onParametersUploadFileChange,
   onAddTableCatalog,
   onRemoveTableCatalog,
@@ -494,6 +479,9 @@ const DatabaseConnectionForm = ({
     event: FormEvent<InputProps> | { target: HTMLInputElement },
   ) => void;
   onChange: (
+    event: FormEvent<InputProps> | { target: HTMLInputElement },
+  ) => void;
+  onQueryChange: (
     event: FormEvent<InputProps> | { target: HTMLInputElement },
   ) => void;
   onParametersUploadFileChange?: (
@@ -523,6 +511,7 @@ const DatabaseConnectionForm = ({
             changeMethods: {
               onParametersChange,
               onChange,
+              onQueryChange,
               onParametersUploadFileChange,
               onAddTableCatalog,
               onRemoveTableCatalog,

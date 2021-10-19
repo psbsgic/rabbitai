@@ -1,4 +1,4 @@
-x-rabbitai-image: &rabbitai-image apache/rabbitai:latest-dev
+x-rabbitai-image: &rabbitai-image rabbitai:latest-dev
 x-rabbitai-user: &rabbitai-user root
 x-rabbitai-depends-on: &rabbitai-depends-on
   - db
@@ -102,6 +102,9 @@ services:
     depends_on: *rabbitai-depends-on
     user: *rabbitai-user
     volumes: *rabbitai-volumes
+    # Bump memory limit if processing selenium / thumbails on rabbitai-worker
+    # mem_limit: 2038m
+    # mem_reservation: 128M
 
   rabbitai-worker-beat:
     image: *rabbitai-image

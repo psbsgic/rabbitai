@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 import re
@@ -26,7 +28,8 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 from flask import current_app, g
 from flask_babel import gettext as __, lazy_gettext as _
 from marshmallow import fields, Schema
-from sqlalchemy import column, DateTime, select, types
+from marshmallow.validate import Range
+from sqlalchemy import column, select, types
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.interfaces import Compiled, Dialect
 from sqlalchemy.engine.reflection import Inspector
@@ -46,6 +49,7 @@ from rabbitai.sql_parse import ParsedQuery, Table
 from rabbitai.utils import core as utils
 from rabbitai.utils.core import ColumnSpec, GenericDataType
 from rabbitai.utils.hashing import md5_sha_from_str
+from rabbitai.utils.memoized import memoized
 from rabbitai.utils.network import is_hostname_valid, is_port_open
 
 if TYPE_CHECKING:
@@ -57,7 +61,8 @@ logger = logging.getLogger()
 
 
 class TimeGrain(NamedTuple):
-    """时间粒度，包括：name、label、function、duration。"""
+    """时间刻度对象，包括：name、label、function、duration。"""
+
     name: str
     label: str
     function: str
@@ -65,34 +70,38 @@ class TimeGrain(NamedTuple):
 
 
 QueryStatus = utils.QueryStatus
+"""查询状态枚举。"""
 
 builtin_time_grains: Dict[Optional[str], str] = {
     None: __("Original value"),
     "PT1S": __("Second"),
+    "PT5S": __("5 second"),
+    "PT30S": __("30 second"),
     "PT1M": __("Minute"),
     "PT5M": __("5 minute"),
     "PT10M": __("10 minute"),
     "PT15M": __("15 minute"),
     "PT0.5H": __("Half hour"),
     "PT1H": __("Hour"),
+    "PT6H": __("6 hour"),
     "P1D": __("Day"),
     "P1W": __("Week"),
     "P1M": __("Month"),
     "P0.25Y": __("Quarter"),
     "P1Y": __("Year"),
-    "1969-12-28T00:00:00Z/P1W": __("Week starting sunday"),
-    "1969-12-29T00:00:00Z/P1W": __("Week starting monday"),
-    "P1W/1970-01-03T00:00:00Z": __("Week ending saturday"),
-    "P1W/1970-01-04T00:00:00Z": __("Week_ending sunday"),
+    "1969-12-28T00:00:00Z/P1W": __("Week starting Sunday"),
+    "1969-12-29T00:00:00Z/P1W": __("Week starting Monday"),
+    "P1W/1970-01-03T00:00:00Z": __("Week ending Saturday"),
+    "P1W/1970-01-04T00:00:00Z": __("Week_ending Sunday"),
 }
-"""在建时间粒度。"""
+"""在建的时间刻度字典。"""
 
 
 class TimestampExpression(ColumnClause):
-    """时间戳列从句表达式。"""
+    """时间戳表达式，列从句。"""
 
     def __init__(self, expr: str, col: ColumnClause, **kwargs: Any) -> None:
-        """Sqlalchemy class that can be can be used to render native column elements
+        """Sqlalchemy class that can be used to render native column elements
         respeting engine-specific quoting rules as part of a string-based expression.
 
         :param expr: Sql expression with '{col}' denoting the locations where the col
@@ -126,19 +135,19 @@ class LimitMethod:
 
 
 class BaseEngineSpec:
-    """
-    数据库引擎特定配置的抽象类。
+    """数据库引擎特定配置的抽象类
 
-    属性:
-        allows_alias_to_source_column: 当SELECT中的列具有与源列相同的别名时，引擎是否能够为ORDER BY中使用的聚合子句选取源列。
+    Attributes:
+        allows_alias_to_source_column: 当SELECT中的列具有与源列相同的别名时，引擎是否能够为ORDER BY中使用的聚合子句选择源列。
         allows_hidden_orderby_agg:     引擎是否允许ORDER BY直接使用聚合子句，而不必在SELECT中添加相同的聚合。
     """
 
-    # region 类属性
-
-    engine = "base"
+    engine = "base"  # str as defined in sqlalchemy.engine.engine
+    """引擎，定义在 sqlalchemy.engine.engine 中引擎的字符串。"""
     engine_aliases: Set[str] = set()
-    engine_name: Optional[str] = None
+    """数据库引擎别名集合。"""
+    engine_name: Optional[str] = None  # used for user messages, overridden in child classes
+    """引擎名称。"""
     _date_trunc_functions: Dict[str, str] = {}
     _time_grain_expressions: Dict[Optional[str], str] = {}
     column_type_mappings: Tuple[
@@ -245,6 +254,7 @@ class BaseEngineSpec:
             GenericDataType.BOOLEAN,
         ),
     )
+    """列数据类型映射"""
     time_groupby_inline = False
     limit_method = LimitMethod.FORCE_LIMIT
     time_secondary_columns = False
@@ -271,31 +281,26 @@ class BaseEngineSpec:
         Pattern[str], Tuple[str, RabbitaiErrorType, Dict[str, Any]]
     ] = {}
 
-    # endregion
-
     @classmethod
     def get_dbapi_exception_mapping(cls) -> Dict[Type[Exception], Type[Exception]]:
         """
-        Each engine can implement and converge its own specific exceptions into
-        Rabbitai DBAPI exceptions
+        获取数据库API异常映射（字典）。
 
-        Note: On python 3.9 this method can be changed to a classmethod property
-        without the need of implementing a metaclass type
+        每个引擎都可以实现自己的特定异常并将其聚合为Rabbitai DBAPI异常。
 
-        :return: A map of driver specific exception to rabbitai custom exceptions
+        :return: 驱动程序特定异常到rabbitai自定义异常的映射。
         """
         return {}
 
     @classmethod
     def get_dbapi_mapped_exception(cls, exception: Exception) -> Exception:
         """
-        Get a rabbitai custom DBAPI exception from the driver specific exception.
+        从特定于驱动程序的异常中获取rabbitai自定义DBAPI异常。
 
-        Override if the engine needs to perform extra changes to the exception, for
-        example change the exception message or implement custom more complex logic
+        如果引擎需要对异常执行额外更改，例如更改异常消息或实现自定义更复杂的逻辑，则重写
 
-        :param exception: The driver specific exception
-        :return: Rabbitai custom DBAPI exception
+        :param exception: T驱动程序的异常
+        :return: 自定义DBAPI异常。
         """
         new_exception = cls.get_dbapi_exception_mapping().get(type(exception))
         if not new_exception:
@@ -304,6 +309,12 @@ class BaseEngineSpec:
 
     @classmethod
     def get_allow_cost_estimate(cls, extra: Dict[str, Any]) -> bool:
+        """
+        返回一个布尔值指示是否允许进行耗时评估。
+
+        :param extra:
+        :return:
+        """
         return False
 
     @classmethod
@@ -314,14 +325,13 @@ class BaseEngineSpec:
         source: Optional[str] = None,
     ) -> Engine:
         """
-        依据指定数据库对象、模式和源，获取SQLA数据库引擎。
+        获取指定数据库的数据库引擎。
 
         :param database: 数据库对象。
-        :param schema: 模式。
-        :param source: 源。
+        :param schema:
+        :param source:
         :return:
         """
-
         user_name = utils.get_username()
         return database.get_sqla_engine(
             schema=schema, nullpool=True, user_name=user_name, source=source
@@ -336,7 +346,7 @@ class BaseEngineSpec:
         type_: Optional[str] = None,
     ) -> TimestampExpression:
         """
-        Construct a TimestampExpression to be used in a SQLAlchemy query.
+        构造要在SQLAlchemy查询中使用的时间戳表达式。
 
         :param col: Target column for the TimestampExpression
         :param pdf: date format (seconds or milliseconds)
@@ -368,14 +378,14 @@ class BaseEngineSpec:
         elif pdf == "epoch_ms":
             time_expr = time_expr.replace("{col}", cls.epoch_ms_to_dttm())
 
-        return TimestampExpression(time_expr, col, type_=DateTime)
+        return TimestampExpression(time_expr, col, type_=col.type)
 
     @classmethod
     def get_time_grains(cls) -> Tuple[TimeGrain, ...]:
         """
-        Generate a tuple of supported time grains.
+        生成支持的时间粒度的元组。
 
-        :return: All time grains supported by the engine
+        :return: 引擎支持的所有时间粒度。
         """
 
         ret_list = []
@@ -388,7 +398,9 @@ class BaseEngineSpec:
         return tuple(ret_list)
 
     @classmethod
-    def _sort_time_grains(cls, val: Tuple[Optional[str], str], index: int) -> Union[float, int, str]:
+    def _sort_time_grains(
+        cls, val: Tuple[Optional[str], str], index: int
+    ) -> Union[float, int, str]:
         """
         Return an ordered time-based value of a portion of a time grain
         for sorting
@@ -457,7 +469,6 @@ class BaseEngineSpec:
         :return: All time grain expressions supported by the engine
         """
 
-        # TODO: use @memoize decorator or similar to avoid recomputation on every call
         time_grain_expressions = cls._time_grain_expressions.copy()
         grain_addon_expressions = current_app.config["TIME_GRAIN_ADDON_EXPRESSIONS"]
         time_grain_expressions.update(grain_addon_expressions.get(cls.engine, {}))
@@ -478,13 +489,17 @@ class BaseEngineSpec:
         )
 
     @classmethod
-    def fetch_data(cls, cursor: Any, limit: Optional[int] = None) -> List[Tuple[Any, ...]]:
+    def fetch_data(
+        cls, cursor: Any, limit: Optional[int] = None
+    ) -> List[Tuple[Any, ...]]:
         """
+        从数据库中提取数据，返回元组的列表。
 
         :param cursor: Cursor instance
         :param limit: Maximum number of rows to be returned by the cursor
         :return: Result of query
         """
+
         if cls.arraysize:
             cursor.arraysize = cls.arraysize
         try:
@@ -516,7 +531,6 @@ class BaseEngineSpec:
         For instance special column like `__time` for Druid can be
         set to is_dttm=True. Note that this only gets called when new
         columns are detected/created"""
-        # TODO: Fix circular import caused by importing TableColumn
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
@@ -575,7 +589,7 @@ class BaseEngineSpec:
         :param schema_name: Schema name
         :return: Engine-specific table metadata
         """
-        # TODO: Fix circular import caused by importing Database
+
         return {}
 
     @classmethod
@@ -590,13 +604,13 @@ class BaseEngineSpec:
         :param database: Database instance
         :return: SQL query with limit clause
         """
-        # TODO: Fix circular import caused by importing Database
+
         if cls.limit_method == LimitMethod.WRAP_SQL:
             sql = sql.strip("\t\n ;")
             qry = (
                 select("*")
-                    .select_from(TextAsFrom(text(sql), ["*"]).alias("inner_qry"))
-                    .limit(limit)
+                .select_from(TextAsFrom(text(sql), ["*"]).alias("inner_qry"))
+                .limit(limit)
             )
             return database.compile_sqla_query(qry)
 
@@ -656,6 +670,7 @@ class BaseEngineSpec:
         to_sql_kwargs["name"] = table.table
 
         if table.schema:
+
             # Only add schema when it is preset and non empty.
             to_sql_kwargs["schema"] = table.schema
 
@@ -685,7 +700,7 @@ class BaseEngineSpec:
         :param datasource_type: Datasource_type can be 'table' or 'view'
         :return: List of all datasources in database or schema
         """
-        # TODO: Fix circular import caused by importing Database
+
         schemas = database.get_all_schema_names(
             cache=database.schema_cache_enabled,
             cache_timeout=database.schema_cache_timeout,
@@ -718,7 +733,6 @@ class BaseEngineSpec:
         The flow works without this method doing anything, but it allows
         for handling the cursor and updating progress information in the
         query object"""
-        # TODO: Fix circular import error caused by importing sql_lab.Query
 
     @classmethod
     def extract_error_message(cls, ex: Exception) -> str:
@@ -782,9 +796,7 @@ class BaseEngineSpec:
 
     @classmethod
     def patch(cls) -> None:
-        """
-        TODO: Improve docstring and refactor implementation in Hive
-        """
+        """"""
 
     @classmethod
     def get_schema_names(cls, inspector: Inspector) -> List[str]:
@@ -803,6 +815,7 @@ class BaseEngineSpec:
         """
         Get all tables from schema
 
+        :param database: database
         :param inspector: SqlAlchemy inspector
         :param schema: Schema to inspect. If omitted, uses default schema for database
         :return: All tables in schema
@@ -819,6 +832,7 @@ class BaseEngineSpec:
         """
         Get all views from schema
 
+        :param database: database
         :param inspector: SqlAlchemy inspector
         :param schema: Schema name. If omitted, uses default schema for database
         :return: All views in schema
@@ -847,7 +861,7 @@ class BaseEngineSpec:
         except NotImplementedError:
             # It's expected that some dialects don't implement the comment method
             pass
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             logger.error("Unexpected error while fetching table comment", exc_info=True)
             logger.exception(ex)
         return comment
@@ -886,7 +900,7 @@ class BaseEngineSpec:
         :return: SqlAlchemy query with additional where clause referencing latest
         partition
         """
-        # TODO: Fix circular import caused by importing Database, TableColumn
+
         return None
 
     @classmethod
@@ -922,7 +936,7 @@ class BaseEngineSpec:
         :param cols: Columns to include in query
         :return: SQL query
         """
-        # pylint: disable=redefined-outer-name
+
         fields: Union[str, List[Any]] = "*"
         cols = cols or []
         if (show_cols or latest_partition) and not cols:
@@ -952,7 +966,7 @@ class BaseEngineSpec:
         return sql
 
     @classmethod
-    def estimate_statement_cost(cls, statement: str, cursor: Any, ) -> Dict[str, Any]:
+    def estimate_statement_cost(cls, statement: str, cursor: Any,) -> Dict[str, Any]:
         """
         Generate a SQL query that estimates the cost of a given statement.
 
@@ -963,7 +977,9 @@ class BaseEngineSpec:
         raise Exception("Database does not support cost estimation")
 
     @classmethod
-    def query_cost_formatter(cls, raw_cost: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    def query_cost_formatter(
+        cls, raw_cost: List[Dict[str, Any]]
+    ) -> List[Dict[str, str]]:
         """
         Format cost estimate.
 
@@ -984,6 +1000,7 @@ class BaseEngineSpec:
         :param username: Effective username
         :return: Dictionary with different costs
         """
+
         parsed_query = ParsedQuery(statement)
         sql = parsed_query.stripped()
         sql_query_mutator = current_app.config["SQL_QUERY_MUTATOR"]
@@ -1004,6 +1021,7 @@ class BaseEngineSpec:
         :param sql: SQL query with possibly multiple statements
         :param source: Source of the query (eg, "sql_lab")
         """
+
         extra = database.get_extra() or {}
         if not cls.get_allow_cost_estimate(extra):
             raise Exception("Database does not support cost estimation")
@@ -1029,6 +1047,7 @@ class BaseEngineSpec:
     ) -> None:
         """
         Modify the SQL Alchemy URL object with the user to impersonate if applicable.
+
         :param url: SQLAlchemy URL object
         :param impersonate_user: Flag indicating if impersonation is enabled
         :param username: Effective username
@@ -1061,6 +1080,7 @@ class BaseEngineSpec:
         :param kwargs: kwargs to be passed to cursor.execute()
         :return:
         """
+
         if not cls.allows_sql_comments:
             query = sql_parse.strip_comments_from_sql(query)
 
@@ -1113,8 +1133,8 @@ class BaseEngineSpec:
         SQLAlchemy). Override `column_type_mappings` for specific needs
         (see MSSQL for example of NCHAR/NVARCHAR handling).
 
-        :param column_type_mappings:
         :param column_type: Column type returned by inspector
+        :param column_type_mappings:
         :return: SqlAlchemy column type
         """
         if not column_type:
@@ -1224,6 +1244,7 @@ class BaseEngineSpec:
         :param database: database instance from which to extract extras
         :raises CertificateException: If certificate is not valid/unparseable
         """
+
         extra: Dict[str, Any] = {}
         if database.extra:
             try:
@@ -1243,7 +1264,15 @@ class BaseEngineSpec:
         )
 
     @classmethod
-    @utils.memoized
+    def is_select_query(cls, parsed_query: ParsedQuery) -> bool:
+        """
+        Determine if the statement should be considered as SELECT statement.
+        Some query dialects do not contain "SELECT" word in queries (eg. Kusto)
+        """
+        return parsed_query.is_select()
+
+    @classmethod
+    @memoized
     def get_column_spec(
         cls,
         native_type: Optional[str],
@@ -1259,9 +1288,10 @@ class BaseEngineSpec:
     ) -> Union[ColumnSpec, None]:
         """
         Converts native database type to sqlalchemy column type.
-        :param column_type_mappings:
-        :param native_type: Native database typee
+
+        :param native_type: Native database type
         :param source: Type coming from the database table or cursor description
+        :param column_type_mappings:
         :return: ColumnSpec object
         """
         col_types = cls.get_sqla_column_type(
@@ -1281,15 +1311,58 @@ class BaseEngineSpec:
             )
         return None
 
+    @classmethod
+    def has_implicit_cancel(cls) -> bool:
+        """
+        Return True if the live cursor handles the implicit cancelation of the query,
+        False otherise.
 
-# schema for adding a database by providing parameters instead of the full SQLAlchemy URI
+        :return: Whether the live cursor implicitly cancels the query
+        :see: handle_cursor
+        """
+
+        return False
+
+    @classmethod
+    def get_cancel_query_id(cls, cursor: Any, query: Query) -> Optional[str]:
+        """
+        Select identifiers from the database engine that uniquely identifies the
+        queries to cancel. The identifier is typically a session id, process id
+        or similar.
+
+        :param cursor: Cursor instance in which the query will be executed
+        :param query: Query instance
+        :return: Query identifier
+        """
+
+        return None
+
+    @classmethod
+    def cancel_query(cls, cursor: Any, query: Query, cancel_query_id: str) -> bool:
+        """
+        Cancel query in the underlying database.
+
+        :param cursor: New cursor instance to the db of the query
+        :param query: Query instance
+        :param cancel_query_id: Value returned by get_cancel_query_payload or set in
+        other life-cycle methods of the query
+        :return: True if query cancelled successfully, False otherwise
+        """
+
+        return False
+
+
 class BasicParametersSchema(Schema):
-    """基本参数架构。"""
+    """schema for adding a database by providing parameters instead of the full SQLAlchemy URI"""
 
     username = fields.String(required=True, allow_none=True, description=__("Username"))
     password = fields.String(allow_none=True, description=__("Password"))
     host = fields.String(required=True, description=__("Hostname or IP address"))
-    port = fields.Integer(required=True, description=__("Database port"))
+    port = fields.Integer(
+        required=True,
+        description=__("Database port"),
+        validate=Range(min=0, max=2 ** 16, max_inclusive=False),
+    )
     database = fields.String(required=True, description=__("Database name"))
     query = fields.Dict(
         keys=fields.Str(), values=fields.Raw(), description=__("Additional parameters")
@@ -1300,7 +1373,7 @@ class BasicParametersSchema(Schema):
 
 
 class BasicParametersType(TypedDict, total=False):
-    """基本参数类型，username、password、host、port、database、query、encryption。"""
+    """数据库基本参数类型。"""
 
     username: Optional[str]
     password: Optional[str]
@@ -1344,7 +1417,15 @@ class BasicParametersMixin:
         parameters: BasicParametersType,
         encryted_extra: Optional[Dict[str, str]] = None,
     ) -> str:
-        query = parameters.get("query", {})
+        """
+
+        :param parameters:
+        :param encryted_extra:
+        :return:
+        """
+
+        # make a copy so that we don't update the original
+        query = parameters.get("query", {}).copy()
         if parameters.get("encryption"):
             if not cls.encryption_parameters:
                 raise Exception("Unable to build a URL with encryption enabled")
@@ -1366,7 +1447,19 @@ class BasicParametersMixin:
     def get_parameters_from_uri(
         cls, uri: str, encrypted_extra: Optional[Dict[str, Any]] = None
     ) -> BasicParametersType:
+        """
+
+        :param uri:
+        :param encrypted_extra:
+        :return:
+        """
+
         url = make_url(uri)
+        query = {
+            key: value
+            for (key, value) in url.query.items()
+            if (key, value) not in cls.encryption_parameters.items()
+        }
         encryption = all(
             item in url.query.items() for item in cls.encryption_parameters.items()
         )
@@ -1376,7 +1469,7 @@ class BasicParametersMixin:
             "host": url.host,
             "port": url.port,
             "database": url.database,
-            "query": url.query,
+            "query": query,
             "encryption": encryption,
         }
 
@@ -1390,10 +1483,11 @@ class BasicParametersMixin:
         If only the hostname is present it will check if the name is resolvable. As more
         parameters are present in the request, more validation is done.
         """
+
         errors: List[RabbitaiError] = []
 
         required = {"host", "port", "username", "database"}
-        present = {key for key in parameters if parameters[key]}  # type: ignore
+        present = {key for key in parameters if parameters.get(key, ())}
         missing = sorted(required - present)
 
         if missing:
@@ -1406,7 +1500,7 @@ class BasicParametersMixin:
                 ),
             )
 
-        host = parameters["host"]
+        host = parameters.get("host", None)
         if not host:
             return errors
         if not is_hostname_valid(host):
@@ -1420,10 +1514,33 @@ class BasicParametersMixin:
             )
             return errors
 
-        port = parameters["port"]
+        port = parameters.get("port", None)
         if not port:
             return errors
-        if not is_port_open(host, port):
+        try:
+            port = int(port)
+        except (ValueError, TypeError):
+            errors.append(
+                RabbitaiError(
+                    message="Port must be a valid integer.",
+                    error_type=RabbitaiErrorType.CONNECTION_INVALID_PORT_ERROR,
+                    level=ErrorLevel.ERROR,
+                    extra={"invalid": ["port"]},
+                ),
+            )
+        if not (isinstance(port, int) and 0 <= port < 2 ** 16):
+            errors.append(
+                RabbitaiError(
+                    message=(
+                        "The port must be an integer between 0 and 65535 "
+                        "(inclusive)."
+                    ),
+                    error_type=RabbitaiErrorType.CONNECTION_INVALID_PORT_ERROR,
+                    level=ErrorLevel.ERROR,
+                    extra={"invalid": ["port"]},
+                ),
+            )
+        elif not is_port_open(host, port):
             errors.append(
                 RabbitaiError(
                     message="The port is closed.",

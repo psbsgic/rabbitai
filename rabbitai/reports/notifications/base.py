@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from typing import Any, List, Optional, Type
 
+import pandas as pd
+
 from rabbitai.models.reports import ReportRecipients, ReportRecipientType
 
 
@@ -13,6 +15,7 @@ class NotificationContent:
     text: Optional[str] = None
     description: Optional[str] = ""
     url: Optional[str] = None  # url to chart/dashboard for this screenshot
+    embedded_data: Optional[pd.DataFrame] = None
 
 
 class BaseNotification:  # pylint: disable=too-few-public-methods

@@ -2,7 +2,7 @@ slice_name: '# of Games That Hit 100k in Sales By Release Year'
 viz_type: treemap
 params:
   adhoc_filters: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 21__table
   granularity_sqla: year
   groupby:

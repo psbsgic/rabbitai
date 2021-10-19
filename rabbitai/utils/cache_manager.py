@@ -5,9 +5,15 @@ from flask_caching import Cache
 
 
 class CacheManager:
-    """缓存管理器，依据Flask应用配置信息，创建缓存、数据缓存、THUMBNAIL缓存。"""
+    """
+    缓存管理器，依据应用配置提供的信息构建缓存实例，并提供访问。
+
+    创建 Cache 类型的应用缓存、数据缓存和缩略图缓存。
+    """
 
     def __init__(self) -> None:
+        """初始化新实例，创建 Cache 类型的应用缓存、数据缓存和缩略图缓存。"""
+
         super().__init__()
 
         self._cache = Cache()
@@ -16,9 +22,9 @@ class CacheManager:
 
     def init_app(self, app: Flask) -> None:
         """
-        依据Flask应用配置信息，创建缓存、数据缓存、THUMBNAIL缓存。
+        依据指定应用实例的配置对象提供的缓存相关选项，分别初始化应用缓存、数据缓存和缩略图缓存。
 
-        :param app: Flask应用.
+        :param app:
         :return:
         """
 

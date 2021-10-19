@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 import functools
 import inspect
 import json
@@ -8,18 +10,30 @@ import textwrap
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Callable, cast, Dict, Iterator, Optional, Type, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    Iterator,
+    Optional,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)
 
 from flask import current_app, g, request
 from flask_appbuilder.const import API_URI_RIS_KEY
 from sqlalchemy.exc import SQLAlchemyError
 from typing_extensions import Literal
 
-from rabbitai.stats_logger import BaseStatsLogger
+if TYPE_CHECKING:
+    from rabbitai.stats_logger import BaseStatsLogger
 
 
 def collect_request_payload() -> Dict[str, Any]:
-    """Collect log payload identifiable from request context"""
+    """从请求上下文中收集可识别的日志有效载荷"""
+
     if not request:
         return {}
 
@@ -47,6 +61,8 @@ def collect_request_payload() -> Dict[str, Any]:
 
 
 class AbstractEventLogger(ABC):
+    """事件日志记录器抽象基类，记录进入和退出时间。"""
+
     def __call__(
         self,
         action: str,
@@ -90,7 +106,7 @@ class AbstractEventLogger(ABC):
     ) -> None:
         pass
 
-    def log_with_context(  # pylint: disable=too-many-locals
+    def log_with_context(
         self,
         action: str,
         duration: Optional[timedelta] = None,
@@ -98,6 +114,17 @@ class AbstractEventLogger(ABC):
         log_to_statsd: bool = True,
         **payload_override: Optional[Dict[str, Any]],
     ) -> None:
+        """
+        记录带上下文的信息。
+
+        :param action: 操作。
+        :param duration: 持续时间。
+        :param object_ref: 对象引用。
+        :param log_to_statsd: 是否记录到性能统计。
+        :param payload_override: 重写载荷。
+        :return:
+        """
+
         from rabbitai.views.core import get_form_data
 
         referrer = request.referrer[:1000] if request and request.referrer else None
@@ -251,17 +278,16 @@ def get_event_logger_from_cfg_value(cfg_value: Any) -> AbstractEventLogger:
     :return: if cfg_value is a class type, will return a new instance created using a
     default con
     """
+
     result: Any = cfg_value
     if inspect.isclass(cfg_value):
         logging.warning(
             textwrap.dedent(
                 """
-                In rabbitai private config, EVENT_LOGGER has been assigned a class
-                object. In order to accomodate pre-configured instances without a
-                default constructor, assignment of a class is deprecated and may no
-                longer work at some point in the future. Please assign an object
-                instance of a type that implements
-                rabbitai.utils.log.AbstractEventLogger.
+                在 rabbitai 私有配置中，EVENT_LOGGER 为类对象。
+                为了允许没有默认构造函数的预配置实例，
+                类的赋值已被弃用，并且在将来某个时候可能不再有效。 
+                请指定实现rabbitai.utils.log.AbstractEventLogger的类型的对象实例。
                 """
             )
         )
@@ -272,8 +298,7 @@ def get_event_logger_from_cfg_value(cfg_value: Any) -> AbstractEventLogger:
     # Verify that we have a valid logger impl
     if not isinstance(result, AbstractEventLogger):
         raise TypeError(
-            "EVENT_LOGGER must be configured with a concrete instance"
-            "of rabbitai.utils.log.AbstractEventLogger."
+            "EVENT_LOGGER 必须配置为 rabbitai.utils.log.AbstractEventLogger 派生类型实例"
         )
 
     logging.info("Configured event logger of type %s", type(result))
@@ -281,9 +306,9 @@ def get_event_logger_from_cfg_value(cfg_value: Any) -> AbstractEventLogger:
 
 
 class DBEventLogger(AbstractEventLogger):
-    """Event logger that commits logs to Rabbitai DB"""
+    """基于数据库的事件日志记录器，提交日志到 Rabbitai 数据库。"""
 
-    def log(  # pylint: disable=too-many-arguments,too-many-locals
+    def log(
         self,
         user_id: Optional[int],
         action: str,

@@ -9,7 +9,7 @@
 	url = https://github.com/trilom/file-changes-action
 [submodule ".github/actions/cached-dependencies"]
 	path = .github/actions/cached-dependencies
-	url = https://github.com/apache-rabbitai/cached-dependencies
+	url = https://github.com/psbsgic/rabbitai/cached-dependencies
 [submodule ".github/actions/comment-on-pr"]
 	path = .github/actions/comment-on-pr
 	url = https://github.com/unsplash/comment-on-pr

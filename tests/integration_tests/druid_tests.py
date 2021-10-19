@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 import json
@@ -23,8 +7,8 @@ from unittest.mock import Mock, patch
 
 from tests.integration_tests.test_app import app
 
-from superset import db, security_manager
-from superset.connectors.druid.views import (
+from rabbitai import db, security_manager
+from rabbitai.connectors.druid.views import (
     Druid,
     DruidClusterModelView,
     DruidColumnInlineView,
@@ -36,7 +20,7 @@ from .base_tests import SupersetTestCase
 
 
 try:
-    from superset.connectors.druid.models import (
+    from rabbitai.connectors.druid.models import (
         DruidCluster,
         DruidColumn,
         DruidDatasource,
@@ -155,7 +139,7 @@ class TestDruid(SupersetTestCase):
     @unittest.skipUnless(
         SupersetTestCase.is_module_installed("pydruid"), "pydruid not installed"
     )
-    @patch("superset.connectors.druid.models.PyDruid")
+    @patch("rabbitai.connectors.druid.models.PyDruid")
     def test_client(self, PyDruid):
         self.login(username="admin")
         cluster = self.get_cluster(PyDruid)
@@ -177,7 +161,7 @@ class TestDruid(SupersetTestCase):
         instance.query_dict = {}
         instance.query_builder.last_query.query_dict = {}
 
-        resp = self.get_resp("/superset/explore/druid/{}/".format(datasource_id))
+        resp = self.get_resp("/rabbitai/explore/druid/{}/".format(datasource_id))
         self.assertIn("test_datasource", resp)
         form_data = {
             "viz_type": "table",
@@ -192,7 +176,7 @@ class TestDruid(SupersetTestCase):
             "force": "true",
         }
         # One groupby
-        url = "/superset/explore_json/druid/{}/".format(datasource_id)
+        url = "/rabbitai/explore_json/druid/{}/".format(datasource_id)
         resp = self.get_json_resp(url, {"form_data": json.dumps(form_data)})
         self.assertEqual("Canada", resp["data"]["records"][0]["dim1"])
 
@@ -209,7 +193,7 @@ class TestDruid(SupersetTestCase):
             "force": "true",
         }
         # two groupby
-        url = "/superset/explore_json/druid/{}/".format(datasource_id)
+        url = "/rabbitai/explore_json/druid/{}/".format(datasource_id)
         resp = self.get_json_resp(url, {"form_data": json.dumps(form_data)})
         self.assertEqual("Canada", resp["data"]["records"][0]["dim1"])
 
@@ -254,7 +238,7 @@ class TestDruid(SupersetTestCase):
         }
 
         def check():
-            resp = self.client.post("/superset/sync_druid/", data=json.dumps(cfg))
+            resp = self.client.post("/rabbitai/sync_druid/", data=json.dumps(cfg))
             druid_ds = (
                 db.session.query(DruidDatasource)
                 .filter_by(datasource_name="test_click")
@@ -283,7 +267,7 @@ class TestDruid(SupersetTestCase):
                 ],
             },
         }
-        resp = self.client.post("/superset/sync_druid/", data=json.dumps(cfg))
+        resp = self.client.post("/rabbitai/sync_druid/", data=json.dumps(cfg))
         druid_ds = (
             db.session.query(DruidDatasource)
             .filter_by(datasource_name="test_click")
@@ -349,7 +333,7 @@ class TestDruid(SupersetTestCase):
     @unittest.skipUnless(
         SupersetTestCase.is_module_installed("pydruid"), "pydruid not installed"
     )
-    @patch("superset.connectors.druid.models.PyDruid")
+    @patch("rabbitai.connectors.druid.models.PyDruid")
     def test_sync_druid_perm(self, PyDruid):
         self.login(username="admin")
         instance = PyDruid.return_value
@@ -400,7 +384,7 @@ class TestDruid(SupersetTestCase):
     @unittest.skipUnless(
         SupersetTestCase.is_module_installed("pydruid"), "pydruid not installed"
     )
-    @patch("superset.connectors.druid.models.PyDruid")
+    @patch("rabbitai.connectors.druid.models.PyDruid")
     def test_refresh_metadata(self, PyDruid):
         self.login(username="admin")
         cluster = self.get_cluster(PyDruid)
@@ -430,7 +414,7 @@ class TestDruid(SupersetTestCase):
     @unittest.skipUnless(
         SupersetTestCase.is_module_installed("pydruid"), "pydruid not installed"
     )
-    @patch("superset.connectors.druid.models.PyDruid")
+    @patch("rabbitai.connectors.druid.models.PyDruid")
     def test_refresh_metadata_augment_type(self, PyDruid):
         self.login(username="admin")
         cluster = self.get_cluster(PyDruid)
@@ -465,7 +449,7 @@ class TestDruid(SupersetTestCase):
     @unittest.skipUnless(
         SupersetTestCase.is_module_installed("pydruid"), "pydruid not installed"
     )
-    @patch("superset.connectors.druid.models.PyDruid")
+    @patch("rabbitai.connectors.druid.models.PyDruid")
     def test_refresh_metadata_augment_verbose_name(self, PyDruid):
         self.login(username="admin")
         cluster = self.get_cluster(PyDruid)
@@ -518,7 +502,7 @@ class TestDruid(SupersetTestCase):
     @unittest.skipUnless(
         SupersetTestCase.is_module_installed("pydruid"), "pydruid not installed"
     )
-    @patch("superset.connectors.druid.models.PyDruid")
+    @patch("rabbitai.connectors.druid.models.PyDruid")
     def test_druid_time_granularities(self, PyDruid):
         self.login(username="admin")
         cluster = self.get_cluster(PyDruid)
@@ -566,7 +550,7 @@ class TestDruid(SupersetTestCase):
             "quarter": "P3M",
             "year": "P1Y",
         }
-        url = "/superset/explore_json/druid/{}/".format(datasource_id)
+        url = "/rabbitai/explore_json/druid/{}/".format(datasource_id)
 
         for granularity_mapping in granularity_map:
             form_data["granularity"] = granularity_mapping
@@ -579,7 +563,7 @@ class TestDruid(SupersetTestCase):
     @unittest.skipUnless(
         SupersetTestCase.is_module_installed("pydruid"), "pydruid not installed"
     )
-    @patch("superset.connectors.druid.models.PyDruid")
+    @patch("rabbitai.connectors.druid.models.PyDruid")
     def test_external_metadata(self, PyDruid):
         self.login(username="admin")
         self.login(username="admin")

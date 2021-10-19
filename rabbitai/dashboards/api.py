@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from zipfile import is_zipfile, ZipFile
 
 from flask import g, make_response, redirect, request, Response, send_file, url_for
@@ -16,7 +16,7 @@ from werkzeug.wsgi import FileWrapper
 
 from rabbitai import is_feature_enabled, thumbnail_cache
 from rabbitai.charts.schemas import ChartEntityResponseSchema
-from rabbitai.commands.exceptions import CommandInvalidError
+from rabbitai.commands.importers.exceptions import NoValidFilesFoundError
 from rabbitai.commands.importers.v1.utils import get_contents_from_bundle
 from rabbitai.constants import MODEL_API_RW_METHOD_PERMISSION_MAP, RouteMethod
 from rabbitai.dashboards.commands.bulk_delete import BulkDeleteDashboardCommand
@@ -27,7 +27,6 @@ from rabbitai.dashboards.commands.exceptions import (
     DashboardCreateFailedError,
     DashboardDeleteFailedError,
     DashboardForbiddenError,
-    DashboardImportError,
     DashboardInvalidError,
     DashboardNotFoundError,
     DashboardUpdateFailedError,
@@ -691,6 +690,7 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
         requested_ids = kwargs["rison"]
 
         if is_feature_enabled("VERSIONED_EXPORT"):
+            token = request.args.get("token")
             timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
             root = f"dashboard_export_{timestamp}"
             filename = f"{root}.zip"
@@ -707,12 +707,15 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
                     return self.response_404()
             buf.seek(0)
 
-            return send_file(
+            response = send_file(
                 buf,
                 mimetype="application/zip",
                 as_attachment=True,
                 attachment_filename=filename,
             )
+            if token:
+                response.set_cookie(token, "done", max_age=600)
+            return response
 
         query = self.datamodel.session.query(Dashboard).filter(
             Dashboard.id.in_(requested_ids)
@@ -736,9 +739,7 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
         action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.thumbnail",
         log_to_statsd=False,
     )
-    def thumbnail(
-        self, pk: int, digest: str, **kwargs: Dict[str, bool]
-    ) -> WerkzeugResponse:
+    def thumbnail(self, pk: int, digest: str, **kwargs: Any) -> WerkzeugResponse:
         """Get Dashboard thumbnail
         ---
         get:
@@ -803,10 +804,12 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
         ).get_from_cache(cache=thumbnail_cache)
         # If the screenshot does not exist, request one from the workers
         if not screenshot:
+            self.incr_stats("async", self.thumbnail.__name__)
             cache_dashboard_thumbnail.delay(dashboard_url, dashboard.digest, force=True)
             return self.response(202, message="OK Async")
         # If digests
         if dashboard.digest != digest:
+            self.incr_stats("redirect", self.thumbnail.__name__)
             return redirect(
                 url_for(
                     f"{self.__class__.__name__}.thumbnail",
@@ -814,6 +817,7 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
                     digest=dashboard.digest,
                 )
             )
+        self.incr_stats("from_cache", self.thumbnail.__name__)
         return Response(
             FileWrapper(screenshot), mimetype="image/png", direct_passthrough=True
         )
@@ -872,7 +876,6 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
 
     @expose("/import/", methods=["POST"])
     @protect()
-    @safe
     @statsd_metrics
     @event_logger.log_this_with_context(
         action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.import_",
@@ -928,6 +931,9 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
             upload.seek(0)
             contents = {upload.filename: upload.read()}
 
+        if not contents:
+            raise NoValidFilesFoundError()
+
         passwords = (
             json.loads(request.form["passwords"])
             if "passwords" in request.form
@@ -938,12 +944,5 @@ class DashboardRestApi(BaseRabbitaiModelRestApi):
         command = ImportDashboardsCommand(
             contents, passwords=passwords, overwrite=overwrite
         )
-        try:
-            command.run()
-            return self.response(200, message="OK")
-        except CommandInvalidError as exc:
-            logger.warning("Import dashboard failed")
-            return self.response_422(message=exc.normalized_messages())
-        except DashboardImportError as exc:
-            logger.exception("Import dashboard failed")
-            return self.response_500(message=str(exc))
+        command.run()
+        return self.response(200, message="OK")

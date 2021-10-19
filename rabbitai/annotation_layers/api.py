@@ -39,13 +39,11 @@ logger = logging.getLogger(__name__)
 
 
 class AnnotationLayerRestApi(BaseRabbitaiModelRestApi):
-    """注释层REST API。"""
-
     datamodel = SQLAInterface(AnnotationLayer)
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
         RouteMethod.RELATED,
-        "bulk_delete",
+        "bulk_delete",  # not using RouteMethod since locally defined
     }
     class_permission_name = "Annotation"
     method_permission_name = MODEL_API_RW_METHOD_PERMISSION_MAP

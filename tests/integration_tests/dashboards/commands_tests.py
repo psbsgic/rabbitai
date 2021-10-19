@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # pylint: disable=no-self-use, invalid-name
 
 import itertools
@@ -24,20 +8,20 @@ import pytest
 import yaml
 from werkzeug.utils import secure_filename
 
-from superset import db, security_manager
-from superset.commands.exceptions import CommandInvalidError
-from superset.commands.importers.exceptions import IncorrectVersionError
-from superset.connectors.sqla.models import SqlaTable
-from superset.dashboards.commands.exceptions import DashboardNotFoundError
-from superset.dashboards.commands.export import (
+from rabbitai import db, security_manager
+from rabbitai.commands.exceptions import CommandInvalidError
+from rabbitai.commands.importers.exceptions import IncorrectVersionError
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.dashboards.commands.exceptions import DashboardNotFoundError
+from rabbitai.dashboards.commands.export import (
     append_charts,
     ExportDashboardsCommand,
     get_default_position,
 )
-from superset.dashboards.commands.importers import v0, v1
-from superset.models.core import Database
-from superset.models.dashboard import Dashboard
-from superset.models.slice import Slice
+from rabbitai.dashboards.commands.importers import v0, v1
+from rabbitai.models.core import Database
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.slice import Slice
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.fixtures.importexport import (
     chart_config,
@@ -55,8 +39,8 @@ from tests.integration_tests.fixtures.world_bank_dashboard import (
 
 class TestExportDashboardsCommand(SupersetTestCase):
     @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
-    @patch("superset.security.manager.g")
-    @patch("superset.views.base.g")
+    @patch("rabbitai.security.manager.g")
+    @patch("rabbitai.views.base.g")
     def test_export_dashboard_command(self, mock_g1, mock_g2):
         mock_g1.user = security_manager.find_user("admin")
         mock_g2.user = security_manager.find_user("admin")
@@ -235,8 +219,8 @@ class TestExportDashboardsCommand(SupersetTestCase):
         }
 
     @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
-    @patch("superset.security.manager.g")
-    @patch("superset.views.base.g")
+    @patch("rabbitai.security.manager.g")
+    @patch("rabbitai.views.base.g")
     def test_export_dashboard_command_no_access(self, mock_g1, mock_g2):
         """Test that users can't export datasets they don't have access to"""
         mock_g1.user = security_manager.find_user("gamma")
@@ -251,8 +235,8 @@ class TestExportDashboardsCommand(SupersetTestCase):
             next(contents)
 
     @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
-    @patch("superset.security.manager.g")
-    @patch("superset.views.base.g")
+    @patch("rabbitai.security.manager.g")
+    @patch("rabbitai.views.base.g")
     def test_export_dashboard_command_invalid_dataset(self, mock_g1, mock_g2):
         """Test that an error is raised when exporting an invalid dataset"""
         mock_g1.user = security_manager.find_user("admin")
@@ -263,8 +247,8 @@ class TestExportDashboardsCommand(SupersetTestCase):
             next(contents)
 
     @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
-    @patch("superset.security.manager.g")
-    @patch("superset.views.base.g")
+    @patch("rabbitai.security.manager.g")
+    @patch("rabbitai.views.base.g")
     def test_export_dashboard_command_key_order(self, mock_g1, mock_g2):
         """Test that they keys in the YAML have the same order as export_fields"""
         mock_g1.user = security_manager.find_user("admin")
@@ -289,7 +273,7 @@ class TestExportDashboardsCommand(SupersetTestCase):
         ]
 
     @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
-    @patch("superset.dashboards.commands.export.suffix")
+    @patch("rabbitai.dashboards.commands.export.suffix")
     def test_append_charts(self, mock_suffix):
         """Test that oprhaned charts are added to the dashbaord position"""
         # return deterministic IDs

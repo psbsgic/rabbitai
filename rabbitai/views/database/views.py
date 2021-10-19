@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import tempfile
 from typing import TYPE_CHECKING
@@ -63,8 +65,6 @@ def upload_stream_write(form_file_field: "FileStorage", path: str) -> None:
 
 
 class DatabaseView(DatabaseMixin, RabbitaiModelView, DeleteMixin, YamlExportMixin):
-    """数据库视图。"""
-
     datamodel = SQLAInterface(models.Database)
 
     class_permission_name = "Database"
@@ -94,8 +94,6 @@ class DatabaseView(DatabaseMixin, RabbitaiModelView, DeleteMixin, YamlExportMixi
 
 
 class CsvToDatabaseView(SimpleFormView):
-    """CSV到数据库视图，提供上传CSV文件到数据库的界面和功能。"""
-
     form = CsvToDatabaseForm
     form_template = "rabbitai/form_view/csv_to_database_view/edit.html"
     form_title = _("CSV to Database configuration")
@@ -240,8 +238,6 @@ class CsvToDatabaseView(SimpleFormView):
 
 
 class ExcelToDatabaseView(SimpleFormView):
-    """Excel到数据库视图，提供上传CSV文件到数据库的界面和功能。"""
-
     form = ExcelToDatabaseForm
     form_template = "rabbitai/form_view/excel_to_database_view/edit.html"
     form_title = _("Excel to Database configuration")

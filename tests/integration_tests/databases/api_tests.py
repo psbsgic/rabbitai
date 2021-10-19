@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 # pylint: disable=invalid-name, no-self-use, too-many-public-methods, too-many-arguments
 """Unit tests for Superset"""
@@ -33,18 +17,18 @@ from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.sql import func
 
-from superset import db, security_manager
-from superset.connectors.sqla.models import SqlaTable
-from superset.db_engine_specs.mysql import MySQLEngineSpec
-from superset.db_engine_specs.postgres import PostgresEngineSpec
-from superset.db_engine_specs.redshift import RedshiftEngineSpec
-from superset.db_engine_specs.bigquery import BigQueryEngineSpec
-from superset.db_engine_specs.gsheets import GSheetsEngineSpec
-from superset.db_engine_specs.hana import HanaEngineSpec
-from superset.errors import SupersetError
-from superset.models.core import Database, ConfigurationMethod
-from superset.models.reports import ReportSchedule, ReportScheduleType
-from superset.utils.core import get_example_database, get_main_database
+from rabbitai import db, security_manager
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.db_engine_specs.mysql import MySQLEngineSpec
+from rabbitai.db_engine_specs.postgres import PostgresEngineSpec
+from rabbitai.db_engine_specs.redshift import RedshiftEngineSpec
+from rabbitai.db_engine_specs.bigquery import BigQueryEngineSpec
+from rabbitai.db_engine_specs.gsheets import GSheetsEngineSpec
+from rabbitai.db_engine_specs.hana import HanaEngineSpec
+from rabbitai.errors import SupersetError
+from rabbitai.models.core import Database, ConfigurationMethod
+from rabbitai.models.reports import ReportSchedule, ReportScheduleType
+from rabbitai.utils.core import get_example_database, get_main_database
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.fixtures.birth_names_dashboard import (
     load_birth_names_dashboard_with_slices,
@@ -457,7 +441,7 @@ class TestDatabaseApi(SupersetTestCase):
         )
 
     @mock.patch(
-        "superset.views.core.app.config",
+        "rabbitai.views.core.app.config",
         {**app.config, "PREVENT_UNSAFE_DB_CONNECTIONS": True},
     )
     def test_create_database_fail_sqllite(self):
@@ -1012,7 +996,7 @@ class TestDatabaseApi(SupersetTestCase):
 
         app.config["PREVENT_UNSAFE_DB_CONNECTIONS"] = True
         data = {
-            "sqlalchemy_uri": "sqlite:///home/superset/unsafe.db",
+            "sqlalchemy_uri": "sqlite:///home/rabbitai/unsafe.db",
             "database_name": "unsafe",
             "impersonate_user": False,
             "server_cert": None,
@@ -1033,9 +1017,9 @@ class TestDatabaseApi(SupersetTestCase):
         app.config["PREVENT_UNSAFE_DB_CONNECTIONS"] = False
 
     @mock.patch(
-        "superset.databases.commands.test_connection.DatabaseDAO.build_db_for_connection_test",
+        "rabbitai.databases.commands.test_connection.DatabaseDAO.build_db_for_connection_test",
     )
-    @mock.patch("superset.databases.commands.test_connection.event_logger",)
+    @mock.patch("rabbitai.databases.commands.test_connection.event_logger",)
     def test_test_connection_failed_invalid_hostname(
         self, mock_event_logger, mock_build_db
     ):
@@ -1047,7 +1031,7 @@ class TestDatabaseApi(SupersetTestCase):
             msg, None, None
         )
         mock_build_db.return_value.db_engine_spec.__name__ = "Some name"
-        superset_error = SupersetError(
+        rabbitai_error = SupersetError(
             message='Unable to resolve hostname "locahost".',
             error_type="CONNECTION_INVALID_HOSTNAME_ERROR",
             level="error",
@@ -1064,7 +1048,7 @@ class TestDatabaseApi(SupersetTestCase):
             },
         )
         mock_build_db.return_value.db_engine_spec.extract_errors.return_value = [
-            superset_error
+            rabbitai_error
         ]
 
         self.login("admin")
@@ -1080,7 +1064,7 @@ class TestDatabaseApi(SupersetTestCase):
         assert rv.status_code == 422
         assert rv.headers["Content-Type"] == "application/json; charset=utf-8"
         response = json.loads(rv.data.decode("utf-8"))
-        expected_response = {"errors": [dataclasses.asdict(superset_error)]}
+        expected_response = {"errors": [dataclasses.asdict(rabbitai_error)]}
         assert response == expected_response
 
     @pytest.mark.usefixtures(
@@ -1414,7 +1398,7 @@ class TestDatabaseApi(SupersetTestCase):
         db.session.delete(database)
         db.session.commit()
 
-    @mock.patch("superset.db_engine_specs.base.BaseEngineSpec.get_function_names",)
+    @mock.patch("rabbitai.db_engine_specs.base.BaseEngineSpec.get_function_names",)
     def test_function_names(self, mock_get_function_names):
         example_db = get_example_database()
         if example_db.backend in {"hive", "presto"}:
@@ -1431,8 +1415,8 @@ class TestDatabaseApi(SupersetTestCase):
         assert rv.status_code == 200
         assert response == {"function_names": ["AVG", "MAX", "SUM"]}
 
-    @mock.patch("superset.databases.api.get_available_engine_specs")
-    @mock.patch("superset.databases.api.app")
+    @mock.patch("rabbitai.databases.api.get_available_engine_specs")
+    @mock.patch("rabbitai.databases.api.app")
     def test_available(self, app, get_available_engine_specs):
         app.config = {"PREFERRED_DATABASES": ["PostgreSQL", "Google BigQuery"]}
         get_available_engine_specs.return_value = {
@@ -1636,8 +1620,8 @@ class TestDatabaseApi(SupersetTestCase):
             ]
         }
 
-    @mock.patch("superset.databases.api.get_available_engine_specs")
-    @mock.patch("superset.databases.api.app")
+    @mock.patch("rabbitai.databases.api.get_available_engine_specs")
+    @mock.patch("rabbitai.databases.api.app")
     def test_available_no_default(self, app, get_available_engine_specs):
         app.config = {"PREFERRED_DATABASES": ["MySQL"]}
         get_available_engine_specs.return_value = {
@@ -1777,9 +1761,9 @@ class TestDatabaseApi(SupersetTestCase):
             ]
         }
 
-    @mock.patch("superset.db_engine_specs.base.is_hostname_valid")
-    @mock.patch("superset.db_engine_specs.base.is_port_open")
-    @mock.patch("superset.databases.api.ValidateDatabaseParametersCommand")
+    @mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
+    @mock.patch("rabbitai.db_engine_specs.base.is_port_open")
+    @mock.patch("rabbitai.databases.api.ValidateDatabaseParametersCommand")
     def test_validate_parameters_valid_payload(
         self, ValidateDatabaseParametersCommand, is_port_open, is_hostname_valid
     ):
@@ -1797,7 +1781,7 @@ class TestDatabaseApi(SupersetTestCase):
             {
                 "host": "localhost",
                 "port": 6789,
-                "username": "superset",
+                "username": "rabbitai",
                 "password": "XXX",
                 "database": "test",
                 "query": {},
@@ -1821,7 +1805,7 @@ class TestDatabaseApi(SupersetTestCase):
             {
                 "host": "localhost",
                 "port": "string",
-                "username": "superset",
+                "username": "rabbitai",
                 "password": "XXX",
                 "database": "test",
                 "query": {},
@@ -1864,7 +1848,7 @@ class TestDatabaseApi(SupersetTestCase):
             ]
         }
 
-    @mock.patch("superset.db_engine_specs.base.is_hostname_valid")
+    @mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
     def test_validate_parameters_invalid_host(self, is_hostname_valid):
         is_hostname_valid.return_value = False
 
@@ -1922,7 +1906,7 @@ class TestDatabaseApi(SupersetTestCase):
             ]
         }
 
-    @mock.patch("superset.db_engine_specs.base.is_hostname_valid")
+    @mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
     def test_validate_parameters_invalid_port_range(self, is_hostname_valid):
         is_hostname_valid.return_value = True
 

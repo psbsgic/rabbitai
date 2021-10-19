@@ -27,9 +27,26 @@ class RabbitaiException(Exception):
 class RabbitaiErrorException(RabbitaiException):
     """Exceptions with a single RabbitaiErrorType associated with them"""
 
-    def __init__(self, error: RabbitaiError) -> None:
+    def __init__(self, error: RabbitaiError, status: Optional[int] = None) -> None:
         super().__init__(error.message)
         self.error = error
+        if status is not None:
+            self.status = status
+
+
+class RabbitaiGenericErrorException(RabbitaiErrorException):
+    """Exceptions that are too generic to have their own type"""
+
+    def __init__(self, message: str, status: Optional[int] = None) -> None:
+        super().__init__(
+            RabbitaiError(
+                message=message,
+                error_type=RabbitaiErrorType.GENERIC_BACKEND_ERROR,
+                level=ErrorLevel.ERROR,
+            )
+        )
+        if status is not None:
+            self.status = status
 
 
 class RabbitaiErrorFromParamsException(RabbitaiErrorException):
@@ -52,9 +69,13 @@ class RabbitaiErrorFromParamsException(RabbitaiErrorException):
 class RabbitaiErrorsException(RabbitaiException):
     """Exceptions with multiple RabbitaiErrorType associated with them"""
 
-    def __init__(self, errors: List[RabbitaiError]) -> None:
+    def __init__(
+        self, errors: List[RabbitaiError], status: Optional[int] = None
+    ) -> None:
         super().__init__(str(errors))
         self.errors = errors
+        if status is not None:
+            self.status = status
 
 
 class RabbitaiTimeoutException(RabbitaiErrorFromParamsException):
@@ -81,11 +102,12 @@ class RabbitaiTemplateParamsErrorException(RabbitaiErrorFromParamsException):
     def __init__(
         self,
         message: str,
+        error: RabbitaiErrorType,
         level: ErrorLevel = ErrorLevel.ERROR,
         extra: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__(
-            RabbitaiErrorType.MISSING_TEMPLATE_PARAMS_ERROR, message, level, extra,
+            error, message, level, extra,
         )
 
 
@@ -151,7 +173,6 @@ class InvalidPayloadFormatError(RabbitaiErrorException):
             message=message,
             error_type=RabbitaiErrorType.INVALID_PAYLOAD_FORMAT_ERROR,
             level=ErrorLevel.ERROR,
-            extra={},
         )
         super().__init__(error)
 
@@ -172,3 +193,7 @@ class InvalidPayloadSchemaError(RabbitaiErrorException):
             extra={"messages": error.messages},
         )
         super().__init__(error)
+
+
+class RabbitaiCancelQueryException(RabbitaiException):
+    pass

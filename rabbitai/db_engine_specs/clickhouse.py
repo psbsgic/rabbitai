@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 from typing import Dict, Optional, Type
 
@@ -6,7 +8,7 @@ from rabbitai.db_engine_specs.exceptions import RabbitaiDBAPIDatabaseError
 from rabbitai.utils import core as utils
 
 
-class ClickHouseEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
+class ClickHouseEngineSpec(BaseEngineSpec):
     """Dialect for ClickHouse analytical DB."""
 
     engine = "clickhouse"

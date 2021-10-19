@@ -1,4 +1,7 @@
-"""a collection of model-related helper classes and functions"""
+# -*- coding: utf-8 -*-
+
+"""与模型相关的助手类和函数的集合"""
+
 import json
 import logging
 import re
@@ -28,6 +31,13 @@ logger = logging.getLogger(__name__)
 
 
 def json_to_dict(json_str: str) -> Dict[Any, Any]:
+    """
+    转换指定Json字符串为字典。
+
+    :param json_str: Json字符串
+    :return:
+    """
+
     if json_str:
         val = re.sub(",[ \t\r\n]+}", "}", json_str)
         val = re.sub(",[ \t\r\n]+\\]", "]", val)
@@ -38,7 +48,7 @@ def json_to_dict(json_str: str) -> Dict[Any, Any]:
 
 def convert_uuids(obj: Any) -> Any:
     """
-    Convert UUID objects to str so we can use yaml.safe_dump
+    转换 UUID 对象为字符串，以便可以使用 yaml.safe_dump。
     """
     if isinstance(obj, uuid.UUID):
         return str(obj)
@@ -53,57 +63,57 @@ def convert_uuids(obj: Any) -> Any:
 
 
 class ImportExportMixin:
-    """导入导出混入类，定义导入导出相关字段。"""
+    """导入导出对象关系模型混入类，提供导入导出相关属性和方法。"""
 
     uuid = sa.Column(
         UUIDType(binary=True), primary_key=False, unique=True, default=uuid.uuid4
     )
 
     export_parent: Optional[str] = None
-    """The name of the attribute with the SQL Alchemy back reference"""
+    """具有SQL Alchemy 反向引用的属性的名称"""
 
     export_children: List[str] = []
-    """List of (str) names of attributes with the SQL Alchemy forward references"""
+    """具有SQL Alchemy正向引用的属性的（str）名称列表"""
 
     export_fields: List[str] = []
-    """The names of the attributes that are available for import and export"""
+    """可用于导入和导出的属性的名称"""
 
     extra_import_fields: List[str] = []
-    """Additional fields that should be imported, even though they were not exported"""
+    """即使未导出也应导入的其他字段"""
 
     __mapper__: Mapper
-    """映射器，定义类属性与数据库表列的映射关系。"""
+    """对象关系映射"""
 
     @classmethod
     def _unique_constrains(cls) -> List[Set[str]]:
         """获取所有（单列和多列）唯一约束"""
+
         unique = [
             {c.name for c in u.columns}
-            for u in cls.__table_args__  # type: ignore
+            for u in cls.__table_args__
             if isinstance(u, UniqueConstraint)
         ]
         unique.extend(
-            {c.name} for c in cls.__table__.columns if c.unique  # type: ignore
+            {c.name} for c in cls.__table__.columns if c.unique
         )
         return unique
 
     @classmethod
     def parent_foreign_key_mappings(cls) -> Dict[str, str]:
-        """获取外键名到外键本地名的映射。"""
+        """获取外键本地名称到外键本地名称的映射"""
+
         parent_rel = cls.__mapper__.relationships.get(cls.export_parent)
         if parent_rel:
             return {l.name: r.name for (l, r) in parent_rel.local_remote_pairs}
         return {}
 
     @classmethod
-    def export_schema(
-        cls, recursive: bool = True, include_parent_ref: bool = False
-    ) -> Dict[str, Any]:
+    def export_schema(cls, recursive: bool = True, include_parent_ref: bool = False) -> Dict[str, Any]:
         """
-        导出结构为字典形式。
+        将架构导出为字典。
 
-        :param recursive: 是否递归，默认True。
-        :param include_parent_ref: 是否包括反向引用，默认False。
+        :param recursive:
+        :param include_parent_ref:
         :return:
         """
 
@@ -122,7 +132,7 @@ class ImportExportMixin:
 
         schema: Dict[str, Any] = {
             column.name: formatter(column)
-            for column in cls.__table__.columns  # type: ignore
+            for column in cls.__table__.columns
             if (column.name in cls.export_fields and column.name not in parent_excludes)
         }
         if recursive:
@@ -154,6 +164,7 @@ class ImportExportMixin:
         :param sync:
         :return:
         """
+
         if sync is None:
             sync = []
         parent_refs = cls.parent_foreign_key_mappings()
@@ -266,7 +277,7 @@ class ImportExportMixin:
         export_uuids: bool = False,
     ) -> Dict[Any, Any]:
         """
-        导出为字典形式。
+        导出为字典。
 
         :param recursive:
         :param include_parent_ref:
@@ -327,7 +338,7 @@ class ImportExportMixin:
 
     def override(self, obj: Any) -> None:
         """
-        使用指定对象的属性值重写该模型对象的导出字段的值。
+        使用指定对象的属性更新该实例的字段。
 
         :param obj:
         :return:
@@ -336,26 +347,33 @@ class ImportExportMixin:
             setattr(self, field, getattr(obj, field))
 
     def copy(self) -> Any:
-        """返回该死了的副本。"""
+        """返回该实例的副本。"""
 
         new_obj = self.__class__()
         new_obj.override(self)
         return new_obj
 
     def alter_params(self, **kwargs: Any) -> None:
-        """使用指定关键字参数更新参数对象。"""
+        """返回更改参数（Json）。"""
 
         params = self.params_dict
         params.update(kwargs)
         self.params = json.dumps(params)
 
     def remove_params(self, param_to_remove: str) -> None:
+        """
+        移除更改参数。
+
+        :param param_to_remove: 要移除的更改参数Json字符串。
+        :return:
+        """
         params = self.params_dict
         params.pop(param_to_remove, None)
         self.params = json.dumps(params)
 
     def reset_ownership(self) -> None:
-        """ object will belong to the user the current user """
+        """ 重置拥有者 """
+
         # make sure the object doesn't have relations to a user
         # it will be filled by appbuilder on save
         self.created_by = None
@@ -367,23 +385,16 @@ class ImportExportMixin:
 
     @property
     def params_dict(self) -> Dict[Any, Any]:
-        """获取参数对象的字典形式。"""
+        """参数的字典形式。"""
         return json_to_dict(self.params)
 
     @property
     def template_params_dict(self) -> Dict[Any, Any]:
-        """获取模板参数对象的字典形式。"""
-        return json_to_dict(self.template_params)  # type: ignore
+        """获取模板参数字典。"""
+        return json_to_dict(self.template_params)
 
 
 def _user_link(user: User) -> Union[Markup, str]:
-    """
-    返回用户访问Html超链接。
-
-    :param user: 用户对象。
-    :return:
-    """
-
     if not user:
         return ""
 
@@ -393,15 +404,12 @@ def _user_link(user: User) -> Union[Markup, str]:
 
 
 class AuditMixinNullable(AuditMixin):
-    """可空审计混入，使用可空类型字段（created_on、changed_on），声明属性：created_by_fk、changed_by_fk。
-
-    允许在CRUD外部编程创建对象。
+    """
+    可空类型审计混入类，更改 AuditMixin 以使用可为空的字段，允许在CRUD之外以编程方式创建对象
     """
 
     created_on = sa.Column(sa.DateTime, default=datetime.now, nullable=True)
-    changed_on = sa.Column(
-        sa.DateTime, default=datetime.now, onupdate=datetime.now, nullable=True
-    )
+    changed_on = sa.Column(sa.DateTime, default=datetime.now, onupdate=datetime.now, nullable=True)
 
     @declared_attr
     def created_by_fk(self) -> sa.Column:
@@ -459,7 +467,7 @@ class AuditMixinNullable(AuditMixin):
 
 
 class QueryResult:
-    """查询结果对象，包括：df、query、duration、status、error_message、errors。"""
+    """查询结果对象，存储查询操作的返回结果。"""
 
     def __init__(
         self,
@@ -479,7 +487,7 @@ class QueryResult:
 
 
 class ExtraJSONMixin:
-    """额外Json列（extra_json）混入类型，并提供访问 extra_json 列的属性 `extra` 。"""
+    """额外Json混入，添加 `extra` 列(JSON)和相应的方法。"""
 
     extra_json = sa.Column(sa.Text, default="{}")
 

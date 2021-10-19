@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 from datetime import datetime
@@ -23,11 +7,11 @@ import pytest
 import prison
 from sqlalchemy.sql import func
 
-from superset import db
-from superset.models.core import Database
-from superset.models.slice import Slice
-from superset.models.dashboard import Dashboard
-from superset.models.reports import (
+from rabbitai import db
+from rabbitai.models.core import Database
+from rabbitai.models.slice import Slice
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.reports import (
     ReportSchedule,
     ReportCreationMethodType,
     ReportRecipients,
@@ -36,7 +20,7 @@ from superset.models.reports import (
     ReportRecipientType,
     ReportState,
 )
-from superset.utils.core import get_example_database
+from rabbitai.utils.core import get_example_database
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.conftest import with_feature_flags
 from tests.integration_tests.fixtures.birth_names_dashboard import (
@@ -129,10 +113,10 @@ class TestReportSchedulesApi(SupersetTestCase):
 
             users = [
                 self.create_user(
-                    "alpha1", "password", "Alpha", email="alpha1@superset.org"
+                    "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
                 ),
                 self.create_user(
-                    "alpha2", "password", "Alpha", email="alpha2@superset.org"
+                    "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
                 ),
             ]
 
@@ -453,7 +437,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -562,7 +546,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -587,7 +571,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -611,7 +595,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -637,7 +621,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -663,7 +647,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -689,7 +673,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -716,7 +700,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -851,7 +835,7 @@ class TestReportSchedulesApi(SupersetTestCase):
     #         "recipients": [
     #             {
     #                 "type": ReportRecipientType.EMAIL,
-    #                 "recipient_config_json": {"target": "target@superset.org"},
+    #                 "recipient_config_json": {"target": "target@rabbitai.org"},
     #             },
     #             {
     #                 "type": ReportRecipientType.SLACK,
@@ -889,7 +873,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 },
                 {
                     "type": ReportRecipientType.SLACK,
@@ -931,7 +915,7 @@ class TestReportSchedulesApi(SupersetTestCase):
             "recipients": [
                 {
                     "type": ReportRecipientType.EMAIL,
-                    "recipient_config_json": {"target": "target@superset.org"},
+                    "recipient_config_json": {"target": "target@rabbitai.org"},
                 }
             ],
             "chart": chart.id,

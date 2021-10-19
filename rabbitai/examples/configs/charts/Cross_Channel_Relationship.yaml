@@ -2,7 +2,7 @@ slice_name: Cross Channel Relationship
 viz_type: chord
 params:
   adhoc_filters: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   columns: channel_2
   datasource: 59__table
   groupby: channel_1

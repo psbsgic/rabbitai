@@ -1,4 +1,3 @@
-
 export const pmc = [
   {
     name: ' Aaron Suddjian',
@@ -217,5 +216,10 @@ export const Databases = [
     title: 'Hologres',
     href: 'https://www.alibabacloud.com/product/hologres',
     imgName: 'hologres.png',
+  },
+  {
+    title: 'IBM Netezza Performance Server',
+    href: 'https://www.ibm.com/products/netezza',
+    imgName: 'netezza.png',
   },
 ];

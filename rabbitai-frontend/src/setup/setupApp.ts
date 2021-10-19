@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 /* eslint global-require: 0 */
 import $ from 'jquery';
 import { SupersetClient } from '@superset-ui/core';
@@ -33,6 +15,11 @@ declare global {
   }
 }
 
+/**
+ * 显示API相关信息。
+ *
+ * @param resp 客户端错误对象。
+ */
 function showApiMessage(resp: ClientErrorObject) {
   const template =
     '<div class="alert"> ' +
@@ -45,6 +32,12 @@ function showApiMessage(resp: ClientErrorObject) {
     .appendTo($('#alert-container'));
 }
 
+/**
+ * 切换捡选框。
+ *
+ * @param apiUrlPrefix API地址前缀。
+ * @param selector 选择器。
+ */
 function toggleCheckbox(apiUrlPrefix: string, selector: string) {
   SupersetClient.get({
     endpoint: apiUrlPrefix + ($(selector)[0] as HTMLInputElement).checked,
@@ -59,6 +52,9 @@ function toggleCheckbox(apiUrlPrefix: string, selector: string) {
     );
 }
 
+/**
+ * 设置应用，初始化Web应用，Html文档就绪后执行相关操作。
+ */
 export default function setupApp() {
   $(document).ready(function () {
     $(':checkbox[data-checkbox-api-prefix]').change(function (

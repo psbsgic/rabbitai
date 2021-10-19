@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Loads datasets, dashboards and slices in a new superset instance"""
+"""Loads datasets, dashboards and slices in a new rabbitai instance"""
 
 import json
 import os
@@ -10,10 +10,10 @@ from io import BytesIO
 from typing import Any, Dict, List, Set
 from urllib import request
 
-from superset import app, db
-from superset.connectors.connector_registry import ConnectorRegistry
-from superset.models import core as models
-from superset.models.slice import Slice
+from rabbitai import app, db
+from rabbitai.connectors.connector_registry import ConnectorRegistry
+from rabbitai.models import core as models
+from rabbitai.models.slice import Slice
 
 BASE_URL = "https://github.com/apache-superset/examples-data/blob/master/"
 """示例数据基地址
@@ -45,6 +45,16 @@ EXAMPLES_FOLDER = os.path.join(config["BASE_DIR"], "examples")
 """示例文件夹"""
 
 misc_dash_slices: Set[str] = set()  # slices assembled in a 'Misc Chart' dashboard
+
+
+def get_table_connector_registry() -> Any:
+    """获取数据表类型数据源。"""
+    return ConnectorRegistry.sources["table"]
+
+
+def get_examples_folder() -> str:
+    """获取示例文件夹。"""
+    return os.path.join(app.config["BASE_DIR"], "examples")
 
 
 def update_slice_ids(layout_dict: Dict[Any, Any], slices: List[Slice]) -> None:
@@ -94,7 +104,7 @@ def get_example_data(filepath: str, is_gzip: bool = True, make_bytes: bool = Fal
     """
 
     # 如果本地存在则从本地加载
-    local_path = os.path.join(EXAMPLES_FOLDER, "data", filepath)
+    local_path = os.path.join(get_examples_folder(), "data", filepath)
     if os.path.exists(local_path):
         with io.open(local_path, "rb") as f:
             content = f.read()

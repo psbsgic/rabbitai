@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 import logging
 import time
 import unittest
@@ -24,8 +8,8 @@ from unittest.mock import patch
 from flask import current_app
 from freezegun import freeze_time
 
-from superset import security_manager
-from superset.utils.log import (
+from rabbitai import security_manager
+from rabbitai.utils.log import (
     AbstractEventLogger,
     DBEventLogger,
     get_event_logger_from_cfg_value,
@@ -68,7 +52,7 @@ class TestEventLogger(unittest.TestCase):
             time.sleep(0.05)
             return 1
 
-        with app.test_request_context("/superset/dashboard/1/?myparam=foo"):
+        with app.test_request_context("/rabbitai/dashboard/1/?myparam=foo"):
             result = test_func()
             payload = mock_log.call_args[1]
             self.assertEqual(result, 1)
@@ -77,8 +61,8 @@ class TestEventLogger(unittest.TestCase):
                 [
                     {
                         "myparam": "foo",
-                        "path": "/superset/dashboard/1/",
-                        "url_rule": "/superset/dashboard/<dashboard_id_or_slug>/",
+                        "path": "/rabbitai/dashboard/1/",
+                        "url_rule": "/rabbitai/dashboard/<dashboard_id_or_slug>/",
                         "object_ref": test_func.__qualname__,
                     }
                 ],
@@ -112,7 +96,7 @@ class TestEventLogger(unittest.TestCase):
             )
             self.assertGreaterEqual(payload["duration_ms"], 100)
 
-    @patch("superset.utils.log.g", spec={})
+    @patch("rabbitai.utils.log.g", spec={})
     @freeze_time("Jan 14th, 2020", auto_tick_seconds=15)
     def test_context_manager_log(self, mock_g):
         class DummyEventLogger(AbstractEventLogger):
@@ -149,7 +133,7 @@ class TestEventLogger(unittest.TestCase):
             }
         ]
 
-    @patch("superset.utils.log.g", spec={})
+    @patch("rabbitai.utils.log.g", spec={})
     def test_context_manager_log_with_context(self, mock_g):
         class DummyEventLogger(AbstractEventLogger):
             def __init__(self):
@@ -196,7 +180,7 @@ class TestEventLogger(unittest.TestCase):
             }
         ]
 
-    @patch("superset.utils.log.g", spec={})
+    @patch("rabbitai.utils.log.g", spec={})
     def test_log_with_context_user_null(self, mock_g):
         class DummyEventLogger(AbstractEventLogger):
             def __init__(self):

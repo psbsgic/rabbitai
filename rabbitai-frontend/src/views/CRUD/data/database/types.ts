@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 type DatabaseUser = {
   first_name: string;
   last_name: string;
@@ -45,14 +27,11 @@ export type DatabaseObject = {
     password?: string;
     encryption?: boolean;
     credentials_info?: string;
-    query?: string | object;
-    catalog?: {};
+    query?: Record<string, string>;
+    catalog?: Record<string, string>;
   };
   configuration_method: CONFIGURATION_METHOD;
   engine?: string;
-
-  // Gsheets temporary storage
-  catalog?: Array<CatalogObject>;
 
   // Performance
   cache_timeout?: string;
@@ -85,11 +64,14 @@ export type DatabaseObject = {
     allows_virtual_table_explore?: boolean; // in SQL Lab
     schemas_allowed_for_csv_upload?: string[]; // in Security
     cancel_query_on_windows_unload?: boolean; // in Performance
-    version?: string;
 
-    // todo: ask beto where this should live
-    cost_query_enabled?: boolean; // in SQL Lab
+    version?: string;
+    cost_estimate_enabled?: boolean; // in SQL Lab
   };
+
+  // Temporary storage
+  catalog?: Array<CatalogObject>;
+  query_input?: string;
   extra?: string;
 };
 
@@ -140,7 +122,7 @@ export type DatabaseForm = {
 };
 
 // the values should align with the database
-// model enum in superset/superset/models/core.py
+// model enum in rabbitai/rabbitai/models/core.py
 export enum CONFIGURATION_METHOD {
   SQLALCHEMY_URI = 'sqlalchemy_form',
   DYNAMIC_FORM = 'dynamic_form',

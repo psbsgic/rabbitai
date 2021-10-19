@@ -1,22 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { render, screen } from 'spec/helpers/testing-library';
@@ -47,12 +28,12 @@ const createProps = () => ({
   toggleExpandSlice: jest.fn(),
   slice: {
     slice_id: 371,
-    slice_url: '/superset/explore/?form_data=%7B%22slice_id%22%3A%20371%7D',
+    slice_url: '/rabbitai/explore/?form_data=%7B%22slice_id%22%3A%20371%7D',
     slice_name: 'Vaccine Candidates per Country & Stage',
     slice_description: 'Table of vaccine candidates for 100 countries',
     form_data: {
       adhoc_filters: [],
-      color_scheme: 'supersetColors',
+      color_scheme: 'rabbitaiColors',
       datasource: '58__table',
       groupby: ['product_category', 'clinical_stage'],
       linear_color_scheme: 'schemeYlOrBr',
@@ -81,15 +62,15 @@ const createProps = () => ({
   isExpanded: false,
   cachedDttm: [''],
   updatedDttm: 1617213803803,
-  supersetCanExplore: true,
-  supersetCanCSV: true,
+  rabbitaiCanExplore: true,
+  rabbitaiCanCSV: true,
   sliceCanEdit: false,
   componentId: 'CHART-fYo7IyvKZQ',
   dashboardId: 26,
   isFullSize: false,
   chartStatus: 'rendered',
   showControls: true,
-  supersetCanShare: true,
+  rabbitaiCanShare: true,
   formData: {},
 });
 

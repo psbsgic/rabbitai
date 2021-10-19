@@ -1,27 +1,11 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 import numpy as np
 import pandas as pd
 
 import tests.integration_tests.test_app
-from superset.dataframe import df_to_records
-from superset.db_engine_specs import BaseEngineSpec
-from superset.result_set import SupersetResultSet
+from rabbitai.dataframe import df_to_records
+from rabbitai.db_engine_specs import BaseEngineSpec
+from rabbitai.result_set import SupersetResultSet
 
 from .base_tests import SupersetTestCase
 

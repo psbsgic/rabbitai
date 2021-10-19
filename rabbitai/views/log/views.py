@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import current_app as app
 from flask_appbuilder.hooks import before_request
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -11,8 +13,6 @@ from . import LogMixin
 
 
 class LogModelView(LogMixin, RabbitaiModelView):
-    """日志模型视图，提供Log对象关系模型的CRUD。"""
-
     datamodel = SQLAInterface(models.Log)
     include_route_methods = {RouteMethod.LIST, RouteMethod.SHOW}
     class_permission_name = "Log"

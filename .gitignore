@@ -27,7 +27,6 @@ _modules
 _static
 build
 app.db
-rabbitai.egg-info/
 changelog.sh
 dist
 dump.rdb
@@ -68,7 +67,7 @@ geckodriver.log
 ghostdriver.log
 testCSV.csv
 .terser-plugin-cache/
-rabbitai-*.tar.gz*
+apache-rabbitai-*.tar.gz*
 release.json
 
 # Translation binaries

@@ -1,6 +1,5 @@
 #! /bin/bash
 
-
 run_git_tag () {
   if [ "$DRY_RUN" = "false" ] && [ "$SKIP_TAG" = "false" ]
   then

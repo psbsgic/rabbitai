@@ -4,7 +4,7 @@ params:
   adhoc_filters: []
   annotation_layers: []
   bottom_margin: auto
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   comparison_type: values
   contribution: true
   datasource: 23__table

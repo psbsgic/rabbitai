@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Optional, Type, TYPE_CHECKING
 
 from flask import Markup
@@ -7,7 +9,7 @@ from sqlalchemy import Column, Integer, String
 from rabbitai import app, db, security_manager
 from rabbitai.connectors.connector_registry import ConnectorRegistry
 from rabbitai.models.helpers import AuditMixinNullable
-from rabbitai.utils import core as utils
+from rabbitai.utils.memoized import memoized
 
 if TYPE_CHECKING:
     from rabbitai.connectors.base.models import BaseDatasource
@@ -16,11 +18,11 @@ config = app.config
 
 
 class DatasourceAccessRequest(Model, AuditMixinNullable):
-    """访问数据源和数据库请求 ORM。"""
+    """数据源和数据库访问请求的 ORM 模型。"""
 
     __tablename__ = "access_request"
-    id = Column(Integer, primary_key=True)
 
+    id = Column(Integer, primary_key=True)
     datasource_id = Column(Integer)
     datasource_type = Column(String(200))
 
@@ -28,28 +30,39 @@ class DatasourceAccessRequest(Model, AuditMixinNullable):
 
     @property
     def cls_model(self) -> Type["BaseDatasource"]:
+        """获取数据源的类。"""
         return ConnectorRegistry.sources[self.datasource_type]
 
     @property
     def username(self) -> Markup:
+        """获取用户名称。"""
         return self.creator()
 
     @property
     def datasource(self) -> "BaseDatasource":
+        """获取数据源对象。"""
         return self.get_datasource
 
     @datasource.getter  # type: ignore
-    @utils.memoized
+    @memoized
     def get_datasource(self) -> "BaseDatasource":
+        """从数据库中获取数据源对象并缓存。"""
         ds = db.session.query(self.cls_model).filter_by(id=self.datasource_id).first()
         return ds
 
     @property
     def datasource_link(self) -> Optional[Markup]:
-        return self.datasource.link  # pylint: disable=no-member
+        """获取数据源访问连接。"""
+        return self.datasource.link
 
     @property
     def roles_with_datasource(self) -> str:
+        """
+        获取角色和数据源的Html列表 ul。
+
+        :return:
+        """
+
         action_list = ""
         perm = self.datasource.perm  # pylint: disable=no-member
         pv = security_manager.find_permission_view_menu("datasource_access", perm)
@@ -67,6 +80,8 @@ class DatasourceAccessRequest(Model, AuditMixinNullable):
 
     @property
     def user_roles(self) -> str:
+        """返回用户角色ul元素。"""
+
         action_list = ""
         for role in self.created_by.roles:
             href = (

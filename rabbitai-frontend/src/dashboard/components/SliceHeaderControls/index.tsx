@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import React from 'react';
 import moment from 'moment';
 import {
@@ -111,9 +93,9 @@ export interface SliceHeaderControlsProps {
   addDangerToast: (message: string) => void;
   addSuccessToast: (message: string) => void;
 
-  supersetCanExplore?: boolean;
-  supersetCanShare?: boolean;
-  supersetCanCSV?: boolean;
+  rabbitaiCanExplore?: boolean;
+  rabbitaiCanShare?: boolean;
+  rabbitaiCanCSV?: boolean;
   sliceCanEdit?: boolean;
 }
 interface State {
@@ -218,7 +200,7 @@ class SliceHeaderControls extends React.PureComponent<
       updatedDttm = null,
       addSuccessToast = () => {},
       addDangerToast = () => {},
-      supersetCanShare = false,
+      rabbitaiCanShare = false,
       isCached = [],
     } = this.props;
     const crossFilterItems = getChartMetadataRegistry().items;
@@ -279,7 +261,7 @@ class SliceHeaderControls extends React.PureComponent<
           </Menu.Item>
         )}
 
-        {this.props.supersetCanExplore && (
+        {this.props.rabbitaiCanExplore && (
           <Menu.Item key={MENU_KEYS.EXPLORE_CHART}>
             <a href={this.props.exploreUrl} rel="noopener noreferrer">
               {t('View chart in Explore')}
@@ -287,7 +269,7 @@ class SliceHeaderControls extends React.PureComponent<
           </Menu.Item>
         )}
 
-        {this.props.supersetCanExplore && (
+        {this.props.rabbitaiCanExplore && (
           <Menu.Item key={MENU_KEYS.VIEW_QUERY}>
             <ModalTrigger
               triggerNode={
@@ -302,7 +284,7 @@ class SliceHeaderControls extends React.PureComponent<
           </Menu.Item>
         )}
 
-        {supersetCanShare && (
+        {rabbitaiCanShare && (
           <ShareMenuItems
             url={getDashboardUrl({
               pathname: window.location.pathname,
@@ -324,11 +306,11 @@ class SliceHeaderControls extends React.PureComponent<
           {t('Download as image')}
         </Menu.Item>
 
-        {this.props.supersetCanCSV && (
+        {this.props.rabbitaiCanCSV && (
           <Menu.Item key={MENU_KEYS.EXPORT_CSV}>{t('Export CSV')}</Menu.Item>
         )}
         {isFeatureEnabled(FeatureFlag.ALLOW_FULL_CSV_EXPORT) &&
-          this.props.supersetCanCSV &&
+          this.props.rabbitaiCanCSV &&
           isTable && (
             <Menu.Item key={MENU_KEYS.EXPORT_FULL_CSV}>
               {t('Export full CSV')}

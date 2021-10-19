@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Any
 
 import simplejson as json
@@ -8,8 +10,8 @@ from flask_appbuilder.security.decorators import has_access_api
 
 from rabbitai import db, event_logger
 from rabbitai.charts.commands.exceptions import (
+    TimeRangeAmbiguousError,
     TimeRangeParseFailError,
-    TimeRangeUnclearError,
 )
 from rabbitai.common.query_context import QueryContext
 from rabbitai.legacy import update_time_range
@@ -23,7 +25,14 @@ get_time_range_schema = {"type": "string"}
 
 
 class Api(BaseRabbitaiView):
-    """API视图，扩展 BaseRabbitaiView，提供查询相关功能。"""
+    """API访问视图。
+
+    /v1/query/
+
+    /v1/form_data/
+
+    /v1/time_range/
+    """
 
     @event_logger.log_this
     @api
@@ -56,6 +65,7 @@ class Api(BaseRabbitaiView):
         Get the formdata stored in the database for existing slice.
         params: slice_id: integer
         """
+
         form_data = {}
         slice_id = request.args.get("slice_id")
         if slice_id:
@@ -74,6 +84,7 @@ class Api(BaseRabbitaiView):
     @expose("/v1/time_range/", methods=["GET"])
     def time_range(self, **kwargs: Any) -> FlaskResponse:
         """Get actually time range from human readable string or datetime expression"""
+
         time_range = kwargs["rison"]
         try:
             since, until = get_since_until(time_range)
@@ -83,6 +94,6 @@ class Api(BaseRabbitaiView):
                 "timeRange": time_range,
             }
             return self.json_response({"result": result})
-        except (ValueError, TimeRangeParseFailError, TimeRangeUnclearError) as error:
+        except (ValueError, TimeRangeParseFailError, TimeRangeAmbiguousError) as error:
             error_msg = {"message": f"Unexpected time range: {error}"}
             return self.json_response(error_msg, 400)

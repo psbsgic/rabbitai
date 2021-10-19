@@ -37,7 +37,7 @@ jobs:
           let results = [];
           [...context.payload.comment.body.matchAll(pattern)].forEach(match => {
             const config = {
-              name: `SUPERSET_FEATURE_${match[1]}`,
+              name: `RABBITAI_FEATURE_${match[1]}`,
               value: match[2],
             };
             results.push(config);
@@ -90,7 +90,7 @@ jobs:
       run: |
         aws ecr describe-images \
         --registry-id $(echo "${{ steps.login-ecr.outputs.registry }}" | grep -Eo "^[0-9]+") \
-        --repository-name superset-ci \
+        --repository-name rabbitai-ci \
         --image-ids imageTag=pr-${{ github.event.issue.number }}
 
     - name: Fail on missing container image
@@ -113,8 +113,8 @@ jobs:
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
         task-definition: .github/workflows/ecs-task-definition.json
-        container-name: superset-ci
-        image: ${{ steps.login-ecr.outputs.registry }}/superset-ci:pr-${{ github.event.issue.number }}
+        container-name: rabbitai-ci
+        image: ${{ steps.login-ecr.outputs.registry }}/rabbitai-ci:pr-${{ github.event.issue.number }}
 
     - name: Update env vars in the Amazon ECS task definition
       run: |
@@ -123,7 +123,7 @@ jobs:
     - name: Describe ECS service
       id: describe-services
       run: |
-        echo "::set-output name=active::$(aws ecs describe-services --cluster superset-ci --services pr-${{ github.event.issue.number }}-service | jq '.services[] | select(.status == "ACTIVE") | any')"
+        echo "::set-output name=active::$(aws ecs describe-services --cluster rabbitai-ci --services pr-${{ github.event.issue.number }}-service | jq '.services[] | select(.status == "ACTIVE") | any')"
 
     - name: Create ECS service
       if: steps.describe-services.outputs.active != 'true'
@@ -133,9 +133,9 @@ jobs:
         ECR_SECURITY_GROUP: sg-092ff3a6ae0574d91
       run: |
         aws ecs create-service \
-        --cluster superset-ci \
+        --cluster rabbitai-ci \
         --service-name pr-${{ github.event.issue.number }}-service \
-        --task-definition superset-ci \
+        --task-definition rabbitai-ci \
         --launch-type FARGATE \
         --desired-count 1 \
         --platform-version LATEST \
@@ -148,19 +148,19 @@ jobs:
       with:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: pr-${{ github.event.issue.number }}-service
-        cluster: superset-ci
+        cluster: rabbitai-ci
         wait-for-service-stability: true
         wait-for-minutes: 10
 
     - name: List tasks
       id: list-tasks
       run: |
-        echo "::set-output name=task::$(aws ecs list-tasks --cluster superset-ci --service-name pr-${{ github.event.issue.number }}-service | jq '.taskArns | first')"
+        echo "::set-output name=task::$(aws ecs list-tasks --cluster rabbitai-ci --service-name pr-${{ github.event.issue.number }}-service | jq '.taskArns | first')"
 
     - name: Get network interface
       id: get-eni
       run: |
-        echo "::set-output name=eni::$(aws ecs describe-tasks --cluster superset-ci --tasks ${{ steps.list-tasks.outputs.task }} | jq '.tasks | .[0] | .attachments | .[0] | .details | map(select(.name=="networkInterfaceId")) | .[0] | .value')"
+        echo "::set-output name=eni::$(aws ecs describe-tasks --cluster rabbitai-ci --tasks ${{ steps.list-tasks.outputs.task }} | jq '.tasks | .[0] | .attachments | .[0] | .details | map(select(.name=="networkInterfaceId")) | .[0] | .value')"
 
     - name: Get public IP
       id: get-ip

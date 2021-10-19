@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import { getChartControlPanelRegistry } from '@superset-ui/core';
 import MainPreset from '../visualizations/presets/MainPreset';
 import setupPluginsExtra from './setupPluginsExtra';
@@ -23,13 +5,18 @@ import setupPluginsExtra from './setupPluginsExtra';
 import Separator from '../explore/controlPanels/Separator';
 import TimeTable from '../explore/controlPanels/TimeTable';
 
+/**
+ * 设置插件，建立插件注册表，注册相关插件：MainPreset、Separator、TimeTable等。
+ */
 export default function setupPlugins() {
+  // 注册已定义的各种插件
   new MainPreset().register();
 
-  // TODO: Remove these shims once the control panel configs are moved into the plugin package.
+  // 注册Separator、TimeTable
   getChartControlPanelRegistry()
     .registerValue('separator', Separator)
     .registerValue('time_table', TimeTable);
 
+  // 注册自定义插件
   setupPluginsExtra();
 }

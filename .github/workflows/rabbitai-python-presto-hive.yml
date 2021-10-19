@@ -19,7 +19,7 @@ jobs:
       PYTHONPATH: ${{ github.workspace }}
       RABBITAI_CONFIG: tests.integration_tests.rabbitai_test_config
       REDIS_PORT: 16379
-      RABBITAI__SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://rabbitai:rabbitai@127.0.0.1:15432/rabbitai
+      RABBITAI__SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://rabbitai:rabbitai@127.0.0.1:15432/rabbitai_db
       RABBITAI__SQLALCHEMY_EXAMPLES_URI: presto://localhost:15433/memory/default
     services:
       postgres:

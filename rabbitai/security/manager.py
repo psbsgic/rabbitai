@@ -1,8 +1,22 @@
-# pylint: disable=too-few-public-methods
-"""A set of constants and methods to manage permissions and security"""
+# -*- coding: utf-8 -*-
+
+"""权限和安全性管理相关的常量和方法集合。"""
+
 import logging
 import re
-from typing import Any, Callable, cast, List, Optional, Set, Tuple, TYPE_CHECKING, Union
+from collections import defaultdict
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)
 
 from flask import current_app, g
 from flask_appbuilder import Model
@@ -71,12 +85,13 @@ class RabbitaiRoleListWidget(ListWidget):
         super().__init__(**kwargs)
 
 
+# 指定安全相关视图显示列表的部件
 UserModelView.list_widget = RabbitaiSecurityListWidget
 RoleModelView.list_widget = RabbitaiRoleListWidget
 PermissionViewModelView.list_widget = RabbitaiSecurityListWidget
 PermissionModelView.list_widget = RabbitaiSecurityListWidget
 
-# Limiting routes on FAB model views
+# 指定各安全相关视图的路由方法
 UserModelView.include_route_methods = RouteMethod.CRUD_SET | {
     RouteMethod.ACTION,
     RouteMethod.API_READ,
@@ -93,11 +108,17 @@ RoleModelView.edit_columns = ["name", "permissions", "user"]
 RoleModelView.related_views = []
 
 
-class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
-    SecurityManager
-):
+class RabbitaiSecurityManager(SecurityManager):
+    """
+    负责身份验证、注册安全视图、角色和权限自动管理，
+    如果要更改任何内容，只需继承和重写，然后将自己的安全管理器传递给AppBuilder。
+    """
+
     userstatschartview = None
+    """用户统计图表视图，默认None"""
+
     READ_ONLY_MODEL_VIEWS = {"Database", "DruidClusterModelView", "DynamicPlugin"}
+    """只读模型视图名称集合，Database、DruidClusterModelView、DynamicPlugin"""
 
     USER_MODEL_VIEWS = {
         "UserDBModelView",
@@ -106,6 +127,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         "UserOIDModelView",
         "UserRemoteUserModelView",
     }
+    """用户模型视图名称集合，UserDBModelView、UserLDAPModelView、UserOAuthModelView、UserRemoteUserModelView"""
 
     GAMMA_READ_ONLY_MODEL_VIEWS = {
         "Dataset",
@@ -114,6 +136,8 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         "DruidMetricInlineView",
         "Datasource",
     } | READ_ONLY_MODEL_VIEWS
+    """GAMMA类型角色只读模型视图名称集合，
+    Dataset、DruidColumnInlineView、DruidDatasourceModelView、DruidMetricInlineView、Datasource"""
 
     ADMIN_ONLY_VIEW_MENUS = {
         "AccessRequestsModelView",
@@ -127,6 +151,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         "Row Level Security Filters",
         "RowLevelSecurityFiltersModelView",
     } | USER_MODEL_VIEWS
+    """管理员视图菜单名称的集合。"""
 
     ALPHA_ONLY_VIEW_MENUS = {
         "Manage",
@@ -135,7 +160,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         "Import dashboards",
         "Upload a CSV",
     }
-
+    """ALPHA视图菜单名称的集合。"""
     ADMIN_ONLY_PERMISSIONS = {
         "can_sql_json",  # TODO: move can_sql_json to sql_lab role
         "can_override_role_permissions",
@@ -145,30 +170,32 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         "can_update_role",
         "all_query_access",
     }
-
+    """管理员权限名称的集合。"""
     READ_ONLY_PERMISSION = {
         "can_show",
         "can_list",
         "can_get",
         "can_external_metadata",
+        "can_external_metadata_by_name",
         "can_read",
     }
-
+    """只读权限名称的集合。"""
     ALPHA_ONLY_PERMISSIONS = {
         "muldelete",
         "all_database_access",
         "all_datasource_access",
     }
-
+    """ALPHA权限名称的集合。"""
     OBJECT_SPEC_PERMISSIONS = {
         "database_access",
         "schema_access",
         "datasource_access",
         "metric_access",
     }
+    """对象规范权限名称的集合。"""
 
     ACCESSIBLE_PERMS = {"can_userinfo", "resetmypassword"}
-
+    """可访问权限名称集合"""
     SQLLAB_PERMISSION_VIEWS = {
         ("can_csv", "Rabbitai"),
         ("can_read", "SavedQuery"),
@@ -182,6 +209,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         ("menu_access", "Saved Queries"),
         ("menu_access", "Query Search"),
     }
+    """SQLLAB权限视图集合"""
 
     data_access_permissions = (
         "database_access",
@@ -191,16 +219,17 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         "all_database_access",
         "all_query_access",
     )
+    """数据访问权限列表"""
 
-    def get_schema_perm(  # pylint: disable=no-self-use
+    def get_schema_perm(
         self, database: Union["Database", str], schema: Optional[str] = None
     ) -> Optional[str]:
         """
-        Return the database specific schema permission.
+        返回数据库模式权限，格式[{database}].[{schema}] 或None。
 
-        :param database: The Rabbitai database or database name
-        :param schema: The Rabbitai schema name
-        :return: The database specific schema permission
+        :param database: 数据库或数据库名称。
+        :param schema: 模式名称
+        :return: 数据库模式权限。
         """
 
         if schema:
@@ -208,9 +237,14 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
 
         return None
 
-    def unpack_schema_perm(  # pylint: disable=no-self-use
-        self, schema_permission: str
-    ) -> Tuple[str, str]:
+    def unpack_schema_perm(self, schema_permission: str) -> Tuple[str, str]:
+        """
+        分解指定数据库模式权限为数据库名称和模式名称的元组。
+
+        :param schema_permission: 数据库模式权限
+        :return:
+        """
+
         # [database_name].[schema_name]
         schema_name = schema_permission.split(".")[1][1:-1]
         database_name = schema_permission.split(".")[0][1:-1]
@@ -325,9 +359,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
             `all_datasource_access` permission"""
 
     @staticmethod
-    def get_datasource_access_link(  # pylint: disable=unused-argument
-        datasource: "BaseDatasource",
-    ) -> Optional[str]:
+    def get_datasource_access_link(datasource: "BaseDatasource",) -> Optional[str]:
         """
         Return the link for the denied Rabbitai datasource.
 
@@ -339,9 +371,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
 
         return conf.get("PERMISSION_INSTRUCTIONS_LINK")
 
-    def get_datasource_access_error_object(  # pylint: disable=invalid-name
-        self, datasource: "BaseDatasource"
-    ) -> RabbitaiError:
+    def get_datasource_access_error_object(self, datasource: "BaseDatasource") -> RabbitaiError:
         """
         Return the error object for the denied Rabbitai datasource.
 
@@ -358,9 +388,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
             },
         )
 
-    def get_table_access_error_msg(  # pylint: disable=no-self-use
-        self, tables: Set["Table"]
-    ) -> str:
+    def get_table_access_error_msg(self, tables: Set["Table"]) -> str:
         """
         Return the error message for the denied SQL tables.
 
@@ -389,9 +417,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
             },
         )
 
-    def get_table_access_link(  # pylint: disable=unused-argument,no-self-use
-        self, tables: Set["Table"]
-    ) -> Optional[str]:
+    def get_table_access_link(self, tables: Set["Table"]) -> Optional[str]:
         """
         Return the access link for the denied SQL tables.
 
@@ -402,6 +428,43 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         from rabbitai import conf
 
         return conf.get("PERMISSION_INSTRUCTIONS_LINK")
+
+    def get_user_datasources(self) -> List["BaseDatasource"]:
+        """
+        Collect datasources which the user has explicit permissions to.
+
+        :returns: The list of datasources
+        """
+
+        user_perms = self.user_view_menu_names("datasource_access")
+        schema_perms = self.user_view_menu_names("schema_access")
+        user_datasources = set()
+        for datasource_class in ConnectorRegistry.sources.values():
+            user_datasources.update(
+                self.get_session.query(datasource_class)
+                .filter(
+                    or_(
+                        datasource_class.perm.in_(user_perms),
+                        datasource_class.schema_perm.in_(schema_perms),
+                    )
+                )
+                .all()
+            )
+
+        # group all datasources by database
+        all_datasources = ConnectorRegistry.get_all_datasources(self.get_session)
+        datasources_by_database: Dict["Database", Set["BaseDatasource"]] = defaultdict(
+            set
+        )
+        for datasource in all_datasources:
+            datasources_by_database[datasource.database].add(datasource)
+
+        # add datasources with implicit permission (eg, database access)
+        for database, datasources in datasources_by_database.items():
+            if self.can_access_database(database):
+                user_datasources.update(datasources)
+
+        return list(user_datasources)
 
     def can_access_table(self, database: "Database", table: "Table") -> bool:
         """
@@ -420,6 +483,13 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         return True
 
     def user_view_menu_names(self, permission_name: str) -> Set[str]:
+        """
+        返回用户可以访问的视图菜单名称的列表。
+
+        :param permission_name: 权限名称。
+        :return:
+        """
+
         base_query = (
             self.get_session.query(self.viewmenu_model.name)
             .join(self.permissionview_model)
@@ -489,7 +559,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
 
         return [s for s in schemas if s in accessible_schemas]
 
-    def get_datasources_accessible_by_user(  # pylint: disable=invalid-name
+    def get_datasources_accessible_by_user(
         self,
         database: "Database",
         datasource_names: List[DatasourceName],
@@ -596,7 +666,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         sesh = self.get_session
         pvms = sesh.query(PermissionView).filter(
             or_(
-                PermissionView.permission  # pylint: disable=singleton-comparison
+                PermissionView.permission   # pylint: disable=singleton-comparison
                 == None,
                 PermissionView.view_menu  # pylint: disable=singleton-comparison
                 == None,
@@ -667,9 +737,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         query = self.get_session.query(Role).filter(Role.id.in_(role_ids))
         return query.all()
 
-    def copy_role(
-        self, role_from_name: str, role_to_name: str, merge: bool = True
-    ) -> None:
+    def copy_role(self, role_from_name: str, role_to_name: str, merge: bool = True) -> None:
         """
         Copies permissions from a role to another.
 
@@ -700,9 +768,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         self.get_session.merge(role_to)
         self.get_session.commit()
 
-    def set_role(
-        self, role_name: str, pvm_check: Callable[[PermissionView], bool]
-    ) -> None:
+    def set_role(self, role_name: str, pvm_check: Callable[[PermissionView], bool]) -> None:
         """
         Set the FAB permission/views for the role.
 
@@ -821,9 +887,7 @@ class RabbitaiSecurityManager(  # pylint: disable=too-many-public-methods
         """
         return (pvm.permission.name, pvm.view_menu.name) in self.SQLLAB_PERMISSION_VIEWS
 
-    def _is_granter_pvm(  # pylint: disable=no-self-use
-        self, pvm: PermissionView
-    ) -> bool:
+    def _is_granter_pvm(self, pvm: PermissionView) -> bool:
         """
         Return True if the user can grant the FAB permission/view, False
         otherwise.

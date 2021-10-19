@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 from typing import Optional
 
@@ -61,7 +63,7 @@ try:
     from statsd import StatsClient
 
     class StatsdStatsLogger(BaseStatsLogger):
-        def __init__(
+        def __init__(  # pylint: disable=super-init-not-called
             self,
             host: str = "localhost",
             port: int = 8125,
@@ -92,5 +94,5 @@ try:
             self.client.gauge(key, value)
 
 
-except Exception:
+except Exception:  # pylint: disable=broad-except
     pass

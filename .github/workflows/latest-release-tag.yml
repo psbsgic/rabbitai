@@ -24,7 +24,7 @@ jobs:
       uses: ./.github/actions/latest-tag
       if: (! ${{ steps.latest-tag.outputs.SKIP_TAG }} )
       with:
-        description: Superset latest release
+        description: Rabbitai latest release
         tag-name: latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

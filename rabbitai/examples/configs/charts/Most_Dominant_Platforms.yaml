@@ -11,7 +11,7 @@ params:
     operator: <=
     sqlExpression: null
     subject: rank
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 21__table
   donut: true
   granularity_sqla: year

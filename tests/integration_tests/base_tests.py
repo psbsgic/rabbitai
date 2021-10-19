@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 from datetime import datetime
@@ -33,18 +17,18 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from tests.integration_tests.test_app import app
-from superset.sql_parse import CtasMethod
-from superset import db, security_manager
-from superset.connectors.base.models import BaseDatasource
-from superset.connectors.druid.models import DruidCluster, DruidDatasource
-from superset.connectors.sqla.models import SqlaTable
-from superset.models import core as models
-from superset.models.slice import Slice
-from superset.models.core import Database
-from superset.models.dashboard import Dashboard
-from superset.models.datasource_access_request import DatasourceAccessRequest
-from superset.utils.core import get_example_database
-from superset.views.base_api import BaseSupersetModelRestApi
+from rabbitai.sql_parse import CtasMethod
+from rabbitai import db, security_manager
+from rabbitai.connectors.base.models import BaseDatasource
+from rabbitai.connectors.druid.models import DruidCluster, DruidDatasource
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.models import core as models
+from rabbitai.models.slice import Slice
+from rabbitai.models.core import Database
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.datasource_access_request import DatasourceAccessRequest
+from rabbitai.utils.core import get_example_database
+from rabbitai.views.base_api import BaseSupersetModelRestApi
 
 FAKE_DB_NAME = "fake_db_100"
 test_client = app.test_client()
@@ -81,7 +65,7 @@ def post_assert_metric(
     """
     Simple client post with an extra assertion for statsd metrics
 
-    :param client: test client for superset api requests
+    :param client: test client for rabbitai api requests
     :param uri: The URI to use for the HTTP POST
     :param data: The JSON data payload to be posted
     :param func_name: The function name that the HTTP POST triggers
@@ -111,7 +95,7 @@ def logged_in_admin():
 class SupersetTestCase(TestCase):
     default_schema_backend_map = {
         "sqlite": "main",
-        "mysql": "superset",
+        "mysql": "rabbitai",
         "postgresql": "public",
         "presto": "default",
         "hive": "default",
@@ -140,7 +124,7 @@ class SupersetTestCase(TestCase):
                 username,
                 username,
                 username,
-                f"{username}@superset.com",
+                f"{username}@rabbitai.com",
                 security_manager.find_role("Gamma"),  # it needs a role
                 password="general",
             )
@@ -385,7 +369,7 @@ class SupersetTestCase(TestCase):
             json_payload["schema"] = schema
 
         resp = self.get_json_resp(
-            "/superset/sql_json/", raise_on_error=False, json_=json_payload
+            "/rabbitai/sql_json/", raise_on_error=False, json_=json_payload
         )
         if raise_on_error and "error" in resp:
             raise Exception("run_sql failed")
@@ -453,7 +437,7 @@ class SupersetTestCase(TestCase):
             self.login(username=(user_name if user_name else "admin"))
         dbid = SupersetTestCase.get_database_by_name(database_name).id
         resp = self.get_json_resp(
-            "/superset/validate_sql_json/",
+            "/rabbitai/validate_sql_json/",
             raise_on_error=False,
             data=dict(database_id=dbid, sql=sql, client_id=client_id),
         )

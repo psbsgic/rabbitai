@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 """A collection of ORM sqlalchemy models for Rabbitai"""
 
 import enum
 import json
 import logging
 import textwrap
+from ast import literal_eval
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime
@@ -44,12 +47,14 @@ from rabbitai.models.helpers import AuditMixinNullable, ImportExportMixin
 from rabbitai.models.tags import FavStarUpdater
 from rabbitai.result_set import RabbitaiResultSet
 from rabbitai.utils import cache as cache_util, core as utils
+from rabbitai.utils.memoized import memoized
 
 config = app.config
 custom_password_store = config["SQLALCHEMY_CUSTOM_PASSWORD_STORE"]
 stats_logger = config["STATS_LOGGER"]
 log_query = config["QUERY_LOGGER"]
 metadata = Model.metadata
+
 logger = logging.getLogger(__name__)
 
 PASSWORD_MASK = "X" * 10
@@ -57,7 +62,7 @@ DB_CONNECTION_MUTATOR = config["DB_CONNECTION_MUTATOR"]
 
 
 class Url(Model, AuditMixinNullable):
-    """地址对象关系模型。"""
+    """网络地址对象关系模型。"""
 
     __tablename__ = "url"
     id = Column(Integer, primary_key=True)
@@ -65,7 +70,7 @@ class Url(Model, AuditMixinNullable):
 
 
 class KeyValue(Model):
-    """存储键值对的对象关系模型。"""
+    """key-value 对对象关系模型。"""
 
     __tablename__ = "keyvalue"
     id = Column(Integer, primary_key=True)
@@ -73,7 +78,7 @@ class KeyValue(Model):
 
 
 class CssTemplate(Model, AuditMixinNullable):
-    """存储仪表盘的 CSS 模板的对象关系模型。"""
+    """CSS 模板对象关系模型，存储仪表盘的CSS模板。"""
 
     __tablename__ = "css_templates"
     id = Column(Integer, primary_key=True)
@@ -83,29 +88,22 @@ class CssTemplate(Model, AuditMixinNullable):
 
 class ConfigurationMethod(str, enum.Enum):
     """配置方法枚举。"""
-
     SQLALCHEMY_FORM = "sqlalchemy_form"
     DYNAMIC_FORM = "dynamic_form"
 
 
 class Database(Model, AuditMixinNullable, ImportExportMixin):
-    """数据库对象关系模型，存储数据库相关信息，支持审计、导入导出等，
-    提供依据 sqlalchemy 访问数据库元数据相关方法，插入和更改后调用安全系统的set_perm方法。"""
+    """数据库对象关系模型，存储数据表、文件等相关信息。"""
 
     __tablename__ = "dbs"
     type = "table"
     __table_args__ = (UniqueConstraint("database_name"),)
 
-    # region 列
-
     id = Column(Integer, primary_key=True)
     verbose_name = Column(String(250), unique=True)
-    """显示名称。"""
     # short unique name, used in permissions
     database_name = Column(String(250), unique=True, nullable=False)
-    """数据库名称，唯一，用于权限。"""
     sqlalchemy_uri = Column(String(1024), nullable=False)
-    """sqlalchemy地址"""
     password = Column(encrypted_field_factory.create(String(1024)))
     cache_timeout = Column(Integer)
     select_as_create_table_as = Column(Boolean, default=False)
@@ -137,8 +135,6 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
     impersonate_user = Column(Boolean, default=False)
     server_cert = Column(encrypted_field_factory.create(Text), nullable=True)
 
-    # endregion
-
     export_fields = [
         "database_name",
         "sqlalchemy_uri",
@@ -150,35 +146,27 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         "allow_csv_upload",
         "extra",
     ]
-    """要导出的字段名称的列表。"""
-
     extra_import_fields = ["password"]
-    """额外要导入字段的列表。"""
     export_children = ["tables"]
-    """导出的子对象的列表"""
 
     def __repr__(self) -> str:
         return self.name
 
-    # region property
-
     @property
     def name(self) -> str:
-        """获取数据库名称，优先返回显示名称。"""
         return self.verbose_name if self.verbose_name else self.database_name
 
     @property
     def allows_subquery(self) -> bool:
-        """是否允许子查询。"""
         return self.db_engine_spec.allows_subqueries
 
     @property
     def function_names(self) -> List[str]:
-        """返回该数据库支持的函数名称的列表。"""
+        """返回数据库支持的函数名称列表。"""
 
         try:
             return self.db_engine_spec.get_function_names(self)
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-except
             # function_names property is used in bulk APIs and should not hard crash
             # more info in: https://github.com/apache/rabbitai/issues/9678
             logger.error(
@@ -190,10 +178,8 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def allows_cost_estimate(self) -> bool:
-        """是否允许性能评估。"""
-
         extra = self.get_extra() or {}
-        cost_estimate_enabled: bool = extra.get("cost_estimate_enabled")
+        cost_estimate_enabled: bool = extra.get("cost_estimate_enabled")  # type: ignore
 
         return (
             self.db_engine_spec.get_allow_cost_estimate(extra) and cost_estimate_enabled
@@ -201,20 +187,17 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def allows_virtual_table_explore(self) -> bool:
-        """是否允许虚拟数据表探索。"""
         extra = self.get_extra()
 
         return bool(extra.get("allows_virtual_table_explore", True))
 
     @property
     def explore_database_id(self) -> int:
-        """获取探索数据库标识。"""
+        """获取数据库浏览标识。"""
         return self.get_extra().get("explore_database_id", self.id)
 
     @property
     def data(self) -> Dict[str, Any]:
-        """获取字典（Json）格式数据。"""
-
         return {
             "id": self.id,
             "name": self.database_name,
@@ -230,104 +213,76 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def unique_name(self) -> str:
-        """获取唯一名称。"""
+        """获取数据库的唯一名称。"""
         return self.database_name
 
     @property
     def url_object(self) -> URL:
-        """获取数据库访问地址sqlalchemy_uri"""
+        """获取数据库访问地址对象 URL。"""
         return make_url(self.sqlalchemy_uri_decrypted)
 
     @property
     def backend(self) -> str:
-        """获取后端名称"""
+        """获取数据库后端。"""
         sqlalchemy_url = make_url(self.sqlalchemy_uri_decrypted)
         return sqlalchemy_url.get_backend_name()
 
     @property
     def parameters(self) -> Dict[str, Any]:
-        """获取参数字典。"""
-
-        # Build parameters if db_engine_spec is a subclass of BasicParametersMixin
-        parameters = {"engine": self.backend}
-
-        if hasattr(self.db_engine_spec, "parameters_schema") and hasattr(
-            self.db_engine_spec, "get_parameters_from_uri"
-        ):
-            uri = make_url(self.sqlalchemy_uri_decrypted)
-            encrypted_extra = self.get_encrypted_extra()
-            return {**parameters, **self.db_engine_spec.get_parameters_from_uri(uri, encrypted_extra=encrypted_extra)}
+        """获取数据库连接参数。"""
+        uri = make_url(self.sqlalchemy_uri_decrypted)
+        encrypted_extra = self.get_encrypted_extra()
+        try:
+            parameters = self.db_engine_spec.get_parameters_from_uri(uri, encrypted_extra=encrypted_extra)  # type: ignore
+        except Exception:  # pylint: disable=broad-except
+            parameters = {}
 
         return parameters
 
     @property
     def metadata_cache_timeout(self) -> Dict[str, Any]:
-        """获取元数据缓存超时"""
+        """获取元数据缓存超时（字典）。"""
         return self.get_extra().get("metadata_cache_timeout", {})
 
     @property
     def schema_cache_enabled(self) -> bool:
-        """是否启用模式缓存"""
         return "schema_cache_timeout" in self.metadata_cache_timeout
 
     @property
     def schema_cache_timeout(self) -> Optional[int]:
-        """获取模式缓存超时"""
         return self.metadata_cache_timeout.get("schema_cache_timeout")
 
     @property
     def table_cache_enabled(self) -> bool:
-        """是否启用数据表缓存"""
         return "table_cache_timeout" in self.metadata_cache_timeout
 
     @property
     def table_cache_timeout(self) -> Optional[int]:
-        """获取数据表缓存超时"""
         return self.metadata_cache_timeout.get("table_cache_timeout")
 
     @property
     def default_schemas(self) -> List[str]:
-        """获取默认模式"""
+        """获取默认模式。"""
         return self.get_extra().get("default_schemas", [])
 
     @property
     def connect_args(self) -> Dict[str, Any]:
-        """获取数据库连接参数"""
+        """获取连接参数。"""
         return self.get_extra().get("engine_params", {}).get("connect_args", {})
-
-    # endregion
 
     @classmethod
     def get_password_masked_url_from_uri(cls, uri: str) -> URL:
-        """
-        获取密码数据库访问地址。
-
-        :param uri:
-        :return:
-        """
         sqlalchemy_url = make_url(uri)
         return cls.get_password_masked_url(sqlalchemy_url)
 
     @classmethod
     def get_password_masked_url(cls, masked_url: URL) -> URL:
-        """
-        获取具有密码的地址。
-
-        :param masked_url:
-        :return:
-        """
         url_copy = deepcopy(masked_url)
         if url_copy.password is not None:
             url_copy.password = PASSWORD_MASK
         return url_copy
 
     def set_sqlalchemy_uri(self, uri: str) -> None:
-        """
-        设置为指定地址。
-
-        :param uri:
-        :return:
-        """
         conn = sqla.engine.url.make_url(uri.strip())
         if conn.password != PASSWORD_MASK and not custom_password_store:
             # do not over-write the password with the password mask
@@ -335,17 +290,13 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         conn.password = PASSWORD_MASK if conn.password else None
         self.sqlalchemy_uri = str(conn)  # hides the password
 
-    def get_effective_user(
-        self, object_url: URL, user_name: Optional[str] = None,
-    ) -> Optional[str]:
+    def get_effective_user(self, object_url: URL, user_name: Optional[str] = None,) -> Optional[str]:
         """
-        获取有效用户，尤其是在模拟过程中。
-
+        Get the effective user, especially during impersonation.
         :param object_url: SQL Alchemy URL object
         :param user_name: Default username
         :return: The effective username
         """
-
         effective_username = None
         if self.impersonate_user:
             effective_username = object_url.username
@@ -359,7 +310,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
                 effective_username = g.user.username
         return effective_username
 
-    @utils.memoized(watch=("impersonate_user", "sqlalchemy_uri_decrypted", "extra"))
+    @memoized(watch=("impersonate_user", "sqlalchemy_uri_decrypted", "extra"))
     def get_sqla_engine(
         self,
         schema: Optional[str] = None,
@@ -422,11 +373,11 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         return create_engine(sqlalchemy_url, **params)
 
     def get_reserved_words(self) -> Set[str]:
-        """获取保留字。"""
+        """获取该数据库支持的保留关键字集合"""
         return self.get_dialect().preparer.reserved_words
 
     def get_quoter(self) -> Callable[[str, Any], str]:
-        """获取定界符"""
+        """获取该数据库支持的定界方法。"""
         return self.get_dialect().identifier_preparer.quote
 
     def get_df(
@@ -436,7 +387,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         mutator: Optional[Callable[[pd.DataFrame], None]] = None,
     ) -> pd.DataFrame:
         """
-        依据指定SQL获取数据病转换为 pd.DataFrame
+        返回数据帧pd.DataFrame。
 
         :param sql:
         :param schema:
@@ -487,15 +438,18 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         """
         编译SQLA查询。
 
-        :param qry: SELECT 查询语句。
-        :param schema: 模式。
+        :param qry:
+        :param schema:
         :return:
         """
+
         engine = self.get_sqla_engine(schema=schema)
 
         sql = str(qry.compile(engine, compile_kwargs={"literal_binds": True}))
 
-        if (engine.dialect.identifier_preparer._double_percents):
+        if (
+            engine.dialect.identifier_preparer._double_percents  # pylint: disable=protected-access
+        ):
             sql = sql.replace("%%", "%")
 
         return sql
@@ -511,7 +465,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         cols: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """
-        生成合适数据库方言的 ``select *`` 语句。
+        基于该数据库的方言，生成 ``select *`` 语句。
 
         :param table_name:
         :param schema:
@@ -539,23 +493,13 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
     def apply_limit_to_sql(
         self, sql: str, limit: int = 1000, force: bool = False
     ) -> str:
-        """
-        应用限制到指定SQL字符串。
-
-        :param sql:
-        :param limit:
-        :param force:
-        :return:
-        """
         return self.db_engine_spec.apply_limit_to_sql(sql, limit, self, force=force)
 
     def safe_sqlalchemy_uri(self) -> str:
-        """获取数据库访问地址。"""
         return self.sqlalchemy_uri
 
     @property
     def inspector(self) -> Inspector:
-        """获取数据库的探测器，可用于获取数据库对象的元数据。"""
         engine = self.get_sqla_engine()
         return sqla.inspect(engine)
 
@@ -569,14 +513,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         cache_timeout: Optional[bool] = None,
         force: bool = False,
     ) -> List[utils.DatasourceName]:
-        """
-        获取数据库中所有数据表名称的列表。
-
-        :param cache:
-        :param cache_timeout:
-        :param force:
-        :return:
-        """
+        """Parameters need to be passed as keyword arguments."""
         if not self.allow_multi_schema_metadata_fetch:
             return []
         return self.db_engine_spec.get_all_datasource_names(self, "table")
@@ -591,14 +528,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         cache_timeout: Optional[bool] = None,
         force: bool = False,
     ) -> List[utils.DatasourceName]:
-        """
-        获取数据库中所有视图名称的列表。
-
-        :param cache:
-        :param cache_timeout:
-        :param force:
-        :return:
-        """
+        """Parameters need to be passed as keyword arguments."""
         if not self.allow_multi_schema_metadata_fetch:
             return []
         return self.db_engine_spec.get_all_datasource_names(self, "view")
@@ -614,7 +544,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         cache_timeout: Optional[int] = None,
         force: bool = False,
     ) -> List[utils.DatasourceName]:
-        """获取模式中所有数据表名称的列表。
+        """Parameters need to be passed as keyword arguments.
 
         For unused parameters, they are referenced in
         cache_util.memoized_func decorator.
@@ -646,7 +576,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         cache_timeout: Optional[int] = None,
         force: bool = False,
     ) -> List[utils.DatasourceName]:
-        """获取模式中所有视图名称的列表。
+        """Parameters need to be passed as keyword arguments.
 
         For unused parameters, they are referenced in
         cache_util.memoized_func decorator.
@@ -675,7 +605,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         cache_timeout: Optional[int] = None,
         force: bool = False,
     ) -> List[str]:
-        """获取所有模式名称的列表。
+        """Parameters need to be passed as keyword arguments.
 
         For unused parameters, they are referenced in
         cache_util.memoized_func decorator.
@@ -689,11 +619,10 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def db_engine_spec(self) -> Type[db_engine_specs.BaseEngineSpec]:
-        """获取数据库引擎规范"""
         return self.get_db_engine_spec_for_backend(self.backend)
 
     @classmethod
-    @utils.memoized
+    @memoized
     def get_db_engine_spec_for_backend(
         cls, backend: str
     ) -> Type[db_engine_specs.BaseEngineSpec]:
@@ -701,7 +630,7 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         return engines.get(backend, db_engine_specs.BaseEngineSpec)
 
     def grains(self) -> Tuple[TimeGrain, ...]:
-        """定义特定于时间粒度数据库的表达式。
+        """Defines time granularity database-specific expressions.
 
         The idea here is to make it easy for users to change the time grain
         from a datetime (maybe the source grain is arbitrary timestamps, daily
@@ -712,13 +641,9 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         return self.db_engine_spec.get_time_grains()
 
     def get_extra(self) -> Dict[str, Any]:
-        """获取数据库的额外信息（字典），这些是特定数据库的连接和访问相关的参数，如：metadata_params。"""
-
         return self.db_engine_spec.get_extra_params(self)
 
     def get_encrypted_extra(self) -> Dict[str, Any]:
-        """获取加密的额外信息"""
-
         encrypted_extra = {}
         if self.encrypted_extra:
             try:
@@ -729,14 +654,6 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
         return encrypted_extra
 
     def get_table(self, table_name: str, schema: Optional[str] = None) -> Table:
-        """
-        获取数据表对象。
-
-        :param table_name:
-        :param schema:
-        :return:
-        """
-
         extra = self.get_extra()
         meta = MetaData(**extra.get("metadata_params", {}))
         return Table(
@@ -750,50 +667,22 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
     def get_table_comment(
         self, table_name: str, schema: Optional[str] = None
     ) -> Optional[str]:
-        """
-        获取数据表注释。
-
-        :param table_name:
-        :param schema:
-        :return:
-        """
         return self.db_engine_spec.get_table_comment(self.inspector, table_name, schema)
 
     def get_columns(
         self, table_name: str, schema: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """
-        获取指定数据表的所有列。
-
-        :param table_name:
-        :param schema:
-        :return:
-        """
         return self.db_engine_spec.get_columns(self.inspector, table_name, schema)
 
     def get_indexes(
         self, table_name: str, schema: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """
-        获取指定数据表的所有索引。
-
-        :param table_name:
-        :param schema:
-        :return:
-        """
         indexes = self.inspector.get_indexes(table_name, schema)
         return self.db_engine_spec.normalize_indexes(indexes)
 
     def get_pk_constraint(
         self, table_name: str, schema: Optional[str] = None
     ) -> Dict[str, Any]:
-        """
-        获取指定数据表的主键。
-
-        :param table_name:
-        :param schema:
-        :return:
-        """
         pk_constraint = self.inspector.get_pk_constraint(table_name, schema) or {}
         return {
             key: utils.base_json_conv(value) for key, value in pk_constraint.items()
@@ -802,24 +691,16 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
     def get_foreign_keys(
         self, table_name: str, schema: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """
-        获取指定数据表的外键。
-
-        :param table_name:
-        :param schema:
-        :return:
-        """
         return self.inspector.get_foreign_keys(table_name, schema)
 
-    def get_schema_access_for_csv_upload(
+    def get_schema_access_for_csv_upload(  # pylint: disable=invalid-name
         self,
     ) -> List[str]:
-        """
-        获取CVS上传的模式。
-
-        :return:
-        """
         allowed_databases = self.get_extra().get("schemas_allowed_for_csv_upload", [])
+
+        if isinstance(allowed_databases, str):
+            allowed_databases = literal_eval(allowed_databases)
+
         if hasattr(g, "user"):
             extra_allowed_databases = config["ALLOWED_USER_CSV_SCHEMA_FUNC"](
                 self, g.user
@@ -829,7 +710,6 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def sqlalchemy_uri_decrypted(self) -> str:
-        """获取解密的sqlalchemy地址"""
         try:
             conn = sqla.engine.url.make_url(self.sqlalchemy_uri)
         except (ArgumentError, ValueError):
@@ -844,46 +724,33 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def sql_url(self) -> str:
-        """在SQL工具箱中访问该数据库的地址。"""
         return f"/rabbitai/sql/{self.id}/"
 
     @hybrid_property
     def perm(self) -> str:
-        """权限，格式：[{self.database_name}].(id:{self.id})。"""
         return f"[{self.database_name}].(id:{self.id})"
 
-    @perm.expression
-    def perm(cls) -> str:
-        """权限表达式。"""
+    @perm.expression  # type: ignore
+    def perm(cls) -> str:  # pylint: disable=no-self-argument
         return (
             "[" + cls.database_name + "].(id:" + expression.cast(cls.id, String) + ")"
         )
 
     def get_perm(self) -> str:
-        """获取权限表达式"""
         return self.perm  # type: ignore
 
     def has_table(self, table: Table) -> bool:
-        """是否有指定数据表。"""
         engine = self.get_sqla_engine()
         return engine.has_table(table.table_name, table.schema or None)
 
     def has_table_by_name(self, table_name: str, schema: Optional[str] = None) -> bool:
-        """
-        是否具有指定名称的数据表。
-
-        :param table_name:
-        :param schema:
-        :return:
-        """
         engine = self.get_sqla_engine()
         return engine.has_table(table_name, schema)
 
-    @utils.memoized
+    @memoized
     def get_dialect(self) -> Dialect:
-        """获取数据库方言。"""
         sqla_url = url.make_url(self.sqlalchemy_uri_decrypted)
-        return sqla_url.get_dialect()()
+        return sqla_url.get_dialect()()  # pylint: disable=no-member
 
 
 sqla.event.listen(Database, "after_insert", security_manager.set_perm)
@@ -891,7 +758,7 @@ sqla.event.listen(Database, "after_update", security_manager.set_perm)
 
 
 class Log(Model):
-    """日志对象关系模型，用于记录 Rabbitai 操作到数据库。"""
+    """ORM object used to log Rabbitai actions to the database"""
 
     __tablename__ = "logs"
 
@@ -910,14 +777,11 @@ class Log(Model):
 
 
 class FavStarClassName(str, enum.Enum):
-    """关注星级类名称枚举"""
     CHART = "slice"
     DASHBOARD = "Dashboard"
 
 
 class FavStar(Model):
-    """关注星级类对象关系模型，监听事件：after_insert、after_delete"""
-
     __tablename__ = "favstar"
 
     id = Column(Integer, primary_key=True)

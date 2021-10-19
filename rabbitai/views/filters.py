@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Any, cast, Optional
 
 from flask_appbuilder.models.filters import BaseFilter

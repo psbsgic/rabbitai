@@ -19,6 +19,8 @@ from rabbitai.db_engine_specs.base import BasicParametersMixin
 from rabbitai.errors import ErrorLevel, RabbitaiError, RabbitaiErrorType
 from rabbitai.models.core import Database
 
+BYPASS_VALIDATION_ENGINES = {"bigquery"}
+
 
 class ValidateDatabaseParametersCommand(BaseCommand):
     def __init__(self, user: User, parameters: Dict[str, Any]):
@@ -29,6 +31,11 @@ class ValidateDatabaseParametersCommand(BaseCommand):
     def run(self) -> None:
         engine = self._properties["engine"]
         engine_specs = get_engine_specs()
+
+        if engine in BYPASS_VALIDATION_ENGINES:
+            # Skip engines that are only validated onCreate
+            return
+
         if engine not in engine_specs:
             raise InvalidEngineError(
                 RabbitaiError(
@@ -41,7 +48,7 @@ class ValidateDatabaseParametersCommand(BaseCommand):
                 ),
             )
         engine_spec = engine_specs[engine]
-        if not issubclass(engine_spec, BasicParametersMixin):
+        if not hasattr(engine_spec, "parameters_schema"):
             raise InvalidEngineError(
                 RabbitaiError(
                     message=__(
@@ -62,7 +69,9 @@ class ValidateDatabaseParametersCommand(BaseCommand):
             )
 
         # perform initial validation
-        errors = engine_spec.validate_parameters(self._properties["parameters"])
+        errors = engine_spec.validate_parameters(  # type: ignore
+            self._properties.get("parameters", {})
+        )
         if errors:
             raise InvalidParametersError(errors)
 
@@ -73,9 +82,8 @@ class ValidateDatabaseParametersCommand(BaseCommand):
             encrypted_extra = {}
 
         # try to connect
-        sqlalchemy_uri = engine_spec.build_sqlalchemy_uri(
-            self._properties["parameters"],  # type: ignore
-            encrypted_extra,
+        sqlalchemy_uri = engine_spec.build_sqlalchemy_uri(  # type: ignore
+            self._properties.get("parameters"), encrypted_extra,
         )
         if self._model and sqlalchemy_uri == self._model.safe_sqlalchemy_uri():
             sqlalchemy_uri = self._model.sqlalchemy_uri_decrypted

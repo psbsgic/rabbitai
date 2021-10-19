@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 
 from flask_appbuilder import Model
@@ -5,7 +7,7 @@ from sqlalchemy import Column, DateTime, Integer, String
 
 
 class CacheKey(Model):
-    """缓存键对象关系模型。"""
+    """存储rabbitai可视化的缓存键记录。"""
 
     __tablename__ = "cache_keys"
     id = Column(Integer, primary_key=True)

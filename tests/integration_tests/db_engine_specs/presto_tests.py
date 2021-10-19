@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 from collections import namedtuple
 from unittest import mock, skipUnless
 
@@ -22,10 +6,10 @@ from sqlalchemy import types
 from sqlalchemy.engine.result import RowProxy
 from sqlalchemy.sql import select
 
-from superset.db_engine_specs.presto import PrestoEngineSpec
-from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.sql_parse import ParsedQuery
-from superset.utils.core import DatasourceName, GenericDataType
+from rabbitai.db_engine_specs.presto import PrestoEngineSpec
+from rabbitai.errors import ErrorLevel, SupersetError, SupersetErrorType
+from rabbitai.sql_parse import ParsedQuery
+from rabbitai.utils.core import DatasourceName, GenericDataType
 from tests.integration_tests.db_engine_specs.base_tests import TestDbEngineSpec
 
 
@@ -41,7 +25,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
             [], PrestoEngineSpec.get_view_names(mock.ANY, mock.ANY, mock.ANY)
         )
 
-    @mock.patch("superset.db_engine_specs.presto.is_feature_enabled")
+    @mock.patch("rabbitai.db_engine_specs.presto.is_feature_enabled")
     def test_get_view_names(self, mock_is_feature_enabled):
         mock_is_feature_enabled.return_value = True
         mock_execute = mock.MagicMock()
@@ -59,7 +43,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         )
         assert result == ["a", "d"]
 
-    @mock.patch("superset.db_engine_specs.presto.is_feature_enabled")
+    @mock.patch("rabbitai.db_engine_specs.presto.is_feature_enabled")
     def test_get_view_names_with_schema(self, mock_is_feature_enabled):
         mock_is_feature_enabled.return_value = True
         mock_execute = mock.MagicMock()
@@ -102,7 +86,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.verify_presto_column(presto_column, expected_results)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -112,7 +96,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.verify_presto_column(presto_column, expected_results)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -122,7 +106,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.verify_presto_column(presto_column, expected_results)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -135,7 +119,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.verify_presto_column(presto_column, expected_results)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -145,7 +129,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.verify_presto_column(presto_column, expected_results)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -164,7 +148,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.verify_presto_column(presto_column, expected_results)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -201,7 +185,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
             self.assertEqual(actual_result.name, expected_result["label"])
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -238,7 +222,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.assertEqual(actual_expanded_cols, expected_expanded_cols)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -287,7 +271,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.assertEqual(actual_expanded_cols, expected_expanded_cols)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -479,7 +463,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         self.assertEqual(formatted_cost, expected)
 
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"PRESTO_EXPAND_DATA": True},
         clear=True,
     )
@@ -572,10 +556,10 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         assert sqla_type is None
 
     @mock.patch(
-        "superset.utils.feature_flag_manager.FeatureFlagManager.is_feature_enabled"
+        "rabbitai.utils.feature_flag_manager.FeatureFlagManager.is_feature_enabled"
     )
-    @mock.patch("superset.db_engine_specs.base.BaseEngineSpec.get_table_names")
-    @mock.patch("superset.db_engine_specs.presto.PrestoEngineSpec.get_view_names")
+    @mock.patch("rabbitai.db_engine_specs.base.BaseEngineSpec.get_table_names")
+    @mock.patch("rabbitai.db_engine_specs.presto.PrestoEngineSpec.get_view_names")
     def test_get_table_names_no_split_views_from_tables(
         self, mock_get_view_names, mock_get_table_names, mock_is_feature_enabled
     ):
@@ -587,10 +571,10 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         assert tables == table_names
 
     @mock.patch(
-        "superset.utils.feature_flag_manager.FeatureFlagManager.is_feature_enabled"
+        "rabbitai.utils.feature_flag_manager.FeatureFlagManager.is_feature_enabled"
     )
-    @mock.patch("superset.db_engine_specs.base.BaseEngineSpec.get_table_names")
-    @mock.patch("superset.db_engine_specs.presto.PrestoEngineSpec.get_view_names")
+    @mock.patch("rabbitai.db_engine_specs.base.BaseEngineSpec.get_table_names")
+    @mock.patch("rabbitai.db_engine_specs.presto.PrestoEngineSpec.get_view_names")
     def test_get_table_names_split_views_from_tables(
         self, mock_get_view_names, mock_get_table_names, mock_is_feature_enabled
     ):
@@ -602,10 +586,10 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         assert sorted(tables) == sorted(table_names)
 
     @mock.patch(
-        "superset.utils.feature_flag_manager.FeatureFlagManager.is_feature_enabled"
+        "rabbitai.utils.feature_flag_manager.FeatureFlagManager.is_feature_enabled"
     )
-    @mock.patch("superset.db_engine_specs.base.BaseEngineSpec.get_table_names")
-    @mock.patch("superset.db_engine_specs.presto.PrestoEngineSpec.get_view_names")
+    @mock.patch("rabbitai.db_engine_specs.base.BaseEngineSpec.get_table_names")
+    @mock.patch("rabbitai.db_engine_specs.presto.PrestoEngineSpec.get_view_names")
     def test_get_table_names_split_views_from_tables_no_tables(
         self, mock_get_view_names, mock_get_table_names, mock_is_feature_enabled
     ):
@@ -687,7 +671,7 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
         column_name = '"moc"k"'
         assert PrestoEngineSpec._is_column_name_quoted(column_name) is True
 
-    @mock.patch("superset.db_engine_specs.base.BaseEngineSpec.select_star")
+    @mock.patch("rabbitai.db_engine_specs.base.BaseEngineSpec.select_star")
     def test_select_star_no_presto_expand_data(self, mock_select_star):
         database = mock.Mock()
         table_name = "table_name"
@@ -701,8 +685,8 @@ class TestPrestoDbEngineSpec(TestDbEngineSpec):
             database, table_name, engine, None, 100, False, True, True, cols
         )
 
-    @mock.patch("superset.db_engine_specs.presto.is_feature_enabled")
-    @mock.patch("superset.db_engine_specs.base.BaseEngineSpec.select_star")
+    @mock.patch("rabbitai.db_engine_specs.presto.is_feature_enabled")
+    @mock.patch("rabbitai.db_engine_specs.base.BaseEngineSpec.select_star")
     def test_select_star_presto_expand_data(
         self, mock_select_star, mock_is_feature_enabled
     ):

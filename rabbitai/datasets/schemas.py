@@ -134,8 +134,6 @@ class ImportV1MetricSchema(Schema):
 
 
 class ImportV1DatasetSchema(Schema):
-    """导入数据集结构。"""
-
     table_name = fields.String(required=True)
     main_dttm_col = fields.String(allow_none=True)
     description = fields.String(allow_none=True)

@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # pylint: disable=no-self-use, invalid-name
 
 import json
@@ -24,16 +8,16 @@ import pytest
 import yaml
 from flask import g
 
-from superset import db, security_manager
-from superset.charts.commands.exceptions import ChartNotFoundError
-from superset.charts.commands.export import ExportChartsCommand
-from superset.charts.commands.importers.v1 import ImportChartsCommand
-from superset.charts.commands.update import UpdateChartCommand
-from superset.commands.exceptions import CommandInvalidError
-from superset.commands.importers.exceptions import IncorrectVersionError
-from superset.connectors.sqla.models import SqlaTable
-from superset.models.core import Database
-from superset.models.slice import Slice
+from rabbitai import db, security_manager
+from rabbitai.charts.commands.exceptions import ChartNotFoundError
+from rabbitai.charts.commands.export import ExportChartsCommand
+from rabbitai.charts.commands.importers.v1 import ImportChartsCommand
+from rabbitai.charts.commands.update import UpdateChartCommand
+from rabbitai.commands.exceptions import CommandInvalidError
+from rabbitai.commands.importers.exceptions import IncorrectVersionError
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.models.core import Database
+from rabbitai.models.slice import Slice
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.fixtures.energy_dashboard import (
     load_energy_table_with_slice,
@@ -48,7 +32,7 @@ from tests.integration_tests.fixtures.importexport import (
 
 
 class TestExportChartsCommand(SupersetTestCase):
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     @pytest.mark.usefixtures("load_energy_table_with_slice")
     def test_export_chart_command(self, mock_g):
         mock_g.user = security_manager.find_user("admin")
@@ -88,7 +72,7 @@ class TestExportChartsCommand(SupersetTestCase):
             "version": "1.0.0",
         }
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_export_chart_command_no_access(self, mock_g):
         """Test that users can't export datasets they don't have access to"""
         mock_g.user = security_manager.find_user("gamma")
@@ -99,7 +83,7 @@ class TestExportChartsCommand(SupersetTestCase):
         with self.assertRaises(ChartNotFoundError):
             next(contents)
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_export_chart_command_invalid_dataset(self, mock_g):
         """Test that an error is raised when exporting an invalid dataset"""
         mock_g.user = security_manager.find_user("admin")
@@ -108,7 +92,7 @@ class TestExportChartsCommand(SupersetTestCase):
         with self.assertRaises(ChartNotFoundError):
             next(contents)
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     @pytest.mark.usefixtures("load_energy_table_with_slice")
     def test_export_chart_command_key_order(self, mock_g):
         """Test that they keys in the YAML have the same order as export_fields"""
@@ -281,8 +265,8 @@ class TestImportChartsCommand(SupersetTestCase):
 
 
 class TestChartsUpdateCommand(SupersetTestCase):
-    @patch("superset.views.base.g")
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.views.base.g")
+    @patch("rabbitai.security.manager.g")
     @pytest.mark.usefixtures("load_energy_table_with_slice")
     def test_update_v1_response(self, mock_sm_g, mock_g):
         """"Test that a chart command updates properties"""

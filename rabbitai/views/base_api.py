@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import functools
 import logging
 from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Type, Union
@@ -26,6 +28,7 @@ from rabbitai.typing import FlaskResponse
 from rabbitai.utils.core import time_function
 
 logger = logging.getLogger(__name__)
+
 get_related_schema = {
     "type": "object",
     "properties": {
@@ -35,38 +38,37 @@ get_related_schema = {
         "filter": {"type": "string"},
     },
 }
-"""获取关联的架构"""
+"""获取关联的结构"""
 
 
 class RelatedResultResponseSchema(Schema):
-    """关联结果响应架构，定义字段：value、text。"""
+    """关联结果响应结构。"""
 
     value = fields.Integer(description="关联项唯一标识")
-    text = fields.String(description="关联项字符串表示")
+    text = fields.String(description="关联项字符串")
 
 
 class RelatedResponseSchema(Schema):
-    """关联响应架构，定义字段：count、result。"""
+    """关联响应结构。"""
     count = fields.Integer(description="关联值的总数")
     result = fields.List(fields.Nested(RelatedResultResponseSchema))
 
 
 class DistinctResultResponseSchema(Schema):
-    """不同值结果响应架构，定义字段：text。"""
-    text = fields.String(description="不同项")
+    """不同值结果响应结构。"""
+    text = fields.String(description="不同值项")
 
 
 class DistincResponseSchema(Schema):
-    """不同值响应架构，定义字段：count、result"""
-    count = fields.Integer(description="不同值的个数")
+    count = fields.Integer(description="不同值的总数")
     result = fields.List(fields.Nested(DistinctResultResponseSchema))
 
 
 def statsd_metrics(f: Callable[..., Any]) -> Callable[..., Any]:
     """
-    处理 REST API 调用，发送所有 statsd 指标（如耗时）。
+    处理从REST API发送所有 statsd 指标。
 
-    :param f: 要包裹的可调用对象。
+    :param f:
     :return:
     """
 
@@ -84,19 +86,16 @@ def statsd_metrics(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class RelatedFieldFilter:
-    """关联字段过滤器。"""
+    """关联字段过滤器，用于过滤过滤字段，包括：field_name、filter_class。"""
 
-    # data class to specify what filter to use on a /related endpoint
+    # 数据类，用于指定在/相关端点上使用的筛选器
     def __init__(self, field_name: str, filter_class: Type[BaseFilter]):
         self.field_name = field_name
         self.filter_class = filter_class
 
 
 class BaseFavoriteFilter(BaseFilter):
-    """
-    Base Custom filter for the GET list that filters all dashboards, slices
-    that a user has favored or not
-    """
+    """获取列表的基本自定义筛选器，用于筛选用户喜欢或不喜欢的所有仪表板、数据片"""
 
     name = _("Is favorite")
     arg_name = ""
@@ -117,14 +116,17 @@ class BaseFavoriteFilter(BaseFilter):
         )
         if value:
             return query.filter(and_(self.model.id.in_(users_favorite_query)))
-
         return query.filter(and_(~self.model.id.in_(users_favorite_query)))
 
 
 class BaseRabbitaiModelRestApi(ModelRestApi):
-    """扩展 FAB 的 ModelResApi 以实现 rabbitai 所需通用功能。"""
+    """
+    扩展 FAB 的 ModelResApi 以实现特定于 rabbitai 的一般功能。
 
-    # region 类属性
+    /related/<column_name>
+
+    /distinct/<column_name>
+    """
 
     csrf_exempt = False
     method_permission_name = {
@@ -150,38 +152,42 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         "thumbnail": "list",
         "viz_types": "list",
     }
-    """各方法的权限名称字典"""
+    """方法名称和权限字典"""
+
     order_rel_fields: Dict[str, Tuple[str, str]] = {}
     """
-    关联查询排序字段 ::
+    关联字段排序 ::
 
         order_rel_fields = {
             "<RELATED_FIELD>": ("<RELATED_FIELD_FIELD>", "<asc|desc>"),
              ...
         }
     """
+
     related_field_filters: Dict[str, Union[RelatedFieldFilter, str]] = {}
     """
-    声明的过滤字段 ::
+    声明关联字段的过滤器
 
         related_fields = {
             "<RELATED_FIELD>": <RelatedFieldFilter>)
         }
     """
+
     filter_rel_fields: Dict[str, BaseFilter] = {}
     """
-    声明关联字段过滤器 ::
+    声明关联字段的基础过滤器 ::
 
         filter_rel_fields_field = {
             "<RELATED_FIELD>": "<FILTER>")
         }
     """
+
     allowed_rel_fields: Set[str] = set()
-    """关联（ `related` ）端点支持的允许关联字段集合。"""
+    """声明  `related` 终结点支持的允许关联字段集合。"""
 
     text_field_rel_fields: Dict[str, str] = {}
     """
-    模型对象的显示文本 ::
+    Declare an alternative for the human readable representation of the Model object::
 
         text_field_rel_fields = {
             "<RELATED_FIELD>": "<RELATED_OBJECT_FIELD>"
@@ -189,18 +195,16 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
     """
 
     allowed_distinct_fields: Set[str] = set()
-    """允许的不同字段名称的集合。"""
+
     openapi_spec_component_schemas: Tuple[Type[Schema], ...] = tuple()
-    """添加额外架构到 OpenAPI 组件架构 schemas。"""
+    """
+    Add extra schemas to the OpenAPI component schemas section
+    """
 
     add_columns: List[str]
-    """要添加列名称的列表。"""
     edit_columns: List[str]
-    """要编辑列名称的列表。"""
     list_columns: List[str]
-    """要列出列名称的列表。"""
     show_columns: List[str]
-    """要显示列名称的列表。"""
 
     responses = {
         "400": {"description": "Bad request", "content": error_payload_content},
@@ -213,15 +217,12 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         },
         "500": {"description": "Fatal error", "content": error_payload_content},
     }
-    """响应对象"""
-
-    # endregion
 
     def __init__(self) -> None:
         # Setup statsd
         self.stats_logger = BaseStatsLogger()
         # Add base API spec base query parameter schemas
-        if self.apispec_parameter_schemas is None:
+        if self.apispec_parameter_schemas is None:  # type: ignore
             self.apispec_parameter_schemas = {}
         self.apispec_parameter_schemas["get_related_schema"] = get_related_schema
         if self.openapi_spec_component_schemas is None:
@@ -239,20 +240,16 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         """
         for schema in self.openapi_spec_component_schemas:
             try:
-                api_spec.components.schema(schema.__name__, schema=schema,)
+                api_spec.components.schema(
+                    schema.__name__, schema=schema,
+                )
             except DuplicateComponentNameError:
                 pass
         super().add_apispec_components(api_spec)
 
-    def create_blueprint(self, appbuilder: AppBuilder, *args: Any, **kwargs: Any) -> Blueprint:
-        """
-        创建一个蓝图，注册该类的公开API地址到蓝图。
-
-        :param appbuilder: 应用构建者。
-        :param args: 参数。
-        :param kwargs: 关键字参数。
-        :return:
-        """
+    def create_blueprint(
+        self, appbuilder: AppBuilder, *args: Any, **kwargs: Any
+    ) -> Blueprint:
         self.stats_logger = self.appbuilder.get_app.config["STATS_LOGGER"]
         return super().create_blueprint(appbuilder, *args, **kwargs)
 
@@ -268,16 +265,9 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
             self.add_columns = [model_id]
         super()._init_properties()
 
-    def _get_related_filter(self, datamodel: SQLAInterface, column_name: str, value: str) -> Filters:
-        """
-        获取关联过滤器。
-
-        :param datamodel: 数据模型接口。
-        :param column_name: 列名称。
-        :param value: 值。
-        :return:
-        """
-
+    def _get_related_filter(
+        self, datamodel: SQLAInterface, column_name: str, value: str
+    ) -> Filters:
         filter_field = self.related_field_filters.get(column_name)
         if isinstance(filter_field, str):
             filter_field = RelatedFieldFilter(cast(str, filter_field), FilterStartsWith)
@@ -294,14 +284,6 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         return filters
 
     def _get_distinct_filter(self, column_name: str, value: str) -> Filters:
-        """
-        获取不同值过滤器。
-
-        :param column_name: 列名称
-        :param value: 值
-        :return:
-        """
-
         filter_field = RelatedFieldFilter(column_name, FilterStartsWith)
         filter_field = cast(RelatedFieldFilter, filter_field)
         search_columns = [filter_field.field_name] if filter_field else None
@@ -314,13 +296,6 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         return filters
 
     def _get_text_for_model(self, model: Model, column_name: str) -> str:
-        """
-        获取指定模型和列的文本表示。
-
-        :param model:
-        :param column_name:
-        :return:
-        """
         if column_name in self.text_field_rel_fields:
             model_column_name = self.text_field_rel_fields.get(column_name)
             if model_column_name:
@@ -330,14 +305,6 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
     def _get_result_from_rows(
         self, datamodel: SQLAInterface, rows: List[Model], column_name: str
     ) -> List[Dict[str, Any]]:
-        """
-        从指定行数据中获取指定列的结果。
-
-        :param datamodel:
-        :param rows:
-        :param column_name:
-        :return:
-        """
         return [
             {
                 "value": datamodel.get_pk_value(row),
@@ -387,13 +354,12 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         self, response: Response, key: str, time_delta: Optional[float] = None
     ) -> None:
         """
-        发送统计指标，在性能统计日志中记录相关信息。
+        Helper function to handle sending statsd metrics
 
         :param response: flask response object, will evaluate if it was an error
         :param key: The function name
         :param time_delta: Optional time it took for the endpoint to execute
         """
-
         if 200 <= response.status_code < 400:
             self.incr_stats("success", key)
         else:
@@ -485,8 +451,7 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
     @statsd_metrics
     @rison(get_related_schema)
     def related(self, column_name: str, **kwargs: Any) -> FlaskResponse:
-        """获取关联字段数据。
-
+        """Get related fields data
         ---
         get:
           parameters:
@@ -517,11 +482,9 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
-
         if column_name not in self.allowed_rel_fields:
             self.incr_stats("error", self.related.__name__)
             return self.response_404()
-
         args = kwargs.get("rison", {})
 
         # handle pagination
@@ -530,7 +493,6 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
             datamodel = self.datamodel.get_related_interface(column_name)
         except KeyError:
             return self.response_404()
-
         page, page_size = self._sanitize_page_args(page, page_size)
         # handle ordering
         order_field = self.order_rel_fields.get(column_name)
@@ -560,8 +522,7 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
     @statsd_metrics
     @rison(get_related_schema)
     def distinct(self, column_name: str, **kwargs: Any) -> FlaskResponse:
-        """获取指定列的不同数据。
-
+        """Get distinct values from field data
         ---
         get:
           parameters:
@@ -592,7 +553,6 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
-
         if column_name not in self.allowed_distinct_fields:
             self.incr_stats("error", self.related.__name__)
             return self.response_404()

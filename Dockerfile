@@ -1,9 +1,10 @@
 ######################################################################
-# PY stage that simply does a pip install on our requirements
+# PY 阶段，简单地使用 pip 安装必须的软件包
 ######################################################################
 ARG PY_VER=3.7.9
 FROM python:${PY_VER} AS rabbitai-py
 
+# 在安装Python软件包前，创建应用程序根目录，安装系统支撑软件
 RUN mkdir /app \
         && apt-get update -y \
         && apt-get install -y --no-install-recommends \
@@ -14,8 +15,7 @@ RUN mkdir /app \
             libecpg-dev \
         && rm -rf /var/lib/apt/lists/*
 
-# First, we just wanna install requirements, which will allow us to utilize the cache
-# in order to only build if and only if requirements change
+# 首先。我们安装必须的软件包，允许我们利用缓存，以便仅当且仅当需求发生变化时构建
 COPY ./requirements/*.txt  /app/requirements/
 COPY setup.py MANIFEST.in README.md /app/
 COPY rabbitai-frontend/package.json /app/rabbitai-frontend/
@@ -26,7 +26,7 @@ RUN cd /app \
 
 
 ######################################################################
-# Node stage to deal with static asset construction
+# Node 阶段，处理静态资源的构建
 ######################################################################
 FROM node:14 AS rabbitai-node
 
@@ -36,7 +36,7 @@ RUN npm install -g npm@${NPM_VER}
 ARG NPM_BUILD_CMD="build"
 ENV BUILD_CMD=${NPM_BUILD_CMD}
 
-# NPM ci first, as to NOT invalidate previous steps except for when package.json changes
+# 首先使用 npm ci 安装依赖软件
 RUN mkdir -p /app/rabbitai-frontend
 RUN mkdir -p /app/rabbitai/assets
 COPY ./docker/frontend-mem-nag.sh /
@@ -45,16 +45,15 @@ RUN /frontend-mem-nag.sh \
         && cd /app/rabbitai-frontend \
         && npm ci
 
-# Next, copy in the rest and let webpack do its thing
+# 接下来，复制剩余的内容以便 webpack 完成相关工作
 COPY ./rabbitai-frontend /app/rabbitai-frontend
-# This is BY FAR the most expensive step (thanks Terser!)
 RUN cd /app/rabbitai-frontend \
         && npm run ${BUILD_CMD} \
         && rm -rf node_modules
 
 
 ######################################################################
-# Final lean image...
+# 最终瘦身镜像 ...
 ######################################################################
 ARG PY_VER=3.7.9
 FROM python:${PY_VER} AS lean
@@ -67,8 +66,8 @@ ENV LANG=C.UTF-8 \
     RABBITAI_HOME="/app/rabbitai_home" \
     RABBITAI_PORT=8088
 
-RUN useradd --user-group -d ${RABBITAI_HOME} --no-log-init --shell /bin/bash rabbitai \
-        && mkdir -p ${PYTHONPATH} \
+RUN mkdir -p ${PYTHONPATH} \
+        && useradd --user-group -d ${RABBITAI_HOME} -m --no-log-init --shell /bin/bash rabbitai \
         && apt-get update -y \
         && apt-get install -y --no-install-recommends \
             build-essential \
@@ -83,7 +82,7 @@ COPY --from=rabbitai-py /usr/local/bin/gunicorn /usr/local/bin/celery /usr/local
 COPY --from=rabbitai-node /app/rabbitai/static/assets /app/rabbitai/static/assets
 COPY --from=rabbitai-node /app/rabbitai-frontend /app/rabbitai-frontend
 
-## Lastly, let's install rabbitai itself
+## 最后，让我们安装 rabbitai
 COPY rabbitai /app/rabbitai
 COPY setup.py MANIFEST.in README.md /app/
 RUN cd /app \

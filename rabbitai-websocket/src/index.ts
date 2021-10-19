@@ -17,7 +17,7 @@ export type StreamResult = [
 
 // sync with rabbitai-frontend/src/components/ErrorMessage/types
 export type ErrorLevel = 'info' | 'warning' | 'error';
-export type RabbitaiError<ExtraType = Record<string, any> | null> = {
+export type SupersetError<ExtraType = Record<string, any> | null> = {
   error_type: string;
   extra: ExtraType;
   level: ErrorLevel;
@@ -31,7 +31,7 @@ interface EventValue {
   job_id: string;
   user_id?: string;
   status: string;
-  errors?: RabbitaiError[];
+  errors?: SupersetError[];
   result_url?: string;
 }
 interface JwtPayload {

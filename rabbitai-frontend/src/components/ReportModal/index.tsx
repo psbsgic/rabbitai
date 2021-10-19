@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import React, {
   useState,
   useEffect,
@@ -29,22 +11,28 @@ import { bindActionCreators } from 'redux';
 import { connect, useDispatch, useSelector } from 'react-redux';
 import { addReport, editReport } from 'src/reports/actions/reports';
 import { AlertObject } from 'src/views/CRUD/alert/types';
-import LabeledErrorBoundInput from 'src/components/Form/LabeledErrorBoundInput';
+
 import TimezoneSelector from 'src/components/TimezoneSelector';
+import LabeledErrorBoundInput from 'src/components/Form/LabeledErrorBoundInput';
 import Icons from 'src/components/Icons';
 import withToasts from 'src/messageToasts/enhancers/withToasts';
-import { CronPicker, CronError } from 'src/components/CronPicker';
+import { CronError } from 'src/components/CronPicker';
+import { RadioChangeEvent } from 'src/common/components';
 import {
   StyledModal,
   StyledTopSection,
   StyledBottomSection,
   StyledIconWrapper,
   StyledScheduleTitle,
+  StyledCronPicker,
   StyledCronError,
   noBottomMargin,
   StyledFooterButton,
   TimezoneHeaderStyle,
   SectionHeaderStyle,
+  StyledMessageContentTitle,
+  StyledRadio,
+  StyledRadioGroup,
 } from './styles';
 
 interface ReportObject {
@@ -67,6 +55,19 @@ interface ReportObject {
   creation_method: string;
 }
 
+interface ChartObject {
+  id: number;
+  chartAlert: string;
+  chartStatus: string;
+  chartUpdateEndTime: number;
+  chartUpdateStartTime: number;
+  latestQueryFormData: object;
+  queryController: { abort: () => {} };
+  queriesResponse: object;
+  triggerQuery: boolean;
+  lastRendered: number;
+}
+
 interface ReportProps {
   addDangerToast: (msg: string) => void;
   addSuccessToast: (msg: string) => void;
@@ -77,16 +78,9 @@ interface ReportProps {
   userId: number;
   userEmail: string;
   dashboardId?: number;
-  chartId?: number;
+  chart?: ChartObject;
   creationMethod: string;
   props: any;
-}
-
-enum ActionType {
-  textChange,
-  inputChange,
-  fetched,
-  reset,
 }
 
 interface ReportPayloadType {
@@ -94,9 +88,15 @@ interface ReportPayloadType {
   value: string;
 }
 
+enum ActionType {
+  inputChange,
+  fetched,
+  reset,
+}
+
 type ReportActionType =
   | {
-      type: ActionType.textChange | ActionType.inputChange;
+      type: ActionType.inputChange;
       payload: ReportPayloadType;
     }
   | {
@@ -107,17 +107,26 @@ type ReportActionType =
       type: ActionType.reset;
     };
 
+const DEFAULT_NOTIFICATION_FORMAT = 'TEXT';
+const TEXT_BASED_VISUALIZATION_TYPES = [
+  'pivot_table',
+  'pivot_table_v2',
+  'table',
+  'paired_ttest',
+];
+
 const reportReducer = (
   state: Partial<ReportObject> | null,
   action: ReportActionType,
 ): Partial<ReportObject> | null => {
   const initialState = {
     name: state?.name || 'Weekly Report',
+    report_format: state?.report_format || DEFAULT_NOTIFICATION_FORMAT,
     ...(state || {}),
   };
 
   switch (action.type) {
-    case ActionType.textChange:
+    case ActionType.inputChange:
       return {
         ...initialState,
         [action.payload.name]: action.payload.value,
@@ -139,6 +148,7 @@ const ReportModal: FunctionComponent<ReportProps> = ({
   show = false,
   ...props
 }) => {
+  const vizType = props.props.chart?.sliceFormData?.viz_type;
   const [currentReport, setCurrentReport] = useReducer<
     Reducer<Partial<ReportObject> | null, ReportActionType>
   >(reportReducer, null);
@@ -166,7 +176,6 @@ const ReportModal: FunctionComponent<ReportProps> = ({
     }
   }, [reports]);
   const onClose = () => {
-    // setLoading(false);
     onHide();
   };
   const onSave = async () => {
@@ -174,7 +183,7 @@ const ReportModal: FunctionComponent<ReportProps> = ({
     const newReportValues: Partial<ReportObject> = {
       crontab: currentReport?.crontab,
       dashboard: props.props.dashboardId,
-      chart: props.props.chartId,
+      chart: props.props.chart?.id,
       description: currentReport?.description,
       name: currentReport?.name,
       owners: [props.props.userId],
@@ -187,9 +196,9 @@ const ReportModal: FunctionComponent<ReportProps> = ({
       type: 'Report',
       creation_method: props.props.creationMethod,
       active: true,
+      report_format: currentReport?.report_format,
     };
 
-    // setLoading(true);
     if (isEditMode) {
       await dispatch(
         editReport(currentReport?.id, newReportValues as ReportObject),
@@ -217,7 +226,7 @@ const ReportModal: FunctionComponent<ReportProps> = ({
   const renderModalFooter = (
     <>
       <StyledFooterButton key="back" onClick={onClose}>
-        Cancel
+        {t('Cancel')}
       </StyledFooterButton>
       <StyledFooterButton
         key="submit"
@@ -227,6 +236,37 @@ const ReportModal: FunctionComponent<ReportProps> = ({
       >
         {isEditMode ? t('Save') : t('Add')}
       </StyledFooterButton>
+    </>
+  );
+
+  const renderMessageContentSection = (
+    <>
+      <StyledMessageContentTitle>
+        <h4>{t('Message Content')}</h4>
+      </StyledMessageContentTitle>
+      <div className="inline-container">
+        <StyledRadioGroup
+          onChange={(event: RadioChangeEvent) => {
+            onChange(ActionType.inputChange, {
+              name: 'report_format',
+              value: event.target.value,
+            });
+          }}
+          value={currentReport?.report_format || DEFAULT_NOTIFICATION_FORMAT}
+        >
+          {TEXT_BASED_VISUALIZATION_TYPES.includes(vizType) && (
+            <StyledRadio value="TEXT">
+              {t('Text embedded in email')}
+            </StyledRadio>
+          )}
+          <StyledRadio value="PNG">
+            {t('Image (PNG) embedded in email')}
+          </StyledRadio>
+          <StyledRadio value="CSV">
+            {t('Formatted CSV attached in email')}
+          </StyledRadio>
+        </StyledRadioGroup>
+      </div>
     </>
   );
 
@@ -248,7 +288,7 @@ const ReportModal: FunctionComponent<ReportProps> = ({
           required
           validationMethods={{
             onChange: ({ target }: { target: HTMLInputElement }) =>
-              onChange(ActionType.textChange, {
+              onChange(ActionType.inputChange, {
                 name: target.name,
                 value: target.value,
               }),
@@ -266,7 +306,7 @@ const ReportModal: FunctionComponent<ReportProps> = ({
           value={currentReport?.description || ''}
           validationMethods={{
             onChange: ({ target }: { target: HTMLInputElement }) =>
-              onChange(ActionType.textChange, {
+              onChange(ActionType.inputChange, {
                 name: target.name,
                 value: target.value,
               }),
@@ -284,16 +324,16 @@ const ReportModal: FunctionComponent<ReportProps> = ({
       <StyledBottomSection>
         <StyledScheduleTitle>
           <h4 css={(theme: SupersetTheme) => SectionHeaderStyle(theme)}>
-            Schedule
+            {t('Schedule')}
           </h4>
-          <p>Scheduled reports will be sent to your email as a PNG</p>
+          <p>{t('Scheduled reports will be sent to your email as a PNG')}</p>
         </StyledScheduleTitle>
 
-        <CronPicker
+        <StyledCronPicker
           clearButton={false}
           value={currentReport?.crontab || '0 12 * * 1'}
           setValue={(newValue: string) => {
-            onChange(ActionType.textChange, {
+            onChange(ActionType.inputChange, {
               name: 'crontab',
               value: newValue,
             });
@@ -310,12 +350,13 @@ const ReportModal: FunctionComponent<ReportProps> = ({
         <TimezoneSelector
           onTimezoneChange={value => {
             setCurrentReport({
-              type: ActionType.textChange,
+              type: ActionType.inputChange,
               payload: { name: 'timezone', value },
             });
           }}
           timezone={currentReport?.timezone}
         />
+        {props.props.chart && renderMessageContentSection}
       </StyledBottomSection>
     </StyledModal>
   );

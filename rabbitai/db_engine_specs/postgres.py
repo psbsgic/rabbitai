@@ -24,6 +24,7 @@ from sqlalchemy.types import String, TypeEngine
 from rabbitai.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin
 from rabbitai.errors import RabbitaiErrorType
 from rabbitai.exceptions import RabbitaiException
+from rabbitai.models.sql_lab import Query
 from rabbitai.utils import core as utils
 from rabbitai.utils.core import ColumnSpec, GenericDataType
 
@@ -64,6 +65,12 @@ CONNECTION_HOST_DOWN_REGEX = re.compile(
 CONNECTION_UNKNOWN_DATABASE_REGEX = re.compile(
     'database "(?P<database>.*?)" does not exist'
 )
+COLUMN_DOES_NOT_EXIST_REGEX = re.compile(
+    r'postgresql error: column "(?P<column_name>.+?)" '
+    r"does not exist\s+LINE (?P<location>\d+?)"
+)
+
+SYNTAX_ERROR_REGEX = re.compile('syntax error at or near "(?P<syntax_error>.*?)"')
 
 
 class PostgresBaseEngineSpec(BaseEngineSpec):
@@ -84,7 +91,7 @@ class PostgresBaseEngineSpec(BaseEngineSpec):
         "P1Y": "DATE_TRUNC('year', {col})",
     }
 
-    custom_errors = {
+    custom_errors: Dict[Pattern[str], Tuple[str, RabbitaiErrorType, Dict[str, Any]]] = {
         CONNECTION_INVALID_USERNAME_REGEX: (
             __('The username "%(username)s" does not exist.'),
             RabbitaiErrorType.CONNECTION_INVALID_USERNAME_ERROR,
@@ -123,6 +130,22 @@ class PostgresBaseEngineSpec(BaseEngineSpec):
             RabbitaiErrorType.CONNECTION_UNKNOWN_DATABASE_ERROR,
             {"invalid": ["database"]},
         ),
+        COLUMN_DOES_NOT_EXIST_REGEX: (
+            __(
+                'We can\'t seem to resolve the column "%(column_name)s" at '
+                "line %(location)s.",
+            ),
+            RabbitaiErrorType.COLUMN_DOES_NOT_EXIST_ERROR,
+            {},
+        ),
+        SYNTAX_ERROR_REGEX: (
+            __(
+                "Please check your query for syntax errors at or "
+                'near "%(syntax_error)s". Then, try running your query again.'
+            ),
+            RabbitaiErrorType.SYNTAX_ERROR,
+            {},
+        ),
     }
 
     @classmethod
@@ -148,7 +171,7 @@ class PostgresEngineSpec(PostgresBaseEngineSpec, BasicParametersMixin):
         "postgresql://user:password@host:port/dbname[?key=value&key=value...]"
     )
     # https://www.postgresql.org/docs/9.1/libpq-ssl.html#LIBQ-SSL-CERTIFICATES
-    encryption_parameters = {"sslmode": "verify-ca"}
+    encryption_parameters = {"sslmode": "require"}
 
     max_column_name_length = 63
     try_remove_schema_from_table_name = False
@@ -237,7 +260,7 @@ class PostgresEngineSpec(PostgresBaseEngineSpec, BasicParametersMixin):
         return extra
 
     @classmethod
-    def get_column_spec(  # type: ignore
+    def get_column_spec(
         cls,
         native_type: Optional[str],
         source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
@@ -258,3 +281,38 @@ class PostgresEngineSpec(PostgresBaseEngineSpec, BasicParametersMixin):
         return super().get_column_spec(
             native_type, column_type_mappings=column_type_mappings
         )
+
+    @classmethod
+    def get_cancel_query_id(cls, cursor: Any, query: Query) -> Optional[str]:
+        """
+        Get Postgres PID that will be used to cancel all other running
+        queries in the same session.
+
+        :param cursor: Cursor instance in which the query will be executed
+        :param query: Query instance
+        :return: Postgres PID
+        """
+        cursor.execute("SELECT pg_backend_pid()")
+        row = cursor.fetchone()
+        return row[0]
+
+    @classmethod
+    def cancel_query(cls, cursor: Any, query: Query, cancel_query_id: str) -> bool:
+        """
+        Cancel query in the underlying database.
+
+        :param cursor: New cursor instance to the db of the query
+        :param query: Query instance
+        :param cancel_query_id: Postgres PID
+        :return: True if query cancelled successfully, False otherwise
+        """
+        try:
+            cursor.execute(
+                "SELECT pg_terminate_backend(pid) "
+                "FROM pg_stat_activity "
+                f"WHERE pid='{cancel_query_id}'"
+            )
+        except Exception:  # pylint: disable=broad-except
+            return False
+
+        return True

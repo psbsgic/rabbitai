@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import { ReactNode } from 'react';
 import {
   DatasourceType,
@@ -35,6 +17,12 @@ import { getControlConfig } from './getControlConfig';
 
 type ValidationError = JsonValue;
 
+/**
+ * 执行控件验证。
+ *
+ * @param control
+ * @param processedState
+ */
 function execControlValidator<T = ControlType>(
   control: ControlState<T>,
   processedState: ControlState<T>,
@@ -82,6 +70,12 @@ function handleMissingChoice<T = ControlType>(control: ControlState<T>) {
   return control;
 }
 
+/**
+ * 应用状态到属性的映射到控件。
+ *
+ * @param controlState
+ * @param controlPanelState
+ */
 export function applyMapStateToPropsToControl<T = ControlType>(
   controlState: ControlState<T>,
   controlPanelState: Partial<ControlPanelState>,
@@ -117,6 +111,13 @@ export function applyMapStateToPropsToControl<T = ControlType>(
   return execControlValidator(handleMissingChoice(state), state);
 }
 
+/**
+ * 从控件配置获取控件状态。
+ *
+ * @param controlConfig 控件配置。
+ * @param controlPanelState 控制面板状态。
+ * @param value 值。
+ */
 export function getControlStateFromControlConfig<T = ControlType>(
   controlConfig: ControlConfig<T> | null,
   controlPanelState: Partial<ControlPanelState>,
@@ -138,6 +139,14 @@ export function getControlStateFromControlConfig<T = ControlType>(
   return controlState;
 }
 
+/**
+ * 获取控件的状态。
+ *
+ * @param controlKey 控件名称
+ * @param vizType 可视类型
+ * @param state 状态
+ * @param value 值
+ */
 export function getControlState(
   controlKey: string,
   vizType: string,
@@ -151,6 +160,14 @@ export function getControlState(
   );
 }
 
+/**
+ * 获取所有控件状态。
+ *
+ * @param vizType 可视类型
+ * @param datasourceType 数据源类型
+ * @param state 状态
+ * @param formData 表单数据
+ */
 export function getAllControlsState(
   vizType: string,
   datasourceType: DatasourceType,

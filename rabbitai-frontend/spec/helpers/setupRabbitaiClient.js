@@ -1,7 +1,7 @@
 import fetchMock from 'fetch-mock';
-import { SupersetClient } from '@rabbitai-ui/core';
+import { SupersetClient } from '@superset-ui/core';
 
-export default function setupSupersetClient() {
+export default function setupRabbitaiClient() {
   // The following is needed to mock out SupersetClient requests
   // including CSRF authentication and initialization
   global.FormData = window.FormData; // used by SupersetClient

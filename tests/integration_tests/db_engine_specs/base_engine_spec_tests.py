@@ -1,36 +1,20 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 import datetime
 from unittest import mock
 
 import pytest
 
-from superset.db_engine_specs import get_engine_specs
-from superset.db_engine_specs.base import (
+from rabbitai.db_engine_specs import get_engine_specs
+from rabbitai.db_engine_specs.base import (
     BaseEngineSpec,
     BasicParametersMixin,
     builtin_time_grains,
     LimitMethod,
 )
-from superset.db_engine_specs.mysql import MySQLEngineSpec
-from superset.db_engine_specs.sqlite import SqliteEngineSpec
-from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.sql_parse import ParsedQuery
-from superset.utils.core import get_example_database
+from rabbitai.db_engine_specs.mysql import MySQLEngineSpec
+from rabbitai.db_engine_specs.sqlite import SqliteEngineSpec
+from rabbitai.errors import ErrorLevel, SupersetError, SupersetErrorType
+from rabbitai.sql_parse import ParsedQuery
+from rabbitai.utils.core import get_example_database
 from tests.integration_tests.db_engine_specs.base_tests import TestDbEngineSpec
 from tests.integration_tests.test_app import app
 
@@ -369,8 +353,8 @@ def test_get_time_grain_with_unkown_values():
     app.config = config
 
 
-@mock.patch("superset.db_engine_specs.base.is_hostname_valid")
-@mock.patch("superset.db_engine_specs.base.is_port_open")
+@mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
+@mock.patch("rabbitai.db_engine_specs.base.is_port_open")
 def test_validate(is_port_open, is_hostname_valid):
     is_hostname_valid.return_value = True
     is_port_open.return_value = True
@@ -409,7 +393,7 @@ def test_validate_parameters_missing():
     ]
 
 
-@mock.patch("superset.db_engine_specs.base.is_hostname_valid")
+@mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
 def test_validate_parameters_invalid_host(is_hostname_valid):
     is_hostname_valid.return_value = False
 
@@ -438,8 +422,8 @@ def test_validate_parameters_invalid_host(is_hostname_valid):
     ]
 
 
-@mock.patch("superset.db_engine_specs.base.is_hostname_valid")
-@mock.patch("superset.db_engine_specs.base.is_port_open")
+@mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
+@mock.patch("rabbitai.db_engine_specs.base.is_port_open")
 def test_validate_parameters_port_closed(is_port_open, is_hostname_valid):
     is_hostname_valid.return_value = True
     is_port_open.return_value = False

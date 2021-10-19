@@ -25,6 +25,7 @@ dist
 rabbitai/static/*
 build
 rabbitai.egg-info
+apache_rabbitai.egg-info
 .idea
 .*sql
 .*zip

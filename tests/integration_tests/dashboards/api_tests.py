@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 # pylint: disable=too-many-public-methods, no-self-use, invalid-name, too-many-arguments
 """Unit tests for Superset"""
@@ -32,13 +16,13 @@ from sqlalchemy.sql import func
 
 from freezegun import freeze_time
 from sqlalchemy import and_
-from superset import db, security_manager
-from superset.models.dashboard import Dashboard
-from superset.models.core import FavStar, FavStarClassName
-from superset.models.reports import ReportSchedule, ReportScheduleType
-from superset.models.slice import Slice
-from superset.utils.core import backend
-from superset.views.base import generate_download_headers
+from rabbitai import db, security_manager
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.core import FavStar, FavStarClassName
+from rabbitai.models.reports import ReportSchedule, ReportScheduleType
+from rabbitai.models.slice import Slice
+from rabbitai.utils.core import backend
+from rabbitai.views.base import generate_download_headers
 
 from tests.integration_tests.base_api_tests import ApiOwnersTestCaseMixin
 from tests.integration_tests.base_tests import SupersetTestCase
@@ -337,7 +321,7 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
             "roles": [],
             "position_json": "",
             "published": False,
-            "url": "/superset/dashboard/slug1/",
+            "url": "/rabbitai/dashboard/slug1/",
             "slug": "slug1",
             "table_names": "",
             "thumbnail_url": dashboard.thumbnail_url,
@@ -812,10 +796,10 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
         Dashboard API: Test delete try not owned
         """
         user_alpha1 = self.create_user(
-            "alpha1", "password", "Alpha", email="alpha1@superset.org"
+            "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
         )
         user_alpha2 = self.create_user(
-            "alpha2", "password", "Alpha", email="alpha2@superset.org"
+            "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
         )
         existing_slice = (
             db.session.query(Slice).filter_by(slice_name="Girl Name Cloud").first()
@@ -838,10 +822,10 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
         Dashboard API: Test delete bulk try not owned
         """
         user_alpha1 = self.create_user(
-            "alpha1", "password", "Alpha", email="alpha1@superset.org"
+            "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
         )
         user_alpha2 = self.create_user(
-            "alpha2", "password", "Alpha", email="alpha2@superset.org"
+            "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
         )
         existing_slice = (
             db.session.query(Slice).filter_by(slice_name="Girl Name Cloud").first()
@@ -1083,10 +1067,10 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
         Dashboard API: Test update chart owners
         """
         user_alpha1 = self.create_user(
-            "alpha1", "password", "Alpha", email="alpha1@superset.org"
+            "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
         )
         user_alpha2 = self.create_user(
-            "alpha2", "password", "Alpha", email="alpha2@superset.org"
+            "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
         )
         admin = self.get_user("admin")
         slices = []
@@ -1249,10 +1233,10 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
         Dashboard API: Test update dashboard not owned
         """
         user_alpha1 = self.create_user(
-            "alpha1", "password", "Alpha", email="alpha1@superset.org"
+            "alpha1", "password", "Alpha", email="alpha1@rabbitai.org"
         )
         user_alpha2 = self.create_user(
-            "alpha2", "password", "Alpha", email="alpha2@superset.org"
+            "alpha2", "password", "Alpha", email="alpha2@rabbitai.org"
         )
         existing_slice = (
             db.session.query(Slice).filter_by(slice_name="Girl Name Cloud").first()
@@ -1316,7 +1300,7 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
         db.session.commit()
 
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"VERSIONED_EXPORT": True},
         clear=True,
     )
@@ -1336,7 +1320,7 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
         assert is_zipfile(buf)
 
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"VERSIONED_EXPORT": True},
         clear=True,
     )
@@ -1351,7 +1335,7 @@ class TestDashboardApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixi
         assert rv.status_code == 404
 
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"VERSIONED_EXPORT": True},
         clear=True,
     )

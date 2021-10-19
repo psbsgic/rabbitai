@@ -10,7 +10,7 @@
     "@emotion/styled": "^10.0.27",
     "@mdx-js/mdx": "^1.6.21",
     "@mdx-js/react": "^1.6.21",
-    "@superset-ui/style": "^0.14.23",
+    "@rabbitai-ui/style": "^0.14.23",
     "antd": "^4.8.0",
     "docz": "^2.3.1",
     "emotion": "^10.0.27",
@@ -52,7 +52,7 @@
   ],
   "license": "0BSD",
   "scripts": {
-    "build": "gatsby build && cp .htaccess public/",
+    "build": "gatsby build && cp .htaccess .asf.yaml public/",
     "develop": "gatsby develop",
     "develop-ga": "GATSBY_GTAG_DEBUG=true gatsby develop",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,mdx}\"",

@@ -1,7 +1,7 @@
 {
   "name": "rabbitai-websocket",
   "version": "0.0.1",
-  "description": "Websocket sidecar application for Rabbitai",
+  "description": "Websocket sidecar application for Superset",
   "main": "index.js",
   "scripts": {
     "start": "node dist/index.js start",

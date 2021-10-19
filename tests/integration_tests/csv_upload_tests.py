@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset CSV upload"""
 import json
@@ -26,12 +10,12 @@ from unittest import mock
 import pandas as pd
 import pytest
 
-from superset.sql_parse import Table
+from rabbitai.sql_parse import Table
 from tests.integration_tests.conftest import ADMIN_SCHEMA_NAME
 from tests.integration_tests.test_app import app  # isort:skip
-from superset import db
-from superset.models.core import Database
-from superset.utils import core as utils
+from rabbitai import db
+from rabbitai.models.core import Database
+from rabbitai.utils import core as utils
 from tests.integration_tests.base_tests import get_resp, login, SupersetTestCase
 
 logger = logging.getLogger(__name__)
@@ -149,9 +133,9 @@ def mock_upload_to_s3(filename: str, upload_prefix: str, table: Table) -> str:
     client = docker.from_env()
     container = client.containers.get("namenode")
     # docker mounted volume that contains csv uploads
-    src = os.path.join("/tmp/superset_uploads", os.path.basename(filename))
+    src = os.path.join("/tmp/rabbitai_uploads", os.path.basename(filename))
     # hdfs destination for the external tables
-    dest_dir = os.path.join("/tmp/external/superset_uploads/", str(table))
+    dest_dir = os.path.join("/tmp/external/rabbitai_uploads/", str(table))
     container.exec_run(f"hdfs dfs -mkdir -p {dest_dir}")
     dest = os.path.join(dest_dir, os.path.basename(filename))
     container.exec_run(f"hdfs dfs -put {src} {dest}")
@@ -160,10 +144,10 @@ def mock_upload_to_s3(filename: str, upload_prefix: str, table: Table) -> str:
 
 
 @mock.patch(
-    "superset.models.core.config",
+    "rabbitai.models.core.config",
     {**app.config, "ALLOWED_USER_CSV_SCHEMA_FUNC": lambda d, u: ["admin_database"]},
 )
-@mock.patch("superset.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
+@mock.patch("rabbitai.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
 def test_import_csv_enforced_schema(setup_csv_upload, create_csv_files):
     if utils.backend() == "sqlite":
         pytest.skip("Sqlite doesn't support schema / database creation")
@@ -211,7 +195,7 @@ def test_import_csv_enforced_schema(setup_csv_upload, create_csv_files):
     assert success_msg in resp
 
 
-@mock.patch("superset.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
+@mock.patch("rabbitai.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
 def test_import_csv_explore_database(setup_csv_upload, create_csv_files):
     if utils.backend() == "sqlite":
         pytest.skip("Sqlite doesn't support schema / database creation")
@@ -225,7 +209,7 @@ def test_import_csv_explore_database(setup_csv_upload, create_csv_files):
     assert table.database_id == utils.get_example_database().id
 
 
-@mock.patch("superset.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
+@mock.patch("rabbitai.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
 def test_import_csv(setup_csv_upload, create_csv_files):
     success_msg_f1 = (
         f'CSV file "{CSV_FILENAME1}" uploaded to table "{CSV_UPLOAD_TABLE}"'
@@ -289,7 +273,7 @@ def test_import_csv(setup_csv_upload, create_csv_files):
     assert data == [("john", 1, "x"), ("paul", 2, None)]
 
 
-@mock.patch("superset.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
+@mock.patch("rabbitai.db_engine_specs.hive.upload_to_s3", mock_upload_to_s3)
 def test_import_excel(setup_csv_upload, create_excel_files):
     if utils.backend() == "hive":
         pytest.skip("Hive doesn't excel upload.")

@@ -352,7 +352,7 @@ metadata:
   refresh_frequency: 0
   default_filters: '{"3547": {"Platform": ["PS", "PS2", "PS3", "XB", "X360"], "__time_range":
     "No filter"}}'
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   filter_scopes:
     '3547':
       Platform:

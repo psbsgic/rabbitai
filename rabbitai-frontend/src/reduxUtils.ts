@@ -1,26 +1,15 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import shortid from 'shortid';
 import { compose } from 'redux';
 import persistState, { StorageAdapter } from 'redux-localstorage';
 import { isEqual, omitBy, isUndefined } from 'lodash';
 
+/**
+ * 使用指定对象添加替换到指定状态对象中指定 arrKey 处的对象。
+ *
+ * @param state 状态对象。
+ * @param arrKey 要添加或替换对象的键。
+ * @param obj 要添加或替换的对象。
+ */
 export function addToObject(
   state: Record<string, any>,
   arrKey: string,
@@ -36,6 +25,14 @@ export function addToObject(
   return { ...state, [arrKey]: newObject };
 }
 
+/**
+ * 使用指定对象更新到指定状态对象中指定 arrKey 处的对象。
+ *
+ * @param state 状态对象。
+ * @param arrKey 要添加或替换对象的键。
+ * @param obj 要更新的对象。
+ * @param alterations 更新对象。
+ */
 export function alterInObject(
   state: Record<string, any>,
   arrKey: string,
@@ -47,6 +44,15 @@ export function alterInObject(
   return { ...state, [arrKey]: newObject };
 }
 
+/**
+ * 在数组中更新。
+ *
+ * @param state 状态对象。
+ * @param arrKey
+ * @param obj
+ * @param alterations
+ * @param idKey
+ */
 export function alterInArr(
   state: Record<string, any>,
   arrKey: string,
@@ -67,6 +73,14 @@ export function alterInArr(
   return { ...state, [arrKey]: newArr };
 }
 
+/**
+ * 依据数组移除。
+ *
+ * @param state
+ * @param arrKey
+ * @param obj
+ * @param idKey
+ */
 export function removeFromArr(
   state: Record<string, any>,
   arrKey: string,
@@ -82,6 +96,12 @@ export function removeFromArr(
   return { ...state, [arrKey]: newArr };
 }
 
+/**
+ * 从指定数组中获取具有指定标识的对象。
+ *
+ * @param arr 数组。
+ * @param id 标识。
+ */
 export function getFromArr(arr: Record<string, any>[], id: string) {
   let obj;
   arr.forEach(o => {
@@ -92,6 +112,14 @@ export function getFromArr(arr: Record<string, any>[], id: string) {
   return obj;
 }
 
+/**
+ * 添加指定对象到指定索引 arrKey 处的对象中。
+ *
+ * @param state
+ * @param arrKey
+ * @param obj
+ * @param prepend
+ */
 export function addToArr(
   state: Record<string, any>,
   arrKey: string,
@@ -111,6 +139,14 @@ export function addToArr(
   return { ...state, ...newState };
 }
 
+/**
+ * 展开数组并添加到指定索引 arrKey 处。
+ *
+ * @param state
+ * @param arrKey
+ * @param arr 数组。
+ * @param prepend
+ */
 export function extendArr(
   state: Record<string, any>,
   arrKey: string,
@@ -133,6 +169,12 @@ export function extendArr(
   return { ...state, ...newState };
 }
 
+/**
+ * 初始化增强器。
+ *
+ * @param persist 是否持久化。
+ * @param persistConfig 持久化配置。
+ */
 export function initEnhancer(
   persist = true,
   persistConfig: { paths?: StorageAdapter<unknown>; config?: string } = {},

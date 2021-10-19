@@ -1,4 +1,3 @@
-
 FROM python:3.7-buster
 
 RUN useradd --user-group --create-home --no-log-init --shell /bin/bash rabbitai
@@ -44,7 +43,7 @@ RUN pip install --upgrade setuptools pip \
     && pip install -r requirements/base.txt \
     && pip install --no-cache-dir .
 
-RUN flask wab babel-compile --target rabbitai/translations
+RUN flask fab babel-compile --target rabbitai/translations
 
 ENV PATH=/home/rabbitai/rabbitai/bin:$PATH \
     PYTHONPATH=/home/rabbitai/rabbitai/:$PYTHONPATH

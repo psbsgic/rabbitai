@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import { isFeatureEnabled, Preset, FeatureFlag } from '@superset-ui/core';
 import {
   BigNumberChartPlugin,
@@ -83,6 +65,9 @@ import { PivotTableChartPlugin as PivotTableChartPluginV2 } from '@superset-ui/p
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
 
+/**
+ * 主预设插件，注册已定义的各插件。
+ */
 export default class MainPreset extends Preset {
   constructor() {
     const experimentalplugins = isFeatureEnabled(
@@ -115,9 +100,7 @@ export default class MainPreset extends Preset {
         new EchartsGaugeChartPlugin().configure({ key: 'gauge_chart' }),
         new EchartsGraphChartPlugin().configure({ key: 'graph_chart' }),
         new EchartsRadarChartPlugin().configure({ key: 'radar' }),
-        new EchartsMixedTimeseriesChartPlugin().configure({
-          key: 'mixed_timeseries',
-        }),
+        new EchartsMixedTimeseriesChartPlugin().configure({ key: 'mixed_timeseries', }),
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),
         new HorizonChartPlugin().configure({ key: 'horizon' }),
@@ -139,18 +122,10 @@ export default class MainPreset extends Preset {
         new TreemapChartPlugin().configure({ key: 'treemap' }),
         new WordCloudChartPlugin().configure({ key: 'word_cloud' }),
         new WorldMapChartPlugin().configure({ key: 'world_map' }),
-        new EchartsAreaChartPlugin().configure({
-          key: 'echarts_area',
-        }),
-        new EchartsTimeseriesChartPlugin().configure({
-          key: 'echarts_timeseries',
-        }),
-        new EchartsTimeseriesBarChartPlugin().configure({
-          key: 'echarts_timeseries_bar',
-        }),
-        new EchartsTimeseriesLineChartPlugin().configure({
-          key: 'echarts_timeseries_line',
-        }),
+        new EchartsAreaChartPlugin().configure({ key: 'echarts_area', }),
+        new EchartsTimeseriesChartPlugin().configure({ key: 'echarts_timeseries', }),
+        new EchartsTimeseriesBarChartPlugin().configure({ key: 'echarts_timeseries_bar', }),
+        new EchartsTimeseriesLineChartPlugin().configure({ key: 'echarts_timeseries_line', }),
         new EchartsTimeseriesSmoothLineChartPlugin().configure({
           key: 'echarts_timeseries_smooth',
         }),

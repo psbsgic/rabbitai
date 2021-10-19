@@ -1,25 +1,7 @@
-..  Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-..    http://www.apache.org/licenses/LICENSE-2.0
-
-..  Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
-
 SQL Lab
 =======
 
-SQL Lab is a modern, feature-rich SQL IDE written in
-`React <https://facebook.github.io/react/>`_.
+SQLLab 是一个现代的、功能丰富的、用 `React <https://facebook.github.io/react/>`_ 开发的 SQL IDE。
 
 ------
 
@@ -27,30 +9,28 @@ SQL Lab is a modern, feature-rich SQL IDE written in
 
 ------
 
-Feature Overview
+功能概述
 ----------------
-- Connects to just about any database backend
-- A multi-tab environment to work on multiple queries at a time
-- A smooth flow to visualize your query results using Rabbitai's rich
-  visualization capabilities
-- Browse database metadata: tables, columns, indexes, partitions
-- Support for long-running queries
+- 连接到几乎任何数据库后端
+- 一次处理多个查询的多选项卡环境
+- 使用Rabbitai丰富的可视化功能实现查询结果可视化的平滑流程
+- 浏览数据库元数据：表、列、索引、分区
+- 支持长时间运行的查询
 
-  - uses the `Celery distributed queue <http://www.celeryproject.org/>`_
-    to dispatch query handling to workers
-  - supports defining a "results backend" to persist query results
+  - 使用 `Celery 分布式队列 <http://www.celeryproject.org/>`_ 向 workers 分派查询处理
+  - 支持定义一个 "结果后端(results backend)" 持久化查询结果
 
-- A search engine to find queries executed in the past
-- Supports templating using the
-  `Jinja templating language <http://jinja.pocoo.org/docs/dev/>`_
-  which allows for using macros in your SQL code
+- 用于查找已执行查询的搜索引擎
+- 支持使用
+  `Jinja 模板语言 <http://jinja.pocoo.org/docs/dev/>`_
+  模板机制，允许在SQL代码中使用宏
 
-Extra features
+附加功能
 --------------
-- Hit ``alt + enter`` as a keyboard shortcut to run your query
+- ``alt + enter`` 作为运行查询的快捷键
 
-Templating with Jinja
----------------------
+使用 Jinja 模板
+---------------
 
 .. code-block:: sql
 
@@ -58,18 +38,15 @@ Templating with Jinja
     FROM some_table
     WHERE partition_key = '{{ presto.first_latest_partition('some_table') }}'
 
-Templating unleashes the power and capabilities of a
-programming language within your SQL code.
+模板化在SQL代码中释放了编程语言的强大功能。
 
-Templates can also be used to write generic queries that are
-parameterized so they can be re-used easily.
+模板还可用于编写参数化的通用查询，以便轻松重用。
 
 
-Available macros
+可用宏
 ''''''''''''''''
 
-We expose certain modules from Python's standard library in
-Rabbitai's Jinja context:
+我们在Rabbitai的Jinja上下文中公开Python标准库中的某些模块：
 
 - ``time``: ``time``
 - ``datetime``: ``datetime.datetime``
@@ -80,7 +57,7 @@ Rabbitai's Jinja context:
 - ``random``: ``random``
 - ``relativedelta``: ``dateutil.relativedelta.relativedelta``
 
-`Jinja's builtin filters <http://jinja.pocoo.org/docs/dev/templates/>`_ can be also be applied where needed.
+`Jinja's 在建过滤器 <http://jinja.pocoo.org/docs/dev/templates/>`_ 也可以应用到需要的地方。
 
 .. autoclass:: rabbitai.jinja_context.ExtraCache
     :members:
@@ -93,31 +70,26 @@ Rabbitai's Jinja context:
 .. autoclass:: rabbitai.jinja_context.HiveTemplateProcessor
     :members:
 
-Extending macros
+扩展宏
 ''''''''''''''''
 
-As mentioned in the `Installation & Configuration <https://rabbitai.apache.org/installation.html#installation-configuration>`_ documentation,
-it's possible for administrators to expose more more macros in their
-environment using the configuration variable ``JINJA_CONTEXT_ADDONS``.
-All objects referenced in this dictionary will become available for users
-to integrate in their queries in **SQL Lab**.
+如 `安装 & 配置 <https://rabbitai.apache.org/installation.html#sql-lab>`__ 文档所述，
+管理员可以使用配置变量 ``JINJA_CONTEXT_ADDONS`` 在其环境中公开更多的宏。
+此词典中引用的所有对象将可供用户在 **SQL Lab** 中集成到其查询中。
 
-Customize templating
+定制模板
 ''''''''''''''''''''
 
-As mentioned in the `Installation & Configuration <https://rabbitai.apache.org/installation.html#sql-lab>`__ documentation,
-it's possible for administrators to overwrite Jinja templating with your customized
-template processor using the configuration variable ``CUSTOM_TEMPLATE_PROCESSORS``.
-The template processors referenced in the dictionary will overwrite default Jinja template processors
-of the specified database engines.
+如 `安装 & 配置 <https://rabbitai.apache.org/installation.html#sql-lab>`__ 文档所述，
 
-Query cost estimation
+管理员可以使用配置变量 ``CUSTOM_TEMPLATE_PROCESSORS`` 使用自定义模板处理器覆盖Jinja模板。
+字典中引用的模板处理器将覆盖指定的数据库引擎的默认的Jinja模板处理器。
+
+查询成本估算
 '''''''''''''''''''''
 
-Some databases support ``EXPLAIN`` queries that allow users to estimate the cost
-of queries before executing this. Currently, Presto is supported in SQL Lab. To
-enable query cost estimation, add the following keys to the "Extra" field in the
-database configuration:
+有些数据库支持 ``EXPLAIN`` 查询，允许用户在执行此查询之前估计查询的成本。
+目前，SQL Lab支持Presto。要启用查询成本估算，请在数据库配置的 "Extra" 字段中添加以下键：
 
 .. code-block:: text
 
@@ -127,11 +99,9 @@ database configuration:
         ...
     }
 
-Here, "version" should be the version of your Presto cluster. Support for this
-functionality was introduced in Presto 0.319.
+这里，"version" 应该是您的Presto集群的版本。Presto 0.319中引入了对该功能的支持。
 
-You also need to enable the feature flag in your `rabbitai_config.py`, and you
-can optionally specify a custom formatter. Eg:
+您还需要在 `rabbitai_config.py` 中启用功能标志，并且可以选择指定自定义格式化程序。如：
 
 .. code-block:: python
 
@@ -165,11 +135,10 @@ can optionally specify a custom formatter. Eg:
 Create Table As (CTAS)
 ''''''''''''''''''''''
 
-You can use ``CREATE TABLE AS SELECT ...`` statements on SQLLab. This feature can be toggled on
-and off at the database configuration level.
+您可以在SQLLab上使用 ``CREATE TABLE AS SELECT ...`` 语句。可以在数据库配置级别打开和关闭此功能。
 
-Note that since ``CREATE TABLE..`` belongs to a SQL DDL category. Specifically on PostgreSQL, DDL is transactional,
-this means that to properly use this feature you have to set ``autocommit`` to true on your engine parameters:
+请注意，由于 ``CREATE TABLE..`` 属于SQL DDL类别。特别是在PostgreSQL上，DDL是事务性的，
+这意味着要正确使用此功能，必须在引擎参数上将 ``autocommit`` 设置为true：
 
 .. code-block:: text
 

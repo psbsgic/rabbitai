@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import current_app as app
 from flask_appbuilder.hooks import before_request
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -10,8 +12,6 @@ from . import LogMixin
 
 
 class LogRestApi(LogMixin, BaseRabbitaiModelRestApi):
-    """日志RestApi，提供Log对象关系模型的CRUD。"""
-
     datamodel = SQLAInterface(models.Log)
     include_route_methods = {"get_list", "get", "post"}
     class_permission_name = "Log"

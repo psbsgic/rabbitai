@@ -383,7 +383,7 @@ metadata:
         scope:
         - ROOT_ID
         immune: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   label_colors:
     Medium: '#1FA8C9'
     Small: '#454E7C'

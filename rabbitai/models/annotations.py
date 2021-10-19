@@ -1,4 +1,5 @@
-"""a collection of Annotation-related models"""
+# -*- coding: utf-8 -*-
+
 from typing import Any, Dict
 
 from flask_appbuilder import Model
@@ -9,7 +10,7 @@ from rabbitai.models.helpers import AuditMixinNullable
 
 
 class AnnotationLayer(Model, AuditMixinNullable):
-    """注释层对象关系模型。"""
+    """注释层对象关系模型，一组注释的逻辑命名空间"""
 
     __tablename__ = "annotation_layer"
     id = Column(Integer, primary_key=True)

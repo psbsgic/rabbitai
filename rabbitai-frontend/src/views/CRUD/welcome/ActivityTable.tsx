@@ -1,29 +1,11 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import { styled, t } from '@superset-ui/core';
 import { setInLocalStorage } from 'src/utils/localStorageHelpers';
 
-import Loading from 'src/components/Loading';
 import ListViewCard from 'src/components/ListViewCard';
 import SubMenu from 'src/components/Menu/SubMenu';
+import { LoadingCards, ActivityData } from 'src/views/CRUD/welcome/Welcome';
 import {
   CardStyles,
   getEditedObjects,
@@ -34,11 +16,11 @@ import { Chart } from 'src/types/Chart';
 import { Dashboard, SavedQueryObject } from 'src/views/CRUD/types';
 
 import Icons from 'src/components/Icons';
-import { ActivityData } from './Welcome';
+
 import EmptyState from './EmptyState';
 
 /**
- * Return result from /superset/recent_activity/{user_id}
+ * Return result from /rabbitai/recent_activity/{user_id}
  */
 interface RecentActivity {
   action: string;
@@ -113,7 +95,7 @@ const getEntityIcon = (entity: ActivityObject) => {
 };
 
 const getEntityUrl = (entity: ActivityObject) => {
-  if ('sql' in entity) return `/superset/sqllab?savedQueryId=${entity.id}`;
+  if ('sql' in entity) return `/rabbitai/sqllab?savedQueryId=${entity.id}`;
   if ('url' in entity) return entity.url;
   return entity.item_url;
 };
@@ -230,7 +212,7 @@ export default function ActivityTable({
   const doneFetching = loadedCount < 3;
 
   if ((loadingState && !editedObjs) || doneFetching) {
-    return <Loading position="inline" />;
+    return <LoadingCards />;
   }
   return (
     <Styles>

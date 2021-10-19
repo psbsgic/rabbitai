@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 
 from flask import g
@@ -5,8 +7,7 @@ from flask_appbuilder import expose, has_access
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
-from rabbitai import db, is_feature_enabled
-from rabbitai.connectors.connector_registry import ConnectorRegistry
+from rabbitai import is_feature_enabled, security_manager
 from rabbitai.constants import MODEL_VIEW_RW_METHOD_PERMISSION_MAP, RouteMethod
 from rabbitai.models.slice import Slice
 from rabbitai.typing import FlaskResponse
@@ -22,8 +23,6 @@ from rabbitai.views.utils import bootstrap_user_data
 
 
 class SliceModelView(SliceMixin, RabbitaiModelView, DeleteMixin):
-    """切片模型视图，提供切片模型相关的CRUD和界面。"""
-
     route_base = "/chart"
     datamodel = SQLAInterface(Slice)
     include_route_methods = RouteMethod.CRUD_SET | {
@@ -49,7 +48,7 @@ class SliceModelView(SliceMixin, RabbitaiModelView, DeleteMixin):
     def add(self) -> FlaskResponse:
         datasources = [
             {"value": str(d.id) + "__" + d.type, "label": repr(d)}
-            for d in ConnectorRegistry.get_all_datasources(db.session)
+            for d in security_manager.get_user_datasources()
         ]
         payload = {
             "datasources": sorted(
@@ -73,8 +72,6 @@ class SliceModelView(SliceMixin, RabbitaiModelView, DeleteMixin):
 
 
 class SliceAsync(SliceModelView):
-    """异步切片模型视图。"""
-
     route_base = "/sliceasync"
     include_route_methods = {RouteMethod.API_READ}
 

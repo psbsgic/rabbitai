@@ -1,22 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 import shortid from 'shortid';
 import {
   waitForChartLoad,
@@ -38,7 +19,7 @@ describe('Dashboard save action', () => {
       cy.get('[data-test="dashboard-header"]').then(headerElement => {
         const dashboardId = headerElement.attr('data-test-id');
 
-        cy.intercept('POST', `/superset/copy_dash/${dashboardId}/`).as(
+        cy.intercept('POST', `/rabbitai/copy_dash/${dashboardId}/`).as(
           'copyRequest',
         );
 
@@ -78,7 +59,7 @@ describe('Dashboard save action', () => {
       .find('.box_plot')
       .should('not.exist');
 
-    cy.intercept('POST', '/superset/save_dash/**/').as('saveRequest');
+    cy.intercept('POST', '/rabbitai/save_dash/**/').as('saveRequest');
     cy.get('[data-test="dashboard-header"]')
       .find('[data-test="header-save-button"]')
       .contains('Save')

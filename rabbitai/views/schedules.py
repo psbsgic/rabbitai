@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+"""
+DEPRECATION NOTICE: this module is deprecated and will be removed on 2.0.
+"""
+
 import enum
 from typing import Type, Union
 
@@ -31,8 +37,6 @@ from .base import DeleteMixin, RabbitaiModelView
 
 
 class EmailScheduleView(RabbitaiModelView, DeleteMixin):
-    """邮件调度视图。"""
-
     include_route_methods = RouteMethod.CRUD_SET
     _extra_data = {"test_email": False, "test_email_recipients": None}
 
@@ -170,8 +174,6 @@ class EmailScheduleView(RabbitaiModelView, DeleteMixin):
 
 
 class DashboardEmailScheduleView(EmailScheduleView):
-    """仪表盘邮件调度视图。"""
-
     schedule_type = ScheduleType.dashboard
     schedule_type_model = Dashboard
 
@@ -251,7 +253,6 @@ class DashboardEmailScheduleView(EmailScheduleView):
 
 
 class SliceEmailScheduleView(EmailScheduleView):
-    """切片邮件调度视图"""
     schedule_type = ScheduleType.slice
     schedule_type_model = Slice
     add_title = _("Schedule Email Reports for Charts")

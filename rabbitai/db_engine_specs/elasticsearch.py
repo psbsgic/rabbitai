@@ -12,7 +12,7 @@ from rabbitai.utils import core as utils
 
 class ElasticSearchEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
     engine = "elasticsearch"
-    engine_name = "ElasticSearch"
+    engine_name = "ElasticSearch (SQL API)"
     time_groupby_inline = True
     time_secondary_columns = True
     allows_joins = False
@@ -67,7 +67,7 @@ class OpenDistroEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
     }
 
     engine = "odelasticsearch"
-    engine_name = "ElasticSearch"
+    engine_name = "ElasticSearch (OpenDistro SQL)"
 
     @classmethod
     def convert_dttm(cls, target_type: str, dttm: datetime) -> Optional[str]:

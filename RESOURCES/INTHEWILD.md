@@ -13,6 +13,7 @@ Join our growing community!
 - [Hostnfly](https://www.hostnfly.com/) [@alexisrosuel]
 - [Lime](https://www.limebike.com/) [@cxmcc]
 - [Lyft](https://www.lyft.com/)
+- [Ontruck](https://www.ontruck.com/)
 
 ### Financial Services
 - [Aktia Bank plc](https://www.aktia.com) [@villebro]
@@ -59,6 +60,7 @@ Join our growing community!
 - [FBK - ICT center](http://ict.fbk.eu)
 - [GfK Data Lab](http://datalab.gfk.com) [@mherr]
 - [GrowthSimple](https://growthsimple.ai/)
+- [Hydrolix](https://www.hydrolix.io/)
 - [Intercom](https://www.intercom.com/) [@kate-gallo]
 - [jampp](https://jampp.com/)
 - [Konfío](http://konfio.mx) [@uis-rodriguez]
@@ -90,7 +92,7 @@ Join our growing community!
 - [Douban](https://www.douban.com/) [@luchuan]
 - [Kuaishou](https://www.kuaishou.com/) [@zhaoyu89730105]
 - [Netflix](https://www.netflix.com/)
-- [TME QQMUSIC/WESING](https://www.tencentmusic.com/)
+- [TME QQMUSIC/WESING](https://www.tencentmusic.com/)[@shenyuanli,@marklaw]
 - [Xite](https://xite.com/) [@shashankkoppar]
 - [Zaihang](http://www.zaih.com/)
 
@@ -98,6 +100,7 @@ Join our growing community!
 - [Brilliant.org](https://brilliant.org/)
 - [Udemy](https://www.udemy.com/) [@sungjuly]
 - [VIPKID](https://www.vipkid.com.cn/) [@illpanda]
+- [Sunbird](https://www.sunbird.org/) [@eksteporg]
 
 ### Energy
 - [Airboxlab](https://foobot.io) [@antoine-galataud]

@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import shortid from 'shortid';
 import JSONbig from 'json-bigint';
 import { t, SupersetClient } from '@superset-ui/core';
@@ -171,8 +153,8 @@ export function estimateQueryCost(query) {
   const { dbId, schema, sql, templateParams } = query;
   const endpoint =
     schema === null
-      ? `/superset/estimate_query_cost/${dbId}/`
-      : `/superset/estimate_query_cost/${dbId}/${schema}/`;
+      ? `/rabbitai/estimate_query_cost/${dbId}/`
+      : `/rabbitai/estimate_query_cost/${dbId}/${schema}/`;
   return dispatch =>
     Promise.all([
       dispatch({ type: COST_ESTIMATE_STARTED, query }),
@@ -290,7 +272,7 @@ export function fetchQueryResults(query, displayLimit) {
     dispatch(requestQueryResults(query));
 
     return SupersetClient.get({
-      endpoint: `/superset/results/${query.resultsKey}/?rows=${displayLimit}`,
+      endpoint: `/rabbitai/results/${query.resultsKey}/?rows=${displayLimit}`,
       parseMethod: 'text',
     })
       .then(({ text = '{}' }) => {
@@ -333,7 +315,7 @@ export function runQuery(query) {
     };
 
     return SupersetClient.post({
-      endpoint: '/superset/sql_json/',
+      endpoint: '/rabbitai/sql_json/',
       body: JSON.stringify(postPayload),
       headers: { 'Content-Type': 'application/json' },
       parseMethod: 'text',
@@ -379,7 +361,7 @@ export function validateQuery(query) {
     };
 
     return SupersetClient.post({
-      endpoint: `/superset/validate_sql_json/${window.location.search}`,
+      endpoint: `/rabbitai/validate_sql_json/${window.location.search}`,
       postPayload,
       stringify: false,
     })
@@ -399,7 +381,7 @@ export function validateQuery(query) {
 export function postStopQuery(query) {
   return function (dispatch) {
     return SupersetClient.post({
-      endpoint: '/superset/stop_query/',
+      endpoint: '/rabbitai/stop_query/',
       postPayload: { client_id: query.id },
       stringify: false,
     })
@@ -1039,7 +1021,7 @@ function getTableMetadata(table, query, dispatch) {
 function getTableExtendedMetadata(table, query, dispatch) {
   return SupersetClient.get({
     endpoint: encodeURI(
-      `/superset/extra_table_metadata/${query.dbId}/` +
+      `/rabbitai/extra_table_metadata/${query.dbId}/` +
         `${encodeURIComponent(table.name)}/${encodeURIComponent(
           table.schema,
         )}/`,
@@ -1272,7 +1254,7 @@ export function popQuery(queryId) {
 export function popDatasourceQuery(datasourceKey, sql) {
   return function (dispatch) {
     return SupersetClient.get({
-      endpoint: `/superset/fetch_datasource_metadata?datasourceKey=${datasourceKey}`,
+      endpoint: `/rabbitai/fetch_datasource_metadata?datasourceKey=${datasourceKey}`,
     })
       .then(({ json }) =>
         dispatch(
@@ -1305,7 +1287,7 @@ export function createDatasource(vizOptions) {
   return dispatch => {
     dispatch(createDatasourceStarted());
     return SupersetClient.post({
-      endpoint: '/superset/sqllab_viz/',
+      endpoint: '/rabbitai/sqllab_viz/',
       postPayload: { data: vizOptions },
     })
       .then(({ json }) => {
@@ -1329,7 +1311,7 @@ export function createCtasDatasource(vizOptions) {
   return dispatch => {
     dispatch(createDatasourceStarted());
     return SupersetClient.post({
-      endpoint: '/superset/get_or_create_table/',
+      endpoint: '/rabbitai/get_or_create_table/',
       postPayload: { data: vizOptions },
     })
       .then(({ json }) => {

@@ -1,29 +1,9 @@
-<!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
+文档源码地址：
+<a href="https://rabbitai.sgic.net.cn">rabbitai.sgic.net.cn</a>
 
-  http://www.apache.org/licenses/LICENSE-2.0
+该站点运行在 Gatsby 框架下并使用 `Documentation` 节。
 
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
-
-Here's the source to the documentation hosted at
-<a href="https://rabbitai.apache.org">rabbitai.apache.org</a>
-
-The site runs on the Gatsby framework and uses docz for it's
-`Documentation` subsection.
-
-## Getting Started
+## 入门
 
 ```bash
 cd docs/
@@ -32,32 +12,30 @@ npm run start
 # navigate to localhost:8000`
 ```
 
-## To Publish
+## 发布
 
-Github Actions CI automatically publishes the site after changes are
-merged to master.
+Github Actions CI在将更改合并到主站点后自动发布站点。
 
-To manually publish, the static site that Gatsby generates needs to be pushed
-to the `asf-site` branch on the
-[apache/rabbitai-site](https://github.com/apache/rabbitai-site/)
-repository. No need to PR here, simply `git push`.
+要手动发布，需要推送 Gatsby 生成的静态站点
+至[psbsgic/rabbitai-site](https://github.com/psbsgic/rabbitai-site/)库的 `asf-site` 分支，
+不需要PR，只需 `git push`。
 
 ```bash
-# Get in the docs/ folder in the main repo
+# 在主 repo 中获取 docs/ 文件夹
 cd ~/repos/rabbitai/docs
-# have Gatsby build the static website, this puts in under `docs/public`
+# Gatsby 构建静态网站，网站目录：`docs/public`
 npm run build
 
-# go to the docs repo
+# 跳转到 docs repo
 cd ~/repos/rabbitai-site
-# checkout the proper branch
+# 签出正确的分支
 git checkout asf-site
 
 # BE CAREFUL WITH THIS COMMAND
 # wipe the content of the repo
 rm -rf *
 
-# copy the static site here
+# 在这里复制静态站点
 cp -r ~/repos/rabbitai/docs/public/ ./
 
 # git push
@@ -65,5 +43,5 @@ git add .
 git commit -m "relevant commit msg"
 git push origin asf-site
 
-# SUCCESS - it should take minutes to take effect on rabbitai.apache.org
+# 成功-需要几分钟才能在rabbitai.sgic.net.cn上生效
 ```

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import current_app as app
 from flask_appbuilder.hooks import before_request
 from flask_appbuilder.models.sqla.interface import SQLAInterface

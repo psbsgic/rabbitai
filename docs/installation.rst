@@ -1,185 +1,135 @@
-..  Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-..    http://www.apache.org/licenses/LICENSE-2.0
-
-..  Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
-
-Installation & Configuration
+安装 & 配置
 ============================
 
-Getting Started
+入门
 ---------------
 
-Rabbitai supports Python versions ``>3.7`` to take advantage of the
-newer Python features and reduce the burden of supporting previous versions.
-We run our test suite against ``3.7``, with a subset of tests additionally
-also being run against ``3.8``.
+Rabbitai支持Python版本 ``>3.7`` 以利用较新的Python特性，并减少支持以前版本的负担。
+我们针对 ``3.7`` 运行测试套件，另外还有一部分测试也针对 ``3.8`` 运行。
 
-Cloud-native!
+云原生!
 -------------
 
-Rabbitai is designed to be highly available. It is
-"cloud-native" as it has been designed scale out in large,
-distributed environments, and works well inside containers.
-While you can easily
-test drive Rabbitai on a modest setup or simply on your laptop,
-there's virtually no limit around scaling out the platform.
-Rabbitai is also cloud-native in the sense that it is
-flexible and lets you choose your web server (Gunicorn, Nginx, Apache),
-your metadata database engine (MySQL, Postgres, MariaDB, ...),
-your message queue (Redis, RabbitMQ, SQS, ...),
-your results backend (S3, Redis, Memcached, ...), your caching layer
-(Memcached, Redis, ...), works well with services like NewRelic, StatsD and
-DataDog, and has the ability to run analytic workloads against
-most popular database technologies.
+Rabbitai的设计目的是提供高可用性。它是“云原生”的，因为它被设计成在大型分布式环境中扩展，并且在容器中运行良好。
+虽然您可以轻松地在普通设置或笔记本电脑上测试Rabbitai，但扩展平台几乎没有限制。
+Rabbitai也是云原生的，因为它非常灵活，允许您选择web服务器（Gunicorn、Nginx、Apache）、
+元数据数据库引擎（MySQL、Postgres、MariaDB等）、消息队列（Redis、RabbitMQ、SQS等）、
+结果后端（S3、Redis、Memcached等）、缓存层（Memcached、Redis等），
+与NewRelic、StatsD和DataDog等服务配合良好，能够针对最流行的数据库技术运行分析工作负载。
 
-Rabbitai is battle tested in large environments with hundreds
-of concurrent users. Airbnb's production environment runs inside
-Kubernetes and serves 600+ daily active users viewing over 100K charts a
-day.
+Rabbitai在拥有数百名并发用户的大型环境中经过了战斗测试。Airbnb的生产环境在Kubernetes内部运行，
+每天为600多名活跃用户提供超过10万张图表的服务。
 
-The Rabbitai web server and the Rabbitai Celery workers (optional)
-are stateless, so you can scale out by running on as many servers
-as needed.
+Rabbitai web服务器和Rabbitai Celery 工作者（可选）是无状态的，因此您可以根据需要在任意多个服务器上运行来扩展。
 
-Install and Deploy Rabbitai Locally with Docker
+使用Docker在本地安装和部署Rabbitai
 -----------------------------------------------
 
-To try Rabbitai locally, the
-best-supported currently method is via Docker, using ``docker-compose``. Rabbitai
-does not have official support for Windows, so we have provided a VM
-workaround below. (We will update this documentation once Windows is
-supported.)
+要在本地尝试Rabbitai，当前支持的最佳方法是通过Docker，使用 ``docker-compose``。
+Rabbitai没有对Windows的官方支持，因此我们在下面提供了一个VM解决方案。（一旦支持Windows，我们将更新此文档。）
 
-**Step 0 - Install a Docker Engine and Docker Compose**
+**Step 0 - 安装 Docker 和 Docker Compose**
 
 *Mac OSX:*
 
-    `Install Docker for Mac <https://docs.docker.com/docker-for-mac/install/>`__, which includes the Docker engine and a recent version of `docker-compose` out of the box.
+    `安装 Docker for Mac <https://docs.docker.com/docker-for-mac/install/>`__，其中包括Docker引擎和最新版本的 `docker-compose` 开箱即用。
 
-    Once you have Docker for Mac installed, open up the preferences pane for Docker, go to the "Resources" section and increase the allocated memory to 6GB. With only the 2GB of RAM allocated by default, Rabbitai will fail to start.
+    安装Docker for Mac后，打开Docker的首选项窗格，转到“资源”部分，将分配的内存增加到6GB。默认情况下只分配2GB的RAM，Rabbitai将无法启动。
 
 
 *Linux:*
 
-    `Install Docker on Linux <https://docs.docker.com/engine/install/>`__ by following Docker’s instructions for whichever flavor of Linux suits you.
+    `安装 Docker on Linux <https://docs.docker.com/engine/install/>`__ ，按照Docker的说明，选择适合您的Linux版本。
 
-    Because ``docker-compose`` is not installed as part of the base Docker installation on Linux, once you have a working engine, follow the `docker-compose installation instructions <https://docs.docker.com/compose/install/>`__ for Linux.
+    因为 ``docker-compose`` 不是作为 Docker 安装的一部分安装的，一旦你有了一个工作的引擎，接下来按照针对Linux `docker-compose 安装说明 <https://docs.docker.com/compose/install/>`__ 进行安装
 
 
 *Windows:*
 
-    NOTE: Windows is currently not a supported environment for Rabbitai installation.
+    注意：Windows目前不支持Rabbitai安装环境。
 
-    For Windows users, the best option may be to install an Ubuntu Desktop VM via `VirtualBox <https://www.virtualbox.org/>`__ and proceed with the Docker on Linux instructions inside of that VM. It is recommended to assign at least 8GB of RAM to the virtual machine as well as provisioning a hard drive of at least 40GB, so that there will be enough space for both the OS and all of the required dependencies.
+    对于Windows用户来说，最好的选择是通过 `VirtualBox <https://www.virtualbox.org/>`__ 安装Ubuntu虚拟机，然后在虚拟机中继续执行Docker on Linux指令。建议为虚拟机分配至少8GB的RAM，并提供至少40GB的硬盘驱动器，以便为操作系统和所有必需的依赖项提供足够的空间。
 
-**Step 1 - Clone Rabbitai's Github repository**
+**Step 1 - 克隆Rabbitai的Github存储库**
 
-`Clone Rabbitai's repo <https://github.com/apache/rabbitai>`__
-in your terminal with the following command:
+使用以下命令 `克隆 Rabbitai <https://github.com/psbsgic/rabbitai>`__ ：
 
 .. code:: bash
 
-    $ git clone https://github.com/apache/rabbitai.git
+    $ git clone https://github.com/psbsgic/rabbitai.git
 
-Once that command completes successfully, you should see a new
-``rabbitai`` folder in your current directory.
+一旦该命令成功完成，您应该会在当前目录中看到一个新的 ``rabbitai`` 文件夹。
 
-**Step 2 - Launch Rabbitai via `docker-compose up`**
+**Step 2 - 通过 `docker-compose up` 启动 Rabbitai**
 
-Next, `cd` into the folder you created in Step 1:
+接下来，`cd` 到 Step 1中创建的文件夹：
 
 .. code:: bash
 
     $ cd rabbitai
 
-Once you're in the directory, run the following command:
+进入目录后，运行以下命令：
 
 .. code:: bash
 
     $ docker-compose up
 
-You should see a wall of logging output from the containers being
-launched on your machine. Once this output slows to a crawl, you should
-have a running instance of Rabbitai on your local machine!
+您应该会看到输出屏幕，上面记录了机器上启动的容器的输出。
+一旦这个输出变慢时，您应该在本地机器上有一个正在运行的Rabbitai实例！
 
-**Step 3 - Log In to Rabbitai**
+**Step 3 - 登录Rabbitai**
 
-Your Rabbitai local instance also includes a Postgres server to store
-your data and is already pre-loaded with some example datasets that ship
-with Rabbitai. You can access Rabbitai now via your web browser by
-visiting ``http://localhost:8088``. Note that many browsers now default
-to ``https`` - if yours is one of them, please make sure it uses
-``http``.
+您的Rabbitai本地实例还包括一个用于存储数据的Postgres服务器，
+并且已经预加载了Rabbitai附带的一些示例数据集。
+您现在可以通过web浏览器访问Rabbitai，访问 ``http://localhost:8088``。
+请注意，许多浏览器现在默认为 ``https`` -如果您的浏览器是其中之一，否则请使用``http``。
 
-Log in with the default username and password:
+使用默认用户名和密码登录：
 
 ::
 
     username: admin
     password: admin
 
-Congrats! You have successfully installed Rabbitai!
+恭喜！您已成功安装Rabbitai！
 
-.. note ::
-    The Docker-related files and documentation are actively maintained and
-    managed by the core committers working on the project. Help and contributions
-    around Docker are welcomed! See also `docker/README.md <https://github.com/apache/rabbitai/blob/master/docker/README.md>`_ for additional information.
-
-OS dependencies
+OS 依赖
 ---------------
 
-Rabbitai stores database connection information in its metadata database.
-For that purpose, we use the ``cryptography`` Python library to encrypt
-connection passwords. Unfortunately, this library has OS level dependencies.
+Rabbitai 存储数据库连接信息在元数据库中。
+为此，我们使用 ``cryptography`` Python 库加密连接密码。
+不幸的是，此库具有操作系统级依赖项。
 
-You may want to attempt the next step
-("Rabbitai installation and initialization") and come back to this step if
-you encounter an error.
+您可能希望尝试下一步（“Rabbitai安装和初始化”），如果遇到错误，请返回此步骤。
 
-Here's how to install them:
+以下是如何安装它们：
 
-For **Debian** and **Ubuntu**, the following command will ensure that
-the required dependencies are installed: ::
+对于 **Debian** 和 **Ubuntu**，运行以下命令安装依赖: ::
 
     sudo apt-get install build-essential libssl-dev libffi-dev python-dev python-pip libsasl2-dev libldap2-dev
 
-**Ubuntu 20.04** the following command will ensure that the required dependencies are installed: ::
+**Ubuntu 20.04** 运行以下命令安装依赖: ::
 
     sudo apt-get install build-essential libssl-dev libffi-dev python3-dev python3-pip libsasl2-dev libldap2-dev
 
-otherwise build for ``cryptography`` fails.
+否则 ``cryptography`` 构建将失败。
 
-For **Fedora** and **RHEL-derivatives**, the following command will ensure
-that the required dependencies are installed: ::
+对于 **Fedora** 和 **RHEL-derivatives**, ，运行以下命令安装依赖: ::
 
     sudo yum upgrade python-setuptools
     sudo yum install gcc gcc-c++ libffi-devel python-devel python-pip python-wheel openssl-devel cyrus-sasl-devel openldap-devel
 
-**Mac OS X** If possible, you should upgrade to the latest version of OS X as issues are more likely to be resolved for that version.
-You *will likely need* the latest version of XCode available for your installed version of OS X. You should also install
-the XCode command line tools: ::
+**Mac OS X** ，您应该升级到最新版本的OS X，因为该版本的问题更有可能得到解决。您*可能需要*适用于您安装的OS X版本的最新版本的XCode。您还应该安装XCode命令行工具: ::
 
     xcode-select --install
 
-System python is not recommended. Homebrew's python also ships with pip: ::
+不推荐使用系统python。自制的python也附带了pip: ::
 
     brew install pkg-config libffi openssl python
     env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" pip install cryptography==2.4.2
 
-**Windows** isn't officially supported at this point, but if you want to
-attempt it, download `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_, and run ``python get-pip.py`` which may need admin access. Then run the following: ::
+**Windows** 目前还没有官方支持，但是您可以测，
+下载 `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_, 以管理员身份运行 ``python get-pip.py``。然后运行: ::
 
     C:\> pip install cryptography
 
@@ -188,73 +138,66 @@ attempt it, download `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_, and r
 
 Python virtualenv
 -----------------
-It is recommended to install Rabbitai inside a virtualenv. Python 3 already ships virtualenv.
-But if it's not installed in your environment for some reason, you can install it
-via the package for your operating systems, otherwise you can install from pip: ::
+推荐安装 Rabbitai 到虚拟环境。Python 3 已提供 virtualenv。
+但是，如果由于某种原因它没有安装在您的环境中，您可以通过针对您的操作系统的软件包安装它，否则您可以从pip安装: ::
 
     pip install virtualenv
 
-You can create and activate a virtualenv by: ::
+您可以通过以下方式创建和激活virtualenv: ::
 
     # virtualenv is shipped in Python 3.6+ as venv instead of pyvenv.
     # See https://docs.python.org/3.6/library/venv.html
     python3 -m venv venv
     . venv/bin/activate
 
-On Windows the syntax for activating it is a bit different: ::
+在Windows上，激活它的语法有点不同: ::
 
     venv\Scripts\activate
 
-Once you activated your virtualenv everything you are doing is confined inside the virtualenv.
-To exit a virtualenv just type ``deactivate``.
+一旦你激活了你的virtualenv，你所做的一切都被限制在virtualenv内。
+要退出virtualenv，只需执行命令 `deactivate`。
 
 Python's setup tools and pip
 ----------------------------
-Put all the chances on your side by getting the very latest ``pip``
-and ``setuptools`` libraries.::
+通过获取最新的  ``pip`` 和 ``setuptools`` 库，您可以获得所有机会。::
 
     pip install --upgrade setuptools pip
 
-Rabbitai installation and initialization
+Rabbitai 安装和初始化
 ----------------------------------------
-Follow these few simple steps to install Rabbitai.::
+按照以下几个简单步骤安装Rabbitai。::
 
-    # Install rabbitai
-    pip install apache-rabbitai
+    # 安装 rabbitai
+    pip install rabbitai
 
-    # Initialize the database
+    # 初始化数据库
     rabbitai db upgrade
 
-    # Create an admin user (you will be prompted to set a username, first and last name before setting a password)
+    # 创建管理员用户(在设置密码之前，系统将提示您设置用户名、名字和姓氏)
     $ export FLASK_APP=rabbitai
-    rabbitai wab create-admin
+    rabbitai fab create-admin
 
-    # Load some data to play with
+    # 加载示例
     rabbitai load_examples
 
-    # Create default roles and permissions
+    # 创建默认角色和权限
     rabbitai init
 
-    # To start a development web server on port 8088, use -p to bind to another port
+    # 要在端口8088上启动开发web服务器，请使用-p绑定到另一个端口
     rabbitai run -p 8088 --with-threads --reload --debugger
 
-After installation, you should be able to point your browser to the right
-hostname:port `http://localhost:8088 <http://localhost:8088>`_, login using
-the credential you entered while creating the admin account, and navigate to
-`Menu -> Admin -> Refresh Metadata`. This action should bring in all of
-your datasources for Rabbitai to be aware of, and they should show up in
-`Menu -> Datasources`, from where you can start playing with your data!
+安装后，您应该能够将浏览器指向右侧
+主机名：端口 `http://localhost:8088 <http://localhost:8088>`_，使用您在创建管理员帐户时输入的凭据登录，
+导航到 `Menu -> Admin -> Refresh Metadata`。这个动作应该让Rabbitai知道你的所有数据源，
+它们应该显示在 `菜单->数据源`（`Menu -> Datasources`）中，从那里你可以开始玩你的数据！
 
 A proper WSGI HTTP Server
 -------------------------
 
-While you can setup Rabbitai to run on Nginx or Apache, many use
-Gunicorn, preferably in **async mode**, which allows for impressive
-concurrency even and is fairly easy to install and configure. Please
-refer to the
-documentation of your preferred technology to set up this Flask WSGI
-application in a way that works well in your environment. Here's an **async**
-setup known to work well in production: ::
+虽然您可以将Rabbitai设置为在Nginx或Apache上运行，但许多人使用Gunicorn，最好是在 **异步模式async mode** 下，
+这甚至可以实现令人印象深刻的并发性，而且安装和配置都相当容易。
+请参考您首选的技术文档，以在您的环境中运行良好的方式设置此WSGI应用程序。
+这里有一个 **异步 async** 设置，已知它在生产中运行良好: ::
 
  　gunicorn \
         -w 10 \
@@ -266,9 +209,9 @@ setup known to work well in production: ::
         --statsd-host localhost:8125 \
         "rabbitai.app:create_app()"
 
-Refer to the
+更多信息参考
 `Gunicorn documentation <https://docs.gunicorn.org/en/stable/design.html>`_
-for more information.
+
 
 Note that the development web
 server (`rabbitai run` or `flask run`) is not intended for production use.
@@ -334,7 +277,7 @@ of the parameters you can copy / paste in that configuration module: ::
     MAPBOX_API_KEY = ''
 
 All the parameters and default values defined in
-https://github.com/apache/rabbitai/blob/master/rabbitai/config.py
+https://github.com/psbsgic/rabbitai/blob/master/rabbitai/config.py
 can be altered in your local ``rabbitai_config.py`` .
 Administrators will want to
 read through the file to understand what can be configured locally
@@ -342,7 +285,7 @@ as well as the default values in place.
 
 Since ``rabbitai_config.py`` acts as a Flask configuration module, it
 can be used to alter the settings Flask itself,
-as well as Flask extensions like ``flask-wtf``, ``flask-cache``,
+as well as Flask extensions like ``flask-wtf``, ``flask-caching``,
 ``flask-migrate``, and ``flask-appbuilder``. Flask App Builder, the web
 framework used by Rabbitai offers many configuration settings. Please consult
 the `Flask App Builder Documentation
@@ -365,12 +308,12 @@ auth postback endpoint, you can add them to *WTF_CSRF_EXEMPT_LIST*
 Caching
 -------
 
-Rabbitai uses `Flask-Cache <https://pythonhosted.org/Flask-Cache/>`_ for
+Rabbitai uses `Flask-Caching <https://flask-caching.readthedocs.io/>`_ for
 caching purpose. Configuring your caching backend is as easy as providing
 ``CACHE_CONFIG`` and ``DATA_CACHE_CONFIG`, constants in ``rabbitai_config.py``
-that complies with `the Flask-Cache specifications <https://flask-caching.readthedocs.io/en/latest/#configuring-flask-caching>`_.
+that complies with `the Flask-Caching specifications <https://flask-caching.readthedocs.io/en/latest/#configuring-flask-caching>`_.
 
-Flask-Cache supports multiple caching backends (Redis, Memcached,
+Flask-Caching supports multiple caching backends (Redis, Memcached,
 SimpleCache (in-memory), or the local filesystem). If you are going to use
 Memcached please use the `pylibmc` client library as `python-memcached` does
 not handle storing binary data correctly. If you use Redis, please install
@@ -393,7 +336,7 @@ defined in ``DATA_CACHE_CONFIG``.
 
 It is also possible to pass a custom cache initialization function in the
 config to handle additional caching use cases. The function must return an
-object that is compatible with the `Flask-Cache <https://pythonhosted.org/Flask-Cache/>`_ API.
+object that is compatible with the `Flask-Caching <https://flask-caching.readthedocs.io/>`_ API.
 
 .. code-block:: python
 
@@ -433,7 +376,7 @@ For other strategies, check the `rabbitai/tasks/cache.py` file.
 Caching Thumbnails
 ------------------
 
-This is an optional feature that can be turned on by activating it's feature flag on config:
+This is an optional feature that can be turned on by activating its feature flag on config:
 
 .. code-block:: python
 
@@ -443,7 +386,7 @@ This is an optional feature that can be turned on by activating it's feature fla
     }
 
 
-For this feature you will need a cache system and celery workers. All thumbnails are store on cache and are processed
+For this feature you will need a cache system and celery workers. All thumbnails are stored on cache and are processed
 asynchronously by the workers.
 
 An example config where images are stored on S3 could be:
@@ -972,7 +915,7 @@ environment variable: ::
 Event Logging
 -------------
 
-Rabbitai by default logs special action event on it's database. These log can be accessed on the UI navigating to
+Rabbitai by default logs special action event on its database. These logs can be accessed on the UI navigating to
 "Security" -> "Action Log". You can freely customize these logs by implementing your own event log class.
 
 Example of a simple JSON to Stdout class::
@@ -1080,11 +1023,11 @@ have the same configuration.
 
 * To start a Celery worker to leverage the configuration run: ::
 
-    celery worker --app=rabbitai.tasks.celery_app:app --pool=prefork -O fair -c 4
+    celery --app=rabbitai.tasks.celery_app:app worker --pool=prefork -O fair -c 4
 
 * To start a job which schedules periodic background jobs, run ::
 
-    celery beat --app=rabbitai.tasks.celery_app:app
+    celery --app=rabbitai.tasks.celery_app:app beat
 
 To setup a result backend, you need to pass an instance of a derivative
 of ``from cachelib.base.BaseCache`` to the ``RESULTS_BACKEND``
@@ -1256,6 +1199,38 @@ in this dictionary are made available for users to use in their SQL.
         'my_crazy_macro': lambda x: x*2,
     }
 
+Default values for jinja templates can be specified via ``Parameters`` menu in the SQL Lab user interface.
+In the UI you can assign a set of parameters as JSON
+
+.. code-block:: JSON
+    {
+        "my_table": "foo"
+    }
+
+The parameters become available in your SQL (example:SELECT * FROM {{ my_table }} ) by using Jinja templating syntax.
+SQL Lab template parameters are stored with the dataset as TEMPLATE PARAMETERS.
+
+There is a special ``_filters`` parameter which can be used to test filters used in the jinja template.
+
+.. code-block:: JSON
+    {
+        "_filters": [ {
+            "col": "action_type",
+            "op": "IN",
+            "val": ["sell", "buy"]
+            } ]
+    }
+
+.. code-block:: python
+    SELECT action, count(*) as times
+            FROM logs
+            WHERE
+                action in ({{ "'" + "','".join(filter_values('action_type')) + "'" }})
+            GROUP BY action
+
+Note ``_filters`` is not stored with the dataset. It's only used within the SQL Lab UI.
+
+
 Besides default Jinja templating, SQL lab also supports self-defined template
 processor by setting the ``CUSTOM_TEMPLATE_PROCESSORS`` in your rabbitai configuration.
 The values in this dictionary overwrite the default Jinja template processors of the
@@ -1326,7 +1301,7 @@ The available validators and names can be found in `sql_validators/`.
 **Scheduling queries**
 
 You can optionally allow your users to schedule queries directly in SQL Lab.
-This is done by addding extra metadata to saved queries, which are then picked
+This is done by adding extra metadata to saved queries, which are then picked
 up by an external scheduled (like [Apache Airflow](https://airflow.apache.org/)).
 
 To allow scheduled queries, add the following to your `config.py`:
@@ -1539,6 +1514,7 @@ Second step: Create a `CustomSsoSecurityManager` that extends `RabbitaiSecurityM
 
 .. code-block:: python
 
+    import logging
     from rabbitai.security import RabbitaiSecurityManager
 
     class CustomSsoSecurityManager(RabbitaiSecurityManager):

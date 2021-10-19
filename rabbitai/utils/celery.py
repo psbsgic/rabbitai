@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from contextlib import contextmanager
 from typing import Iterator
 
-from contextlib2 import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
@@ -32,7 +32,7 @@ def session_scope(nullpool: bool) -> Iterator[Session]:
         session = session_class()
     else:
         session = db.session()
-        session.commit()
+        session.commit()  # HACK
 
     try:
         yield session

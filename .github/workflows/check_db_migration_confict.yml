@@ -2,7 +2,7 @@ name: Check DB migration conflict
 on:
   push:
     paths:
-      - "superset/migrations/**"
+      - "rabbitai/migrations/**"
 
 jobs:
   check_db_migration_conflict:
@@ -41,7 +41,7 @@ jobs:
               });
               const files = await github.paginate(listFilesOpts);
               if (
-                files.some(x => x.contents_url.includes('/contents/superset/migrations'))
+                files.some(x => x.contents_url.includes('/contents/rabbitai/migrations'))
               ) {
                 console.log(`PR #${pull.number} "${pull.title}" also added db migration`)
                 await github.issues.createComment({
@@ -51,7 +51,7 @@ jobs:
                   issue_number: pull.number,
                   body:
                     `⚠️ @${pull.user.login} Your base branch \`${currentBranch}\` has just ` +
-                    'also updated `superset/migrations`.\n' +
+                    'also updated `rabbitai/migrations`.\n' +
                     '\n' +
                     '❗ **Please consider rebasing your branch to avoid db migration conflicts.**',
                 });

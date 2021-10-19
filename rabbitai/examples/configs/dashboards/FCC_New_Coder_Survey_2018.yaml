@@ -698,7 +698,7 @@ metadata:
   expanded_slices: {}
   refresh_frequency: 0
   default_filters: '{}'
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   filter_scopes:
     '1387':
       Ethnic Minority:

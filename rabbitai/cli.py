@@ -4,6 +4,7 @@ import json
 import logging
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from subprocess import Popen
 from typing import Any, Dict, List, Optional, Type, Union
 from zipfile import is_zipfile, ZipFile
@@ -15,7 +16,6 @@ from colorama import Fore, Style
 from flask import current_app, g
 from flask.cli import FlaskGroup, with_appcontext
 from flask_appbuilder import Model
-from pathlib2 import Path
 
 from rabbitai import app, appbuilder, config, security_manager
 from rabbitai.app import create_app
@@ -60,7 +60,7 @@ def normalize_token(token_name: str) -> str:
 )
 @with_appcontext
 def rabbitai() -> None:
-    """This is a management script for the Rabbitai application."""
+    """Rabbitai 应用的管理脚本。"""
 
     @app.shell_context_processor
     def make_shell_context() -> Dict[str, Any]:
@@ -70,7 +70,7 @@ def rabbitai() -> None:
 @rabbitai.command()
 @with_appcontext
 def init() -> None:
-    """Inits the Rabbitai application"""
+    """初始化 Rabbitai 应用，构建权限。"""
     appbuilder.add_permissions(update_perms=True)
     security_manager.sync_role_definitions()
 
@@ -79,7 +79,7 @@ def init() -> None:
 @with_appcontext
 @click.option("--verbose", "-v", is_flag=True, help="Show extra information")
 def version(verbose: bool) -> None:
-    """Prints the current version number"""
+    """打印输出当前版本信息。"""
     print(Fore.BLUE + "-=" * 15)
     print(
         Fore.YELLOW
@@ -99,6 +99,15 @@ def load_examples_run(
     only_metadata: bool = False,
     force: bool = False,
 ) -> None:
+    """
+    加载示例。
+
+    :param load_test_data: 是否加载测试数据。
+    :param load_big_data: 是否加载大数据。
+    :param only_metadata: 是否仅加载元数据。
+    :param force: 是否强制。
+    :return:
+    """
     if only_metadata:
         print("Loading examples metadata")
     else:
@@ -109,8 +118,9 @@ def load_examples_run(
 
     examples.load_css_templates()
 
-    print("Loading energy related dataset")
-    examples.load_energy(only_metadata, force)
+    if load_test_data:
+        print("Loading energy related dataset")
+        examples.load_energy(only_metadata, force)
 
     print("Loading [World Bank's Health Nutrition and Population Stats]")
     examples.load_world_bank_health_n_pop(only_metadata, force)
@@ -118,24 +128,16 @@ def load_examples_run(
     print("Loading [Birth names]")
     examples.load_birth_names(only_metadata, force)
 
-    print("Loading [Tabbed dashboard]")
-    examples.load_tabbed_dashboard(only_metadata)
+    if load_test_data:
+        print("Loading [Tabbed dashboard]")
+        examples.load_tabbed_dashboard(only_metadata)
 
     if not load_test_data:
-        print("Loading [Random time series data]")
-        examples.load_random_time_series_data(only_metadata, force)
-
         print("Loading [Random long/lat data]")
         examples.load_long_lat_data(only_metadata, force)
 
         print("Loading [Country Map data]")
         examples.load_country_map_data(only_metadata, force)
-
-        print("Loading [Multiformat time series]")
-        examples.load_multiformat_time_series(only_metadata, force)
-
-        print("Loading [Paris GeoJson]")
-        examples.load_paris_iris_geojson(only_metadata, force)
 
         print("Loading [San Francisco population polygons]")
         examples.load_sf_population_polygons(only_metadata, force)
@@ -540,6 +542,7 @@ else:
 @with_appcontext
 def update_datasources_cache() -> None:
     """Refresh sqllab datasources cache"""
+
     from rabbitai.models.core import Database
 
     for database in db.session.query(Database).all():

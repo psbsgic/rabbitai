@@ -33,7 +33,7 @@ function test_init() {
   echo --------------------
   rabbitai db upgrade
   echo --------------------
-  echo Rabbitai init
+  echo Superset init
   echo --------------------
   rabbitai init
 }
@@ -45,7 +45,7 @@ DB_NAME="test"
 DB_USER="rabbitai"
 DB_PASSWORD="rabbitai"
 export RABBITAI__SQLALCHEMY_DATABASE_URI=${RABBITAI__SQLALCHEMY_DATABASE_URI:-postgresql+psycopg2://"${DB_USER}":"${DB_PASSWORD}"@localhost/"${DB_NAME}"}
-export RABBITAI_CONFIG=${RABBITAI_CONFIG:-tests.rabbitai_test_config}
+export RABBITAI_CONFIG=${RABBITAI_CONFIG:-tests.integration_tests.rabbitai_test_config}
 RUN_INIT=1
 RUN_RESET_DB=1
 RUN_TESTS=1
@@ -102,7 +102,7 @@ done
 
 echo ------------------------------------
 echo DB_URI="${RABBITAI__SQLALCHEMY_DATABASE_URI}"
-echo Rabbitai config module="${RABBITAI_CONFIG}"
+echo Superset config module="${RABBITAI_CONFIG}"
 echo Run init procedures=$RUN_INIT
 echo Run reset DB=$RUN_RESET_DB
 echo Test to run:"${TEST_MODULE}"

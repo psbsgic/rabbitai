@@ -1,4 +1,4 @@
-table_name: channels
+table_name: Slack Channels
 main_dttm_col: created
 description: null
 default_endpoint: null
@@ -8,7 +8,7 @@ schema: null
 sql: null
 params: null
 template_params: null
-filter_select_enabled: false
+filter_select_enabled: true
 fetch_values_predicate: null
 extra: null
 uuid: f7db6d45-7056-f395-d24a-6c805fb4c97d
@@ -344,4 +344,4 @@ columns:
   python_date_format: null
 version: 1.0.0
 database_uuid: a2dc77af-e654-49bb-b321-40f6b559a1ee
-data: https://raw.githubusercontent.com/apache-superset/examples-data/master/datasets/examples/slack/channels.csv
+data: https://raw.githubusercontent.com/apache-rabbitai/examples-data/master/datasets/examples/slack/channels.csv

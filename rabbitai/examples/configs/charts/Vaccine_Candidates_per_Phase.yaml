@@ -2,7 +2,7 @@ slice_name: Vaccine Candidates per Phase
 viz_type: pie
 params:
   adhoc_filters: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 69__table
   donut: true
   groupby:

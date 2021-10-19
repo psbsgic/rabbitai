@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import enum
@@ -22,7 +24,7 @@ Session = sessionmaker(autoflush=False)
 
 class TagTypes(enum.Enum):
     """
-    标签类型枚举。
+    Types for tags.
 
     Objects (queries, charts and dashboards) will have with implicit tags based
     on metadata: types, owners and who favorited them. This way, user "alice"
@@ -39,7 +41,7 @@ class TagTypes(enum.Enum):
 
 
 class ObjectTypes(enum.Enum):
-    """对象类型枚举。"""
+    """Object types."""
 
     query = 1
     chart = 2
@@ -47,7 +49,7 @@ class ObjectTypes(enum.Enum):
 
 
 class Tag(Model, AuditMixinNullable):
-    """标签对象关系模型，附加到对象（查询、图表或仪表板）的标记。"""
+    """A tag attached to an object (query, chart or dashboard)."""
 
     __tablename__ = "tag"
     id = Column(Integer, primary_key=True)
@@ -56,7 +58,7 @@ class Tag(Model, AuditMixinNullable):
 
 
 class TaggedObject(Model, AuditMixinNullable):
-    """标签化对象关系模型，对象和标记之间的关联。"""
+    """An association between an object and a tag."""
 
     __tablename__ = "tagged_object"
     id = Column(Integer, primary_key=True)
@@ -68,32 +70,15 @@ class TaggedObject(Model, AuditMixinNullable):
 
 
 def get_tag(name: str, session: Session, type_: TagTypes) -> Tag:
-    """
-    从数据库中获取一个标签Tag对象，如果不存在则创建并添加到数据库。
-
-    :param name: 名称。
-    :param session: 数据库会话。
-    :param type_: 类型。
-    :return:
-    """
-
     tag = session.query(Tag).filter_by(name=name, type=type_).one_or_none()
     if tag is None:
         tag = Tag(name=name, type=type_)
         session.add(tag)
         session.commit()
-
     return tag
 
 
 def get_object_type(class_name: str) -> ObjectTypes:
-    """
-    依据指定类名称获取对象类型。
-
-    :param class_name:
-    :return:
-    """
-
     mapping = {
         "slice": ObjectTypes.chart,
         "dashboard": ObjectTypes.dashboard,
@@ -106,7 +91,7 @@ def get_object_type(class_name: str) -> ObjectTypes:
 
 
 class ObjectUpdater:
-    """对象关系模型更改器，提供监听对象更改相关方法。"""
+    """对象更新者，提供插入、更新和删除后的回调方法，以便处理相应的标签化对象。"""
 
     object_type: Optional[str] = None
 
@@ -115,9 +100,9 @@ class ObjectUpdater:
         cls, target: Union["Dashboard", "FavStar", "Slice"]
     ) -> List[int]:
         """
-        获取拥有者的标识列表。
+        获取指定目标对象的拥有者标识的列表。
 
-        :param target: 目标对象。
+        :param target:
         :return:
         """
         raise NotImplementedError("Subclass should implement `get_owners_ids`")
@@ -127,13 +112,12 @@ class ObjectUpdater:
         cls, session: Session, target: Union["Dashboard", "FavStar", "Slice"]
     ) -> None:
         """
-        添加拥有者，构建并存储 TaggedObject 到数据库。
+        添加拥有者。
 
         :param session:
         :param target:
         :return:
         """
-
         for owner_id in cls.get_owners_ids(target):
             name = "owner:{0}".format(owner_id)
             tag = get_tag(name, session, TagTypes.owner)
@@ -150,14 +134,13 @@ class ObjectUpdater:
         target: Union["Dashboard", "FavStar", "Slice"],
     ) -> None:
         """
-        插入对象到数据库后要调用的方法，添加拥有者相关标签Tag对象到数据库。
+        插入对象到数据库后要调用的方法，添加标签化对象。
 
-        :param _mapper: 映射
-        :param connection: 连接
-        :param target: 对象。
+        :param _mapper:
+        :param connection:
+        :param target:
         :return:
         """
-
         session = Session(bind=connection)
 
         # add `owner:` tags
@@ -180,11 +163,11 @@ class ObjectUpdater:
         target: Union["Dashboard", "FavStar", "Slice"],
     ) -> None:
         """
-        更新对象到数据库后要调用的方法，添加拥有者相关标签Tag对象到数据库。
+        处理对象更新后的操作，更新标签化对象。
 
-        :param _mapper: 映射
-        :param connection: 连接
-        :param target: 对象。
+        :param _mapper:
+        :param connection:
+        :param target:
         :return:
         """
         session = Session(bind=connection)
@@ -217,11 +200,11 @@ class ObjectUpdater:
         target: Union["Dashboard", "FavStar", "Slice"],
     ) -> None:
         """
-        删除对象到数据库后要调用的方法，从数据库中删除标签Tag对象。
+        删除对象后调用该方法删除相应的标签化对象。
 
-        :param _mapper: 映射
-        :param connection: 连接
-        :param target: 对象。
+        :param _mapper:
+        :param connection:
+        :param target:
         :return:
         """
         session = Session(bind=connection)
@@ -236,7 +219,7 @@ class ObjectUpdater:
 
 
 class ChartUpdater(ObjectUpdater):
-    """图表更改器，提供图表对象更改后要调用的方法。"""
+
     object_type = "chart"
 
     @classmethod
@@ -245,7 +228,6 @@ class ChartUpdater(ObjectUpdater):
 
 
 class DashboardUpdater(ObjectUpdater):
-    """仪表盘更改器，提供仪表盘对象更改后要调用的方法。"""
 
     object_type = "dashboard"
 
@@ -255,7 +237,7 @@ class DashboardUpdater(ObjectUpdater):
 
 
 class QueryUpdater(ObjectUpdater):
-    """查询更改器，提供查询对象更改后要调用的方法。"""
+
     object_type = "query"
 
     @classmethod
@@ -264,14 +246,10 @@ class QueryUpdater(ObjectUpdater):
 
 
 class FavStarUpdater:
-    """星级更改器，提供插入和更改后要调用的类方法。"""
-
     @classmethod
     def after_insert(
         cls, _mapper: Mapper, connection: Connection, target: "FavStar"
     ) -> None:
-        """插入后要调用的方法。"""
-
         session = Session(bind=connection)
         name = "favorited_by:{0}".format(target.user_id)
         tag = get_tag(name, session, TagTypes.favorited_by)
@@ -288,14 +266,6 @@ class FavStarUpdater:
     def after_delete(
         cls, _mapper: Mapper, connection: Connection, target: "FavStar"
     ) -> None:
-        """
-        删除后要调用的方法。
-
-        :param _mapper:
-        :param connection:
-        :param target:
-        :return:
-        """
         session = Session(bind=connection)
         name = "favorited_by:{0}".format(target.user_id)
         query = (

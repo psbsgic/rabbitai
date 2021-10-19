@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """A collection of ORM sqlalchemy models for Rabbitai"""
 
 import enum
@@ -57,6 +59,13 @@ class ReportState(str, enum.Enum):
 class ReportDataFormat(str, enum.Enum):
     VISUALIZATION = "PNG"
     DATA = "CSV"
+    TEXT = "TEXT"
+
+
+class ReportCreationMethodType(str, enum.Enum):
+    CHARTS = "charts"
+    DASHBOARDS = "dashboards"
+    ALERTS_REPORTS = "alerts_reports"
 
 
 report_schedule_user = Table(
@@ -72,7 +81,9 @@ report_schedule_user = Table(
 
 
 class ReportSchedule(Model, AuditMixinNullable):
-    """报告计划对象关系模型，支持更改提醒和报告。"""
+    """
+    Report Schedules, supports alerts and reports
+    """
 
     __tablename__ = "report_schedule"
     __table_args__ = (UniqueConstraint("name", "type"),)
@@ -84,6 +95,10 @@ class ReportSchedule(Model, AuditMixinNullable):
     context_markdown = Column(Text)
     active = Column(Boolean, default=True, index=True)
     crontab = Column(String(1000), nullable=False)
+    creation_method = Column(
+        String(255), server_default=ReportCreationMethodType.ALERTS_REPORTS
+    )
+    timezone = Column(String(100), default="UTC", nullable=False)
     report_format = Column(String(50), default=ReportDataFormat.VISUALIZATION)
     sql = Column(Text())
     # (Alerts/Reports) M-O to chart
@@ -125,9 +140,7 @@ class ReportSchedule(Model, AuditMixinNullable):
 
 
 class ReportRecipients(Model, AuditMixinNullable):
-    """
-    Report Recipients, meant to support multiple notification types, eg: Slack, email
-    """
+    """报表收件人，用于支持多种通知类型，例如：Slack、email"""
 
     __tablename__ = "report_recipient"
     id = Column(Integer, primary_key=True)

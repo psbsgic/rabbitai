@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { theme, useConfig } from 'docz';
 import { Link } from 'gatsby';
@@ -7,7 +6,7 @@ import {
   Button, Col, Row, Carousel,
 } from 'antd';
 import { css } from '@emotion/core';
-import { supersetTheme } from '@superset-ui/style';
+import { rabbitaiTheme } from '@rabbitai-ui/style';
 import {
   DeploymentUnitOutlined,
   FireOutlined,
@@ -24,7 +23,7 @@ import SEO from '../components/seo';
 import logo from '../images/rabbitai-logo-horiz-apache.svg';
 import { mq } from '../utils';
 
-const { colors } = supersetTheme;
+const { colors } = rabbitaiTheme;
 
 const mainPageStyle = css`
   text-align: center;

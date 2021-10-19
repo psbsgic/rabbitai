@@ -1,9 +1,9 @@
 {
-  "domain": "rabbitai",
+  "domain": "superset",
   "locale_data": {
-    "rabbitai": {
+    "superset": {
       "": {
-        "domain": "rabbitai",
+        "domain": "superset",
         "plural_forms": "nplurals=1; plural=0;",
         "lang": "ru"
       },

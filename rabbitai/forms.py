@@ -1,4 +1,4 @@
-"""Contains the logic to create cohesive forms on the explore view"""
+# -*- coding: utf-8 -*-
 
 import json
 from typing import Any, List, Optional
@@ -8,7 +8,7 @@ from wtforms import Field
 
 
 class JsonListField(Field):
-    """Json列表字段。"""
+    """编辑和显示Json列表字段。"""
     widget = BS3TextFieldWidget()
     data: List[str] = []
 
@@ -23,7 +23,8 @@ class JsonListField(Field):
 
 
 class CommaSeparatedListField(Field):
-    """逗号分隔字段。"""
+    """编辑和显示逗号分隔列表字段。"""
+
     widget = BS3TextFieldWidget()
     data: List[str] = []
 
@@ -42,7 +43,6 @@ class CommaSeparatedListField(Field):
 
 def filter_not_empty_values(values: Optional[List[Any]]) -> Optional[List[Any]]:
     """Returns a list of non empty values or None"""
-
     if not values:
         return None
     data = [value for value in values if value]

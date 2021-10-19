@@ -1,5 +1,7 @@
-""" Rabbitai utilities for pandas.DataFrame.
-"""
+# -*- coding: utf-8 -*-
+
+""" Rabbitai utilities for pandas.DataFrame."""
+
 import warnings
 from typing import Any, Dict, List
 
@@ -10,9 +12,9 @@ from rabbitai.utils.core import JS_MAX_INTEGER
 
 def _convert_big_integers(val: Any) -> Any:
     """
-    Cast integers larger than ``JS_MAX_INTEGER`` to strings.
+    转换大于 ``JS_MAX_INTEGER`` 的整数为字符串。
 
-    :param val: the value to process
+    :param val: 要处理的值。
     :returns: the same value but recast as a string if it was an integer over
         ``JS_MAX_INTEGER``
     """
@@ -21,18 +23,21 @@ def _convert_big_integers(val: Any) -> Any:
 
 def df_to_records(dframe: pd.DataFrame) -> List[Dict[str, Any]]:
     """
-    Convert a DataFrame to a set of records.
+    转换 DataFrame 为记录集合。
 
-    :param dframe: the DataFrame to convert
-    :returns: a list of dictionaries reflecting each single row of the DataFrame
+    :param dframe: 要转换的 DataFrame。
+    :returns: 记录字典的列表。
     """
+
     if not dframe.columns.is_unique:
         warnings.warn(
             "DataFrame columns are not unique, some columns will be omitted.",
             UserWarning,
             stacklevel=2,
         )
+
     columns = dframe.columns
+
     return list(
         dict(zip(columns, map(_convert_big_integers, row)))
         for row in zip(*[dframe[col] for col in columns])

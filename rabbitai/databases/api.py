@@ -12,7 +12,7 @@ from marshmallow import ValidationError
 from sqlalchemy.exc import NoSuchTableError, OperationalError, SQLAlchemyError
 
 from rabbitai import app, event_logger
-from rabbitai.commands.exceptions import CommandInvalidError
+from rabbitai.commands.importers.exceptions import NoValidFilesFoundError
 from rabbitai.commands.importers.v1.utils import get_contents_from_bundle
 from rabbitai.constants import MODEL_API_RW_METHOD_PERMISSION_MAP, RouteMethod
 from rabbitai.databases.commands.create import CreateDatabaseCommand
@@ -22,10 +22,10 @@ from rabbitai.databases.commands.exceptions import (
     DatabaseCreateFailedError,
     DatabaseDeleteDatasetsExistFailedError,
     DatabaseDeleteFailedError,
-    DatabaseImportError,
     DatabaseInvalidError,
     DatabaseNotFoundError,
     DatabaseUpdateFailedError,
+    InvalidParametersError,
 )
 from rabbitai.databases.commands.export import ExportDatabasesCommand
 from rabbitai.databases.commands.importers.dispatcher import ImportDatabasesCommand
@@ -50,7 +50,8 @@ from rabbitai.databases.schemas import (
 )
 from rabbitai.databases.utils import get_table_metadata
 from rabbitai.db_engine_specs import get_available_engine_specs
-from rabbitai.exceptions import InvalidPayloadFormatError, InvalidPayloadSchemaError
+from rabbitai.errors import ErrorLevel, RabbitaiError, RabbitaiErrorType
+from rabbitai.exceptions import InvalidPayloadFormatError
 from rabbitai.extensions import security_manager
 from rabbitai.models.core import Database
 from rabbitai.typing import FlaskResponse
@@ -119,6 +120,7 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         "database_name",
         "explore_database_id",
         "expose_in_sqllab",
+        "extra",
         "force_ctas_schema",
         "id",
     ]
@@ -229,6 +231,12 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
             new_model = CreateDatabaseCommand(g.user, item).run()
             # Return censored version for sqlalchemy URI
             item["sqlalchemy_uri"] = new_model.sqlalchemy_uri
+            item["expose_in_sqllab"] = new_model.expose_in_sqllab
+
+            # If parameters are available return them in the payload
+            if new_model.parameters:
+                item["parameters"] = new_model.parameters
+
             return self.response(201, id=new_model.id, result=item)
         except DatabaseInvalidError as ex:
             return self.response_422(message=ex.normalized_messages())
@@ -707,6 +715,7 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+        token = request.args.get("token")
         requested_ids = kwargs["rison"]
         timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
         root = f"database_export_{timestamp}"
@@ -724,16 +733,18 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
                 return self.response_404()
         buf.seek(0)
 
-        return send_file(
+        response = send_file(
             buf,
             mimetype="application/zip",
             as_attachment=True,
             attachment_filename=filename,
         )
+        if token:
+            response.set_cookie(token, "done", max_age=600)
+        return response
 
     @expose("/import/", methods=["POST"])
     @protect()
-    @safe
     @statsd_metrics
     @event_logger.log_this_with_context(
         action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.import_",
@@ -785,6 +796,9 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         with ZipFile(upload) as bundle:
             contents = get_contents_from_bundle(bundle)
 
+        if not contents:
+            raise NoValidFilesFoundError()
+
         passwords = (
             json.loads(request.form["passwords"])
             if "passwords" in request.form
@@ -795,15 +809,8 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         command = ImportDatabasesCommand(
             contents, passwords=passwords, overwrite=overwrite
         )
-        try:
-            command.run()
-            return self.response(200, message="OK")
-        except CommandInvalidError as exc:
-            logger.warning("Import database failed")
-            return self.response_422(message=exc.normalized_messages())
-        except DatabaseImportError as exc:
-            logger.error("Import database failed", exc_info=True)
-            return self.response_500(message=str(exc))
+        command.run()
+        return self.response(200, message="OK")
 
     @expose("/<int:pk>/function_names/", methods=["GET"])
     @protect()
@@ -898,6 +905,9 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         preferred_databases: List[str] = app.config.get("PREFERRED_DATABASES", [])
         available_databases = []
         for engine_spec, drivers in get_available_engine_specs().items():
+            if not drivers:
+                continue
+
             payload: Dict[str, Any] = {
                 "name": engine_spec.engine_name,
                 "engine": engine_spec.engine,
@@ -989,7 +999,16 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         try:
             payload = DatabaseValidateParametersSchema().load(request.json)
         except ValidationError as error:
-            raise InvalidPayloadSchemaError(error)
+            errors = [
+                RabbitaiError(
+                    message="\n".join(messages),
+                    error_type=RabbitaiErrorType.INVALID_PAYLOAD_SCHEMA_ERROR,
+                    level=ErrorLevel.ERROR,
+                    extra={"invalid": [attribute]},
+                )
+                for attribute, messages in error.messages.items()
+            ]
+            raise InvalidParametersError(errors)
 
         command = ValidateDatabaseParametersCommand(g.user, payload)
         command.run()

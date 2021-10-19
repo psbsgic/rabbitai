@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 from typing import Optional
 
@@ -28,7 +30,7 @@ class R(BaseRabbitaiView):
 
     @event_logger.log_this
     @expose("/<int:url_id>")
-    def index(self, url_id: int) -> FlaskResponse:
+    def index(self, url_id: int) -> FlaskResponse:  # pylint: disable=no-self-use
         url = db.session.query(models.Url).get(url_id)
         if url and url.url:
             explore_url = "//rabbitai/explore/?"
@@ -45,7 +47,7 @@ class R(BaseRabbitaiView):
     @event_logger.log_this
     @has_access_api
     @expose("/shortner/", methods=["POST"])
-    def shortner(self) -> FlaskResponse:
+    def shortner(self) -> FlaskResponse:  # pylint: disable=no-self-use
         url = request.form.get("data")
         if not self._validate_url(url):
             logger.warning("Invalid URL: %s", url)

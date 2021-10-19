@@ -38,6 +38,7 @@ To send alerts and reports to Slack channels, you need to create a new Slack App
 3. Go to "OAuth & Permissions" section, and give the following scopes to your app:
     - `incoming-webhook`
     - `files:write`
+    - `chat:write`
 4. At the top of the "OAuth and Permissions" section, click "install to workspace".
 5. Select a default channel for your app and continue.
 (You can post to any channel by inviting your Rabbitai app into that channel).
@@ -196,7 +197,7 @@ Using the templates below,
 6. Run the image using `docker-compose up` in the same directory as the `docker-compose.py` file
 7. In a new terminal window, upgrade the DB by running `docker exec -it rabbitai-1.0.1-extended rabbitai db upgrade`
 8. Then run `docker exec -it rabbitai-1.0.1-extended rabbitai init`
-9. Then setup your admin user if need be, `docker exec -it rabbitai-1.0.1-extended rabbitai wab create-admin`
+9. Then setup your admin user if need be, `docker exec -it rabbitai-1.0.1-extended rabbitai fab create-admin`
 10. Finally, restart the running instance - `CTRL-C`, then `docker-compose up`
 
 (note: v 1.0.1 is current at time of writing, you can change the version number to the latest version if a newer version is available)
@@ -246,7 +247,7 @@ services:
       - rabbitai
       - postgres
       - redis
-    command: "celery worker --app=rabbitai.tasks.celery_app:app --pool=gevent --concurrency=500"
+    command: "celery --app=rabbitai.tasks.celery_app:app worker --pool=gevent --concurrency=500"
     volumes:
       - ./config/:/app/pythonpath/
   beat:
@@ -258,7 +259,7 @@ services:
       - rabbitai
       - postgres
       - redis
-    command: "celery beat --app=rabbitai.tasks.celery_app:app --pidfile /tmp/celerybeat.pid --schedule /tmp/celerybeat-schedule"
+    command: "celery --app=rabbitai.tasks.celery_app:app beat --pidfile /tmp/celerybeat.pid --schedule /tmp/celerybeat-schedule"
     volumes:
       - ./config/:/app/pythonpath/
   rabbitai:

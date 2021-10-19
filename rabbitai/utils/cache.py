@@ -1,20 +1,25 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, TYPE_CHECKING, Union
 
 from flask import current_app as app, request
 from flask_caching import Cache
+from flask_caching.backends import NullCache
 from werkzeug.wrappers import ETagResponseMixin  # .etag
 
 from rabbitai import db
 from rabbitai.extensions import cache_manager
 from rabbitai.models.cache import CacheKey
-from rabbitai.stats_logger import BaseStatsLogger
 from rabbitai.utils.core import json_int_dttm_ser
 from rabbitai.utils.hashing import md5_sha_from_dict
+
+if TYPE_CHECKING:
+    from rabbitai.stats_logger import BaseStatsLogger
 
 config = app.config
 stats_logger: BaseStatsLogger = config["STATS_LOGGER"]
@@ -33,6 +38,9 @@ def set_and_log_cache(
     cache_timeout: Optional[int] = None,
     datasource_uid: Optional[str] = None,
 ) -> None:
+    if isinstance(cache_instance.cache, NullCache):
+        return
+
     timeout = cache_timeout if cache_timeout else config["CACHE_DEFAULT_TIMEOUT"]
     try:
         dttm = datetime.utcnow().isoformat().split(".")[0]
@@ -47,7 +55,7 @@ def set_and_log_cache(
                 datasource_uid=datasource_uid,
             )
             db.session.add(ck)
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         # cache.set call can fail if the backend is down or if
         # the key is too large or whatever other reasons
         logger.warning("Could not cache key %s", cache_key)
@@ -62,7 +70,7 @@ ONE_YEAR = 365 * 24 * 60 * 60  # 1 year in seconds
 logger = logging.getLogger(__name__)
 
 
-def view_cache_key(*args: Any, **kwargs: Any) -> str:
+def view_cache_key(*args: Any, **kwargs: Any) -> str:  # pylint: disable=unused-argument
     args_hash = hash(frozenset(request.args.items()))
     return "view/{}/{}".format(request.path, args_hash)
 
@@ -70,8 +78,7 @@ def view_cache_key(*args: Any, **kwargs: Any) -> str:
 def memoized_func(
     key: Callable[..., str] = view_cache_key, cache: Cache = cache_manager.cache,
 ) -> Callable[..., Any]:
-    """
-    Use this decorator to cache functions that have predefined first arg.
+    """Use this decorator to cache functions that have predefined first arg.
 
     enable_cache is treated as True by default,
     except enable_cache = False is passed to the decorated function.
@@ -124,7 +131,6 @@ def etag_cache(
     dataframe cache for requests that produce the same SQL.
 
     """
-
     if max_age is None:
         max_age = app.config["CACHE_DEFAULT_TIMEOUT"]
 

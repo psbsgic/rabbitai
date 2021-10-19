@@ -1,6 +1,25 @@
-# Release Notes for Rabbitai 1.1.0
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
-Rabbitai 1.1.0 continues to build on the [1.0](https://github.com/apache/rabbitai/blob/master/RELEASING/release-notes-1-0/README.md) release with big improvements to user experience, security, dashboard level access, and database connectivity.
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+# Release Notes for Superset 1.1.0
+
+Superset 1.1.0 continues to build on the [1.0](https://github.com/apache/rabbitai/blob/master/RELEASING/release-notes-1-0/README.md) release with big improvements to user experience, security, dashboard level access, and database connectivity.
 
 - [**User Experience**](#user-experience)
 - [**Dashboard Level Security**](#dashboard-level-security)
@@ -10,19 +29,19 @@ Rabbitai 1.1.0 continues to build on the [1.0](https://github.com/apache/rabbita
 
 # User Experience
 
-In general, the quality, usability, and aesthetics of the Rabbitai user experience continues to develop in the direction of [SIP-34](https://github.com/apache/rabbitai/issues/8976) and more tests have been added to ui components to ensure usability is maintained.
+In general, the quality, usability, and aesthetics of the Superset user experience continues to develop in the direction of [SIP-34](https://github.com/apache/rabbitai/issues/8976) and more tests have been added to ui components to ensure usability is maintained.
 
 The migration to Apache ECharts continues with the addition of a [new force-directed graph](https://github.com/apache/rabbitai/pull/13111).
 
 ![Force Directed Graph](media/force_directed_graph.jpg)
 
-The ECharts library included with Rabbitai was also bumped to 5.0.2, which includes some [fixes to pie charts.](https://github.com/apache/rabbitai/pull/13052) The overall improvement of chart options and quality can be expected to continue in future releases. New 'sort by' controls have also been [added](https://github.com/apache/rabbitai/pull/13049) to [many charts](https://github.com/apache/rabbitai/pull/13057).
+The ECharts library included with Superset was also bumped to 5.0.2, which includes some [fixes to pie charts.](https://github.com/apache/rabbitai/pull/13052) The overall improvement of chart options and quality can be expected to continue in future releases. New 'sort by' controls have also been [added](https://github.com/apache/rabbitai/pull/13049) to [many charts](https://github.com/apache/rabbitai/pull/13057).
 
 The dashboard native filter feature, [while still behind a feature flag in this release,](https://github.com/apache/rabbitai/blob/master/RELEASING/release-notes-1-0/README.md#feature-flags) has been improved and is ready to test out.
 
 ![Native Filter](media/native_filters.jpg)
 
-Since the 1.0 release, we have seen a surge of support from the community around updating Rabbitai's [documentation](https://rabbitai.apache.org/docs/intro) and adding more tests to the UI. Thanks to all who contributed in this area. This is what open-source software is all about!
+Since the 1.0 release, we have seen a surge of support from the community around updating Superset's [documentation](https://rabbitai.apache.org/docs/intro) and adding more tests to the UI. Thanks to all who contributed in this area. This is what open-source software is all about!
 
 # Dashboard Level Security
 
@@ -35,7 +54,7 @@ In 1.1, some key steps were taken towards the vision laid out in SIP-51. **Note 
 
 # Database Connectivity
 
-Rabbitai is only as good as the databases it can query. This release saw the expanded support of existing databases and foundational support for new databases.
+Superset is only as good as the databases it can query. This release saw the expanded support of existing databases and foundational support for new databases.
 
 - [Opendistro](https://github.com/apache/rabbitai/pull/12602)
 - [Trino](https://github.com/apache/rabbitai/pull/13105)

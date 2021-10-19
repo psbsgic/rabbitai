@@ -14,7 +14,7 @@ from rabbitai.typing import FlaskResponse
 from rabbitai.views.base import RabbitaiModelView
 
 
-class StartEndDttmValidator:
+class StartEndDttmValidator:  # pylint: disable=too-few-public-methods
     """
     Validates dttm fields.
     """
@@ -32,9 +32,9 @@ class StartEndDttmValidator:
             )
 
 
-class AnnotationModelView(RabbitaiModelView, CompactCRUDMixin):
-    """注释模型视图。"""
-
+class AnnotationModelView(
+    RabbitaiModelView, CompactCRUDMixin
+):  # pylint: disable=too-many-ancestors
     datamodel = SQLAInterface(Annotation)
     include_route_methods = RouteMethod.CRUD_SET | {"annotation"}
 
@@ -85,16 +85,14 @@ class AnnotationModelView(RabbitaiModelView, CompactCRUDMixin):
 
     @expose("/<pk>/annotation/", methods=["GET"])
     @has_access
-    def annotation(self, pk: int) -> FlaskResponse:
+    def annotation(self, pk: int) -> FlaskResponse:  # pylint: disable=unused-argument
         if not is_feature_enabled("ENABLE_REACT_CRUD_VIEWS"):
             return super().list()
 
         return super().render_app_template()
 
 
-class AnnotationLayerModelView(RabbitaiModelView):
-    """注释层模型视图。"""
-
+class AnnotationLayerModelView(RabbitaiModelView):  # pylint: disable=too-many-ancestors
     datamodel = SQLAInterface(AnnotationLayer)
     include_route_methods = RouteMethod.CRUD_SET | {RouteMethod.API_READ}
     related_views = [AnnotationModelView]

@@ -3,17 +3,16 @@ from typing import Dict, Optional, Tuple
 import pandas as pd
 from sqlalchemy import BigInteger, Date, DateTime, String
 
-from rabbitai import db
+from rabbitai import app, db
 from rabbitai.models.slice import Slice
 from rabbitai.utils.core import get_example_database
 
 from .helpers import (
-    config,
     get_example_data,
     get_slice_json,
+    get_table_connector_registry,
     merge_slice,
     misc_dash_slices,
-    TBL,
 )
 
 
@@ -59,11 +58,13 @@ def load_multiformat_time_series(
         print("-" * 80)
 
     print(f"Creating table [{tbl_name}] reference")
-    obj = db.session.query(TBL).filter_by(table_name=tbl_name).first()
+    table = get_table_connector_registry()
+    obj = db.session.query(table).filter_by(table_name=tbl_name).first()
     if not obj:
-        obj = TBL(table_name=tbl_name)
+        obj = table(table_name=tbl_name)
     obj.main_dttm_col = "ds"
     obj.database = database
+    obj.filter_select_enabled = True
     dttm_and_expr_dict: Dict[str, Tuple[Optional[str], None]] = {
         "ds": (None, None),
         "ds2": (None, None),
@@ -89,7 +90,7 @@ def load_multiformat_time_series(
         slice_data = {
             "metrics": ["count"],
             "granularity_sqla": col.column_name,
-            "row_limit": config["ROW_LIMIT"],
+            "row_limit": app.config["ROW_LIMIT"],
             "since": "2015",
             "until": "2016",
             "viz_type": "cal_heatmap",

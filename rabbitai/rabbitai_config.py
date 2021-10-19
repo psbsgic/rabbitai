@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
+
 import os
 
 # region Babel config for translations
 
-# Setup default language
 BABEL_DEFAULT_LOCALE = "zh"
-# Your application default translation path
+"""默认本地化语言缩写名称"""
+
 BABEL_DEFAULT_FOLDER = "rabbitai/translations"
-# The allowed translation for you app
+"""国际化翻译文档文件夹。"""
+
 LANGUAGES = {
     "en": {"flag": "us", "name": "English"},
     "es": {"flag": "es", "name": "Spanish"},
@@ -20,6 +23,7 @@ LANGUAGES = {
     "ru": {"flag": "ru", "name": "Russian"},
     "ko": {"flag": "kr", "name": "Korean"},
 }
+"""支持的翻译字典，格式：'语言缩写名称': {'flag': '', 'name': ''}。"""
 
 # endregion
 
@@ -27,20 +31,20 @@ LANGUAGES = {
 # SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
 
 # 连接到 postgresql 数据库
-# 用户名:密码@localhost:端口（5432）/数据库名（superset）
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:psb123456@localhost:5432/superset'
+# 用户名:密码@localhost:端口（5432）/数据库名（rabbitai_db）
+SQLALCHEMY_DATABASE_URI = 'postgresql://rabbitai:rabbitai@localhost:5432/rabbitai_db'
+"""数据库连接地址字符串。"""
 
-# 默认缓存配置
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-"""项目的根目录，即配置文件所在目录。"""
+"""项目的根目录，即该配置文件所在目录。"""
 
 # 存储数据的目录
-if "SUPERSET_HOME" in os.environ:
-    DATA_DIR = os.environ["SUPERSET_HOME"]
-    """数据目录，SUPERSET_HOME系统环境变量定义的目录"""
+if "RABBITAI_HOME" in os.environ:
+    DATA_DIR = os.environ["RABBITAI_HOME"]
+    """数据目录，RABBITAI_HOME 系统环境变量定义的目录"""
 else:
-    DATA_DIR = os.path.join(os.path.expanduser("~"), ".superset")
-    """数据目录，用户目录下的.superset目录"""
+    DATA_DIR = os.path.join(os.path.expanduser("~"), ".rabbitai")
+    """数据目录，用户目录下的.rabbitai目录"""
 
 # CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 CACHE_CONFIG = {

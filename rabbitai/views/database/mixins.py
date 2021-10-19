@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import inspect
 
 from flask import Markup
@@ -14,8 +16,6 @@ from rabbitai.utils import core as utils
 
 
 class DatabaseMixin:
-    """定义数据库对象关系模型视图相关属性。"""
-
     list_title = _("Databases")
     show_title = _("Show Database")
     add_title = _("Add Database")
@@ -211,7 +211,7 @@ class DatabaseMixin:
     def pre_update(self, database: Database) -> None:
         self._pre_add_update(database)
 
-    def pre_delete(self, database: Database) -> None:
+    def pre_delete(self, database: Database) -> None:  # pylint: disable=no-self-use
         if database.tables:
             raise RabbitaiException(
                 Markup(
@@ -221,7 +221,7 @@ class DatabaseMixin:
                 )
             )
 
-    def check_extra(self, database: Database) -> None:
+    def check_extra(self, database: Database) -> None:  # pylint: disable=no-self-use
         # this will check whether json.loads(extra) can succeed
         try:
             extra = database.get_extra()
@@ -243,7 +243,9 @@ class DatabaseMixin:
                     )
                 )
 
-    def check_encrypted_extra(self, database: Database) -> None:
+    def check_encrypted_extra(  # pylint: disable=no-self-use
+        self, database: Database
+    ) -> None:
         # this will check whether json.loads(secure_extra) can succeed
         try:
             database.get_encrypted_extra()

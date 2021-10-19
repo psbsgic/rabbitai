@@ -1877,19 +1877,19 @@ msgid "Year"
 msgstr ""
 
 #: rabbitai/db_engine_specs/base.py:99
-msgid "Week starting sunday"
+msgid "Week starting Sunday"
 msgstr ""
 
 #: rabbitai/db_engine_specs/base.py:100
-msgid "Week starting monday"
+msgid "Week starting Monday"
 msgstr ""
 
 #: rabbitai/db_engine_specs/base.py:101
-msgid "Week ending saturday"
+msgid "Week ending Saturday"
 msgstr ""
 
 #: rabbitai/db_engine_specs/base.py:102
-msgid "Week_ending sunday"
+msgid "Week ending Sunday"
 msgstr ""
 
 #: rabbitai/db_engine_specs/base.py:1276

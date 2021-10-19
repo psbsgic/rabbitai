@@ -1,36 +1,20 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 from contextlib import closing
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 from flask_babel import lazy_gettext as _
 from sqlalchemy.sql.type_api import TypeEngine
 
-from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.exceptions import (
-    SupersetGenericDBErrorException,
-    SupersetSecurityException,
+from rabbitai.errors import ErrorLevel, RabbitaiError, RabbitaiErrorType
+from rabbitai.exceptions import (
+    RabbitaiGenericDBErrorException,
+    RabbitaiSecurityException,
 )
-from superset.models.core import Database
-from superset.result_set import SupersetResultSet
-from superset.sql_parse import ParsedQuery
+from rabbitai.models.core import Database
+from rabbitai.result_set import RabbitaiResultSet
+from rabbitai.sql_parse import ParsedQuery
 
 if TYPE_CHECKING:
-    from superset.connectors.sqla.models import SqlaTable
+    from rabbitai.connectors.sqla.models import SqlaTable
 
 
 def get_physical_table_metadata(
@@ -68,7 +52,7 @@ def get_physical_table_metadata(
 def get_virtual_table_metadata(dataset: "SqlaTable") -> List[Dict[str, str]]:
     """Use SQLparser to get virtual dataset metadata"""
     if not dataset.sql:
-        raise SupersetGenericDBErrorException(
+        raise RabbitaiGenericDBErrorException(
             message=_("Virtual dataset query cannot be empty"),
         )
 
@@ -79,18 +63,18 @@ def get_virtual_table_metadata(dataset: "SqlaTable") -> List[Dict[str, str]]:
     )
     parsed_query = ParsedQuery(sql)
     if not db_engine_spec.is_readonly_query(parsed_query):
-        raise SupersetSecurityException(
-            SupersetError(
-                error_type=SupersetErrorType.DATASOURCE_SECURITY_ACCESS_ERROR,
+        raise RabbitaiSecurityException(
+            RabbitaiError(
+                error_type=RabbitaiErrorType.DATASOURCE_SECURITY_ACCESS_ERROR,
                 message=_("Only `SELECT` statements are allowed"),
                 level=ErrorLevel.ERROR,
             )
         )
     statements = parsed_query.get_statements()
     if len(statements) > 1:
-        raise SupersetSecurityException(
-            SupersetError(
-                error_type=SupersetErrorType.DATASOURCE_SECURITY_ACCESS_ERROR,
+        raise RabbitaiSecurityException(
+            RabbitaiError(
+                error_type=RabbitaiErrorType.DATASOURCE_SECURITY_ACCESS_ERROR,
                 message=_("Only single queries supported"),
                 level=ErrorLevel.ERROR,
             )
@@ -103,8 +87,8 @@ def get_virtual_table_metadata(dataset: "SqlaTable") -> List[Dict[str, str]]:
             query = dataset.database.apply_limit_to_sql(statements[0])
             db_engine_spec.execute(cursor, query)
             result = db_engine_spec.fetch_data(cursor, limit=1)
-            result_set = SupersetResultSet(result, cursor.description, db_engine_spec)
+            result_set = RabbitaiResultSet(result, cursor.description, db_engine_spec)
             cols = result_set.columns
     except Exception as exc:
-        raise SupersetGenericDBErrorException(message=str(exc))
+        raise RabbitaiGenericDBErrorException(message=str(exc))
     return cols

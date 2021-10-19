@@ -6,7 +6,7 @@ from rabbitai.connectors.sqla.models import SqlaTable
 from rabbitai.views.base import BaseFilter
 
 
-class DatasetIsNullOrEmptyFilter(BaseFilter):
+class DatasetIsNullOrEmptyFilter(BaseFilter):  # pylint: disable=too-few-public-methods
     name = _("Null or Empty")
     arg_name = "dataset_is_null_or_empty"
 

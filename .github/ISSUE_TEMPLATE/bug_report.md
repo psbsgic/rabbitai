@@ -30,7 +30,7 @@ If applicable, add screenshots to help explain your problem.
 
 (please complete the following information):
 
-- superset version: `superset version`
+- rabbitai version: `rabbitai version`
 - python version: `python --version`
 - node.js version: `node -v`
 - any feature flags active:
@@ -39,8 +39,8 @@ If applicable, add screenshots to help explain your problem.
 
 Make sure to follow these steps before submitting your issue - thank you!
 
-- [ ] I have checked the superset logs for python stacktraces and included it here as text if there are any.
-- [ ] I have reproduced the issue with at least the latest released version of superset.
+- [ ] I have checked the rabbitai logs for python stacktraces and included it here as text if there are any.
+- [ ] I have reproduced the issue with at least the latest released version of rabbitai.
 - [ ] I have checked the issue tracker for the same issue and I haven't found one similar.
 
 ### Additional context

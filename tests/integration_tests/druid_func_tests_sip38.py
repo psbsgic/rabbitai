@@ -1,28 +1,12 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 import json
 import unittest
 from unittest.mock import Mock, patch
 
 import tests.integration_tests.test_app
-import superset.connectors.druid.models as models
-from superset.connectors.druid.models import DruidColumn, DruidDatasource, DruidMetric
-from superset.exceptions import SupersetException
+import rabbitai.connectors.druid.models as models
+from rabbitai.connectors.druid.models import DruidColumn, DruidDatasource, DruidMetric
+from rabbitai.exceptions import SupersetException
 
 from .base_tests import SupersetTestCase
 
@@ -51,7 +35,7 @@ def emplace(metrics_dict, metric_name, is_postagg=False):
 
 # Unit tests that can be run without initializing base tests
 @patch.dict(
-    "superset.extensions.feature_flag_manager._feature_flags",
+    "rabbitai.extensions.feature_flag_manager._feature_flags",
     {"SIP_38_VIZ_REARCHITECTURE": True},
     clear=True,
 )
@@ -819,7 +803,7 @@ class TestDruidFunc(SupersetTestCase):
     def test_metrics_and_post_aggs(self):
         """
         Test generation of metrics and post-aggregations from an initial list
-        of superset metrics (which may include the results of either). This
+        of rabbitai metrics (which may include the results of either). This
         primarily tests that specifying a post-aggregator metric will also
         require the raw aggregation of the associated druid metric column.
         """

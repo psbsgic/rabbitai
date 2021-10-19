@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Defines the templating context for SQL Lab"""
 
 import json
@@ -23,11 +25,8 @@ from typing_extensions import TypedDict
 
 from rabbitai.exceptions import RabbitaiTemplateException
 from rabbitai.extensions import feature_flag_manager
-from rabbitai.utils.core import (
-    convert_legacy_filters_into_adhoc,
-    memoized,
-    merge_extra_filters,
-)
+from rabbitai.utils.core import convert_legacy_filters_into_adhoc, merge_extra_filters
+from rabbitai.utils.memoized import memoized
 
 if TYPE_CHECKING:
     from rabbitai.connectors.sqla.models import SqlaTable
@@ -48,21 +47,16 @@ ALLOWED_TYPES = (
     "tuple",
     "set",
 )
-"""允许的类型名称列表"""
-
 COLLECTION_TYPES = ("list", "dict", "tuple", "set")
-"""集合类型列表，list, dict, tuple, set"""
+
 
 @memoized
 def context_addons() -> Dict[str, Any]:
-    """从应用配置对象中获取上下文插件字典，JINJA_CONTEXT_ADDONS。"""
     return current_app.config.get("JINJA_CONTEXT_ADDONS", {})
 
 
 class Filter(TypedDict):
-    """表示一个过滤器类型，包括属性：col、op、val"""
-
-    op: str
+    op: str  # pylint: disable=C0103
     col: str
     val: Union[None, Any, List[Any]]
 
@@ -287,7 +281,7 @@ class ExtraCache:
         filters: List[Filter] = []
 
         for flt in form_data.get("adhoc_filters", []):
-            val: Union[str, List[str]] = flt.get("comparator")
+            val: Union[Any, List[Any]] = flt.get("comparator")
             op: str = flt["operator"].upper() if "operator" in flt else None
             # fltOpName: str = flt.get("filterOptionName")
             if (
@@ -311,7 +305,6 @@ class ExtraCache:
 
 
 def safe_proxy(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """返回安全代理。"""
     return_value = func(*args, **kwargs)
     value_type = type(return_value).__name__
     if value_type not in ALLOWED_TYPES:
@@ -334,13 +327,6 @@ def safe_proxy(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 
 
 def validate_context_types(context: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    验证上下文类型。
-
-    :param context:
-    :return:
-    """
-
     for key in context:
         arg_type = type(context[key]).__name__
         if arg_type not in ALLOWED_TYPES and key not in context_addons():
@@ -364,15 +350,9 @@ def validate_context_types(context: Dict[str, Any]) -> Dict[str, Any]:
     return context
 
 
-def validate_template_context(engine: Optional[str], context: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    验证模板上下文。
-
-    :param engine:
-    :param context:
-    :return:
-    """
-
+def validate_template_context(
+    engine: Optional[str], context: Dict[str, Any]
+) -> Dict[str, Any]:
     if engine and engine in context:
         # validate engine context separately to allow for engine-specific methods
         engine_context = validate_context_types(context.pop(engine))
@@ -383,11 +363,14 @@ def validate_template_context(engine: Optional[str], context: Dict[str, Any]) ->
     return validate_context_types(context)
 
 
-class BaseTemplateProcessor:
-    """面向数据库的 jinja context。"""
+class BaseTemplateProcessor:  # pylint: disable=too-few-public-methods
+    """
+    Base class for database-specific jinja context
+    """
 
     engine: Optional[str] = None
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         database: "Database",
@@ -397,6 +380,17 @@ class BaseTemplateProcessor:
         removed_filters: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
+        """
+        使用指定数据库对象、查询对象、SQL数据表对象、额外缓存键列表、移除的过滤器列表和其它关键字参数，创建新实例。
+
+        :param database: 数据库对象。
+        :param query: 查询对象。
+        :param table: SQL数据表对象。
+        :param extra_cache_keys: 额外缓存键列表。
+        :param removed_filters: 移除的过滤器列表。
+        :param kwargs: 关键字参数。
+        """
+
         self._database = database
         self._query = query
         self._schema = None
@@ -429,8 +423,6 @@ class BaseTemplateProcessor:
 
 
 class JinjaTemplateProcessor(BaseTemplateProcessor):
-    """面向数据库的Jinja模板处理器。"""
-
     def set_context(self, **kwargs: Any) -> None:
         super().set_context(**kwargs)
         extra_cache = ExtraCache(self._extra_cache_keys, self._removed_filters)
@@ -446,7 +438,9 @@ class JinjaTemplateProcessor(BaseTemplateProcessor):
         )
 
 
-class NoOpTemplateProcessor(BaseTemplateProcessor):
+class NoOpTemplateProcessor(
+    BaseTemplateProcessor
+):  # pylint: disable=too-few-public-methods
     def process_template(self, sql: str, **kwargs: Any) -> str:
         """
         Makes processing a template a noop

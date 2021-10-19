@@ -1,25 +1,9 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # type: ignore
 from copy import copy
 from datetime import timedelta
 
-from superset.config import *
-from tests.integration_tests.superset_test_custom_template_processors import (
+from rabbitai.config import *
+from tests.integration_tests.rabbitai_test_custom_template_processors import (
     CustomPrestoTemplateProcessor,
 )
 
@@ -28,16 +12,16 @@ SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(
     DATA_DIR, "unittests.integration_tests.db"
 )
 DEBUG = False
-SUPERSET_WEBSERVER_PORT = 8081
+RABBITAI_WEBSERVER_PORT = 8081
 
 # Allowing SQLALCHEMY_DATABASE_URI and SQLALCHEMY_EXAMPLES_URI to be defined as an env vars for
 # continuous integration
-if "SUPERSET__SQLALCHEMY_DATABASE_URI" in os.environ:
-    SQLALCHEMY_DATABASE_URI = os.environ["SUPERSET__SQLALCHEMY_DATABASE_URI"]
+if "RABBITAI__SQLALCHEMY_DATABASE_URI" in os.environ:
+    SQLALCHEMY_DATABASE_URI = os.environ["RABBITAI__SQLALCHEMY_DATABASE_URI"]
 
 SQLALCHEMY_EXAMPLES_URI = SQLALCHEMY_DATABASE_URI
-if "SUPERSET__SQLALCHEMY_EXAMPLES_URI" in os.environ:
-    SQLALCHEMY_EXAMPLES_URI = os.environ["SUPERSET__SQLALCHEMY_EXAMPLES_URI"]
+if "RABBITAI__SQLALCHEMY_EXAMPLES_URI" in os.environ:
+    SQLALCHEMY_EXAMPLES_URI = os.environ["RABBITAI__SQLALCHEMY_EXAMPLES_URI"]
 
 if "UPLOAD_FOLDER" in os.environ:
     UPLOAD_FOLDER = os.environ["UPLOAD_FOLDER"]
@@ -90,14 +74,14 @@ CACHE_DEFAULT_TIMEOUT = int(timedelta(minutes=10).total_seconds())
 CACHE_CONFIG = {
     "CACHE_TYPE": "redis",
     "CACHE_DEFAULT_TIMEOUT": int(timedelta(minutes=1).total_seconds()),
-    "CACHE_KEY_PREFIX": "superset_cache",
+    "CACHE_KEY_PREFIX": "rabbitai_cache",
     "CACHE_REDIS_URL": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}",
 }
 
 DATA_CACHE_CONFIG = {
     **CACHE_CONFIG,
     "CACHE_DEFAULT_TIMEOUT": int(timedelta(seconds=30).total_seconds()),
-    "CACHE_KEY_PREFIX": "superset_data_cache",
+    "CACHE_KEY_PREFIX": "rabbitai_data_cache",
 }
 
 GLOBAL_ASYNC_QUERIES_JWT_SECRET = "test-secret-change-me-test-secret-change-me"
@@ -107,7 +91,7 @@ ALERT_REPORTS_WORKING_TIME_OUT_KILL = True
 
 class CeleryConfig(object):
     BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
-    CELERY_IMPORTS = ("superset.sql_lab",)
+    CELERY_IMPORTS = ("rabbitai.sql_lab",)
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
     CELERY_ANNOTATIONS = {"sql_lab.add": {"rate_limit": "10/s"}}
     CONCURRENCY = 1

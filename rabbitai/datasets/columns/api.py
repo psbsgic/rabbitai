@@ -18,8 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class DatasetColumnsRestApi(BaseRabbitaiModelRestApi):
-    """数据表列对象访问API。"""
-
     datamodel = SQLAInterface(TableColumn)
 
     include_route_methods = {"delete"}
@@ -36,9 +34,10 @@ class DatasetColumnsRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("delete")
-    def delete(self, pk: int, column_id: int) -> Response:
+    def delete(  # pylint: disable=arguments-differ
+        self, pk: int, column_id: int
+    ) -> Response:
         """Deletes a Dataset column
-
         ---
         delete:
           description: >-

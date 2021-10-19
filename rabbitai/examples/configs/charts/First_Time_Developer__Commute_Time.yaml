@@ -29,7 +29,7 @@ params:
     operator: '!='
     sqlExpression: null
     subject: communite_time
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 42__table
   granularity_sqla: time_start
   groupby:

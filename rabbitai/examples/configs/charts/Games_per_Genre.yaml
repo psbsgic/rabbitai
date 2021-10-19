@@ -2,7 +2,7 @@ slice_name: Games per Genre
 viz_type: treemap
 params:
   adhoc_filters: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 1559__table
   granularity_sqla: year
   groupby:

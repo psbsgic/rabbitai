@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 from datetime import datetime
@@ -10,7 +12,7 @@ from flask_appbuilder.api import expose, protect, rison, safe
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import ngettext
 
-from rabbitai.commands.exceptions import CommandInvalidError
+from rabbitai.commands.importers.exceptions import NoValidFilesFoundError
 from rabbitai.commands.importers.v1.utils import get_contents_from_bundle
 from rabbitai.constants import MODEL_API_RW_METHOD_PERMISSION_MAP, RouteMethod
 from rabbitai.databases.filters import DatabaseFilter
@@ -221,6 +223,7 @@ class SavedQueryRestApi(BaseRabbitaiModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+        token = request.args.get("token")
         requested_ids = kwargs["rison"]
         timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
         root = f"saved_query_export_{timestamp}"
@@ -238,16 +241,18 @@ class SavedQueryRestApi(BaseRabbitaiModelRestApi):
                 return self.response_404()
         buf.seek(0)
 
-        return send_file(
+        response = send_file(
             buf,
             mimetype="application/zip",
             as_attachment=True,
             attachment_filename=filename,
         )
+        if token:
+            response.set_cookie(token, "done", max_age=600)
+        return response
 
     @expose("/import/", methods=["POST"])
     @protect()
-    @safe
     @statsd_metrics
     @event_logger.log_this_with_context(
         action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.import_",
@@ -299,6 +304,9 @@ class SavedQueryRestApi(BaseRabbitaiModelRestApi):
         with ZipFile(upload) as bundle:
             contents = get_contents_from_bundle(bundle)
 
+        if not contents:
+            raise NoValidFilesFoundError()
+
         passwords = (
             json.loads(request.form["passwords"])
             if "passwords" in request.form
@@ -309,12 +317,5 @@ class SavedQueryRestApi(BaseRabbitaiModelRestApi):
         command = ImportSavedQueriesCommand(
             contents, passwords=passwords, overwrite=overwrite
         )
-        try:
-            command.run()
-            return self.response(200, message="OK")
-        except CommandInvalidError as exc:
-            logger.warning("Import Saved Query failed")
-            return self.response_422(message=exc.normalized_messages())
-        except Exception as exc:  # pylint: disable=broad-except
-            logger.exception("Import Saved Query failed")
-            return self.response_500(message=str(exc))
+        command.run()
+        return self.response(200, message="OK")

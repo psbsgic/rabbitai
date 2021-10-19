@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from typing import Any, Dict, List
@@ -23,12 +25,6 @@ from .base import BaseRabbitaiView, json_success
 
 
 def process_template(content: str) -> str:
-    """
-    使用用户名称和标识，渲染指定内容。
-
-    :param content:
-    :return:
-    """
     env = SandboxedEnvironment()
     template = env.from_string(content)
     context = {
@@ -39,8 +35,6 @@ def process_template(content: str) -> str:
 
 
 class TagView(BaseRabbitaiView):
-    """标签视图。"""
-
     @staticmethod
     def is_enabled() -> bool:
         return is_feature_enabled("TAGGING_SYSTEM")
@@ -52,7 +46,7 @@ class TagView(BaseRabbitaiView):
 
     @has_access_api
     @expose("/tags/suggestions/", methods=["GET"])
-    def suggestions(self) -> FlaskResponse:
+    def suggestions(self) -> FlaskResponse:  # pylint: disable=no-self-use
         query = (
             db.session.query(TaggedObject)
             .join(Tag)
@@ -129,7 +123,7 @@ class TagView(BaseRabbitaiView):
 
     @has_access_api
     @expose("/tagged_objects/", methods=["GET", "POST"])
-    def tagged_objects(self) -> FlaskResponse:
+    def tagged_objects(self) -> FlaskResponse:  # pylint: disable=no-self-use
         tags = [
             process_template(tag)
             for tag in request.args.get("tags", "").split(",")

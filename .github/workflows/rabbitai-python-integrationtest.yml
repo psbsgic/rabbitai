@@ -20,7 +20,7 @@ jobs:
       RABBITAI_CONFIG: tests.integration_tests.rabbitai_test_config
       REDIS_PORT: 16379
       RABBITAI__SQLALCHEMY_DATABASE_URI: |
-        mysql+mysqldb://rabbitai:rabbitai@127.0.0.1:13306/rabbitai?charset=utf8mb4&binary_prefix=true
+        mysql+mysqldb://rabbitai:rabbitai@127.0.0.1:13306/rabbitai_db?charset=utf8mb4&binary_prefix=true
     services:
       mysql:
         image: mysql:5.7

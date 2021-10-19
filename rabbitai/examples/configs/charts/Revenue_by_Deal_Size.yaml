@@ -5,7 +5,7 @@ params:
   annotation_layers: []
   bar_stacked: true
   bottom_margin: auto
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   comparison_type: values
   contribution: false
   datasource: 23__table

@@ -2,8 +2,7 @@ from flask_babel import lazy_gettext as _
 
 
 class LogMixin:
-    """日志混入，定义日志视图相关类属性，包括：
-    list_title、show_title、add_title、edit_title、list_columns、edit_columns、base_order、label_columns。"""
+    """日志混入类，定义标题、排序列、显示列等。"""
 
     list_title = _("Logs")
     show_title = _("Show Log")

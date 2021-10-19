@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 import json
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -26,10 +10,10 @@ from flask_sqlalchemy import BaseQuery
 from freezegun import freeze_time
 from sqlalchemy.sql import func
 
-from superset import db, security_manager
-from superset.models.core import Database
-from superset.models.dashboard import Dashboard
-from superset.models.reports import (
+from rabbitai import db, security_manager
+from rabbitai.models.core import Database
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.reports import (
     ReportDataFormat,
     ReportExecutionLog,
     ReportRecipients,
@@ -39,8 +23,8 @@ from superset.models.reports import (
     ReportScheduleValidatorType,
     ReportState,
 )
-from superset.models.slice import Slice
-from superset.reports.commands.exceptions import (
+from rabbitai.models.slice import Slice
+from rabbitai.reports.commands.exceptions import (
     AlertQueryError,
     AlertQueryInvalidTypeError,
     AlertQueryMultipleColumnsError,
@@ -54,9 +38,9 @@ from superset.reports.commands.exceptions import (
     ReportScheduleScreenshotTimeout,
     ReportScheduleWorkingTimeoutError,
 )
-from superset.reports.commands.execute import AsyncExecuteReportScheduleCommand
-from superset.reports.commands.log_prune import AsyncPruneReportScheduleLogCommand
-from superset.utils.core import get_example_database
+from rabbitai.reports.commands.execute import AsyncExecuteReportScheduleCommand
+from rabbitai.reports.commands.log_prune import AsyncPruneReportScheduleLogCommand
+from rabbitai.utils.core import get_example_database
 from tests.integration_tests.fixtures.birth_names_dashboard import (
     load_birth_names_dashboard_with_slices,
 )
@@ -609,8 +593,8 @@ def create_invalid_sql_alert_email_chart(request):
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_email_chart_report_schedule(
     screenshot_mock, email_mock, create_report_email_chart,
 ):
@@ -630,7 +614,7 @@ def test_email_chart_report_schedule(
         )
         # assert that the link sent is correct
         assert (
-            f'<a href="http://0.0.0.0:8080/superset/slice/'
+            f'<a href="http://0.0.0.0:8080/rabbitai/slice/'
             f'{create_report_email_chart.chart.id}/">Explore in Superset</a>'
             in email_mock.call_args[0][2]
         )
@@ -646,8 +630,8 @@ def test_email_chart_report_schedule(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_email_chart_report_dry_run(
     screenshot_mock, email_mock, create_report_email_chart,
 ):
@@ -669,10 +653,10 @@ def test_email_chart_report_dry_run(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart_with_csv"
 )
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.csv.get_chart_csv_data")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
 def test_email_chart_report_schedule_with_csv(
     csv_mock, email_mock, mock_open, mock_urlopen, create_report_email_chart_with_csv,
 ):
@@ -696,7 +680,7 @@ def test_email_chart_report_schedule_with_csv(
         )
         # assert that the link sent is correct
         assert (
-            f'<a href="http://0.0.0.0:8080/superset/slice/'
+            f'<a href="http://0.0.0.0:8080/rabbitai/slice/'
             f'{create_report_email_chart_with_csv.chart.id}/">Explore in Superset</a>'
             in email_mock.call_args[0][2]
         )
@@ -713,11 +697,11 @@ def test_email_chart_report_schedule_with_csv(
     "load_birth_names_dashboard_with_slices",
     "create_report_email_chart_with_csv_no_query_context",
 )
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.csv.get_chart_csv_data")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_email_chart_report_schedule_with_csv_no_query_context(
     screenshot_mock,
     csv_mock,
@@ -753,10 +737,10 @@ def test_email_chart_report_schedule_with_csv_no_query_context(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart_with_text"
 )
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.csv.get_chart_csv_data")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
 def test_email_chart_report_schedule_with_text(
     csv_mock, email_mock, mock_open, mock_urlopen, create_report_email_chart_with_text,
 ):
@@ -806,8 +790,8 @@ def test_email_chart_report_schedule_with_text(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_dashboard"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.DashboardScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.DashboardScreenshot.get_screenshot")
 def test_email_dashboard_report_schedule(
     screenshot_mock, email_mock, create_report_email_dashboard
 ):
@@ -837,8 +821,8 @@ def test_email_dashboard_report_schedule(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_slack_chart"
 )
-@patch("superset.reports.notifications.slack.WebClient.files_upload")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.slack.WebClient.files_upload")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_slack_chart_report_schedule(
     screenshot_mock, file_upload_mock, create_report_slack_chart,
 ):
@@ -866,10 +850,10 @@ def test_slack_chart_report_schedule(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_slack_chart_with_csv"
 )
-@patch("superset.reports.notifications.slack.WebClient.files_upload")
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.utils.csv.get_chart_csv_data")
+@patch("rabbitai.reports.notifications.slack.WebClient.files_upload")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
 def test_slack_chart_report_schedule_with_csv(
     csv_mock,
     mock_open,
@@ -905,10 +889,10 @@ def test_slack_chart_report_schedule_with_csv(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_slack_chart_with_text"
 )
-@patch("superset.reports.notifications.slack.WebClient.chat_postMessage")
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.utils.csv.get_chart_csv_data")
+@patch("rabbitai.reports.notifications.slack.WebClient.chat_postMessage")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
 def test_slack_chart_report_schedule_with_text(
     csv_mock,
     mock_open,
@@ -1037,8 +1021,8 @@ def test_report_schedule_success_grace_end(create_alert_slack_chart_grace):
 
 
 @pytest.mark.usefixtures("create_alert_email_chart")
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_alert_limit_is_applied(
     screenshot_mock, email_mock, create_alert_email_chart,
 ):
@@ -1064,8 +1048,8 @@ def test_alert_limit_is_applied(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_dashboard"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.DashboardScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.DashboardScreenshot.get_screenshot")
 def test_email_dashboard_report_fails(
     screenshot_mock, email_mock, create_report_email_dashboard
 ):
@@ -1089,10 +1073,10 @@ def test_email_dashboard_report_fails(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_alert_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 @patch.dict(
-    "superset.extensions.feature_flag_manager._feature_flags",
+    "rabbitai.extensions.feature_flag_manager._feature_flags",
     ALERTS_ATTACH_REPORTS=True,
 )
 def test_slack_chart_alert(
@@ -1122,9 +1106,9 @@ def test_slack_chart_alert(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_alert_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
 @patch.dict(
-    "superset.extensions.feature_flag_manager._feature_flags",
+    "rabbitai.extensions.feature_flag_manager._feature_flags",
     ALERTS_ATTACH_REPORTS=False,
 )
 def test_slack_chart_alert_no_attachment(email_mock, create_alert_email_chart):
@@ -1150,8 +1134,8 @@ def test_slack_chart_alert_no_attachment(email_mock, create_alert_email_chart):
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_slack_chart"
 )
-@patch("superset.reports.notifications.slack.WebClient")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.slack.WebClient")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_slack_token_callable_chart_report(
     screenshot_mock, slack_client_mock_class, create_report_slack_chart,
 ):
@@ -1201,14 +1185,14 @@ def test_email_mul_alert(create_mul_alert_email_chart):
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_alert_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
 def test_soft_timeout_alert(email_mock, create_alert_email_chart):
     """
     ExecuteReport Command: Test soft timeout on alert queries
     """
     from celery.exceptions import SoftTimeLimitExceeded
 
-    from superset.reports.commands.exceptions import AlertQueryTimeout
+    from rabbitai.reports.commands.exceptions import AlertQueryTimeout
 
     with patch.object(
         create_alert_email_chart.database.db_engine_spec, "execute", return_value=None
@@ -1231,10 +1215,10 @@ def test_soft_timeout_alert(email_mock, create_alert_email_chart):
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_alert_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 @patch.dict(
-    "superset.extensions.feature_flag_manager._feature_flags",
+    "rabbitai.extensions.feature_flag_manager._feature_flags",
     ALERTS_ATTACH_REPORTS=True,
 )
 def test_soft_timeout_screenshot(screenshot_mock, email_mock, create_alert_email_chart):
@@ -1260,10 +1244,10 @@ def test_soft_timeout_screenshot(screenshot_mock, email_mock, create_alert_email
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart_with_csv"
 )
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.csv.get_chart_csv_data")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
 def test_soft_timeout_csv(
     csv_mock, email_mock, mock_open, mock_urlopen, create_report_email_chart_with_csv,
 ):
@@ -1296,10 +1280,10 @@ def test_soft_timeout_csv(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart_with_csv"
 )
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.csv.get_chart_csv_data")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
 def test_generate_no_csv(
     csv_mock, email_mock, mock_open, mock_urlopen, create_report_email_chart_with_csv,
 ):
@@ -1332,15 +1316,15 @@ def test_generate_no_csv(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_fail_screenshot(screenshot_mock, email_mock, create_report_email_chart):
     """
     ExecuteReport Command: Test soft timeout on screenshot
     """
     from celery.exceptions import SoftTimeLimitExceeded
 
-    from superset.reports.commands.exceptions import AlertQueryTimeout
+    from rabbitai.reports.commands.exceptions import AlertQueryTimeout
 
     screenshot_mock.side_effect = Exception("Unexpected error")
     with pytest.raises(ReportScheduleScreenshotFailedError):
@@ -1360,10 +1344,10 @@ def test_fail_screenshot(screenshot_mock, email_mock, create_report_email_chart)
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_chart_with_csv"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.csv.urllib.request.urlopen")
-@patch("superset.utils.csv.urllib.request.OpenerDirector.open")
-@patch("superset.utils.csv.get_chart_csv_data")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.csv.urllib.request.urlopen")
+@patch("rabbitai.utils.csv.urllib.request.OpenerDirector.open")
+@patch("rabbitai.utils.csv.get_chart_csv_data")
 def test_fail_csv(
     csv_mock, mock_open, mock_urlopen, email_mock, create_report_email_chart_with_csv
 ):
@@ -1395,9 +1379,9 @@ def test_fail_csv(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_alert_email_chart"
 )
-@patch("superset.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
 @patch.dict(
-    "superset.extensions.feature_flag_manager._feature_flags",
+    "rabbitai.extensions.feature_flag_manager._feature_flags",
     ALERTS_ATTACH_REPORTS=False,
 )
 def test_email_disable_screenshot(email_mock, create_alert_email_chart):
@@ -1419,7 +1403,7 @@ def test_email_disable_screenshot(email_mock, create_alert_email_chart):
 
 
 @pytest.mark.usefixtures("create_invalid_sql_alert_email_chart")
-@patch("superset.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
 def test_invalid_sql_alert(email_mock, create_invalid_sql_alert_email_chart):
     """
     ExecuteReport Command: Test alert with invalid SQL statements
@@ -1438,7 +1422,7 @@ def test_invalid_sql_alert(email_mock, create_invalid_sql_alert_email_chart):
 
 
 @pytest.mark.usefixtures("create_invalid_sql_alert_email_chart")
-@patch("superset.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
 def test_grace_period_error(email_mock, create_invalid_sql_alert_email_chart):
     """
     ExecuteReport Command: Test alert grace period on error
@@ -1483,8 +1467,8 @@ def test_grace_period_error(email_mock, create_invalid_sql_alert_email_chart):
 
 
 @pytest.mark.usefixtures("create_invalid_sql_alert_email_chart")
-@patch("superset.reports.notifications.email.send_email_smtp")
-@patch("superset.utils.screenshots.ChartScreenshot.get_screenshot")
+@patch("rabbitai.reports.notifications.email.send_email_smtp")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.get_screenshot")
 def test_grace_period_error_flap(
     screenshot_mock, email_mock, create_invalid_sql_alert_email_chart,
 ):
@@ -1551,7 +1535,7 @@ def test_grace_period_error_flap(
 @pytest.mark.usefixtures(
     "load_birth_names_dashboard_with_slices", "create_report_email_dashboard"
 )
-@patch("superset.reports.dao.ReportScheduleDAO.bulk_delete_logs")
+@patch("rabbitai.reports.dao.ReportScheduleDAO.bulk_delete_logs")
 def test_prune_log_soft_time_out(bulk_delete_logs, create_report_email_dashboard):
     from celery.exceptions import SoftTimeLimitExceeded
     from datetime import datetime, timedelta

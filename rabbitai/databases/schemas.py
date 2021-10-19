@@ -1,6 +1,6 @@
 import inspect
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Type
 
 from flask import current_app
 from flask_babel import lazy_gettext as _
@@ -11,7 +11,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import ArgumentError
 
-from rabbitai.db_engine_specs import get_engine_specs
+from rabbitai.db_engine_specs import BaseEngineSpec, get_engine_specs
 from rabbitai.exceptions import CertificateException, RabbitaiSecurityException
 from rabbitai.models.core import ConfigurationMethod, PASSWORD_MASK
 from rabbitai.security.analytics_db_safety import check_sqlalchemy_uri
@@ -237,30 +237,20 @@ class DatabaseParametersSchemaMixin:
         the constructed SQLAlchemy URI to be passed.
         """
         parameters = data.pop("parameters", {})
-
-        # TODO (betodealmeida): remove second expression after making sure
-        # frontend is not passing engine inside parameters
-        engine = data.pop("engine", None) or parameters.pop("engine", None)
+        # TODO(AAfghahi) standardize engine.
+        engine = (
+            data.pop("engine", None)
+            or parameters.pop("engine", None)
+            or data.pop("backend", None)
+        )
 
         configuration_method = data.get("configuration_method")
         if configuration_method == ConfigurationMethod.DYNAMIC_FORM:
-            if not engine:
-                raise ValidationError(
-                    [
-                        _(
-                            "An engine must be specified when passing "
-                            "individual parameters to a database."
-                        )
-                    ]
-                )
-            engine_specs = get_engine_specs()
-            if engine not in engine_specs:
-                raise ValidationError(
-                    [_('Engine "%(engine)s" is not a valid engine.', engine=engine,)]
-                )
-            engine_spec = engine_specs[engine]
+            engine_spec = get_engine_spec(engine)
 
-            if not hasattr(engine_spec, "build_sqlalchemy_uri"):
+            if not hasattr(engine_spec, "build_sqlalchemy_uri") or not hasattr(
+                engine_spec, "parameters_schema"
+            ):
                 raise ValidationError(
                     [
                         _(
@@ -270,7 +260,10 @@ class DatabaseParametersSchemaMixin:
                     ]
                 )
 
-            serialized_encrypted_extra = data.get("encrypted_extra", "{}")
+            # validate parameters
+            parameters = engine_spec.parameters_schema.load(parameters)  # type: ignore
+
+            serialized_encrypted_extra = data.get("encrypted_extra") or "{}"
             try:
                 encrypted_extra = json.loads(serialized_encrypted_extra)
             except json.decoder.JSONDecodeError:
@@ -283,7 +276,28 @@ class DatabaseParametersSchemaMixin:
         return data
 
 
+def get_engine_spec(engine: Optional[str]) -> Type[BaseEngineSpec]:
+    if not engine:
+        raise ValidationError(
+            [
+                _(
+                    "An engine must be specified when passing "
+                    "individual parameters to a database."
+                )
+            ]
+        )
+    engine_specs = get_engine_specs()
+    if engine not in engine_specs:
+        raise ValidationError(
+            [_('Engine "%(engine)s" is not a valid engine.', engine=engine,)]
+        )
+    return engine_specs[engine]
+
+
 class DatabaseValidateParametersSchema(Schema):
+    class Meta:  # pylint: disable=too-few-public-methods
+        unknown = EXCLUDE
+
     engine = fields.String(required=True, description="SQLAlchemy engine to use")
     parameters = fields.Dict(
         keys=fields.String(),
@@ -304,6 +318,12 @@ class DatabaseValidateParametersSchema(Schema):
         description=server_cert_description,
         allow_none=True,
         validate=server_cert_validator,
+    )
+    configuration_method = EnumField(
+        ConfigurationMethod,
+        by_value=True,
+        required=True,
+        description=configuration_method_description,
     )
 
 
@@ -516,6 +536,25 @@ class DatabaseFunctionNamesResponse(Schema):
 
 
 class ImportV1DatabaseExtraSchema(Schema):
+    # pylint: disable=no-self-use, unused-argument
+    @pre_load
+    def fix_schemas_allowed_for_csv_upload(
+        self, data: Dict[str, Any], **kwargs: Any
+    ) -> Dict[str, Any]:
+        """
+        Fix ``schemas_allowed_for_csv_upload`` being a string.
+
+        Due to a bug in the database modal, some databases might have been
+        saved and exported with a string for ``schemas_allowed_for_csv_upload``.
+        """
+        schemas_allowed_for_csv_upload = data.get("schemas_allowed_for_csv_upload")
+        if isinstance(schemas_allowed_for_csv_upload, str):
+            data["schemas_allowed_for_csv_upload"] = json.loads(
+                schemas_allowed_for_csv_upload
+            )
+
+        return data
+
     metadata_params = fields.Dict(keys=fields.Str(), values=fields.Raw())
     engine_params = fields.Dict(keys=fields.Str(), values=fields.Raw())
     metadata_cache_timeout = fields.Dict(keys=fields.Str(), values=fields.Integer())

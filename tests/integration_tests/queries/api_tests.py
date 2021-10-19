@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 from datetime import datetime, timedelta
@@ -26,10 +10,10 @@ import prison
 from sqlalchemy.sql import func
 
 import tests.integration_tests.test_app
-from superset import db, security_manager
-from superset.models.core import Database
-from superset.utils.core import get_example_database, get_main_database, QueryStatus
-from superset.models.sql_lab import Query
+from rabbitai import db, security_manager
+from rabbitai.models.core import Database
+from rabbitai.utils.core import get_example_database, get_main_database, QueryStatus
+from rabbitai.models.sql_lab import Query
 
 from tests.integration_tests.base_tests import SupersetTestCase
 
@@ -194,10 +178,10 @@ class TestQueryApi(SupersetTestCase):
         Query API: Test get query without data access
         """
         gamma1 = self.create_user(
-            "gamma_1", "password", "Gamma", email="gamma1@superset.org"
+            "gamma_1", "password", "Gamma", email="gamma1@rabbitai.org"
         )
         gamma2 = self.create_user(
-            "gamma_2", "password", "Gamma", email="gamma2@superset.org"
+            "gamma_2", "password", "Gamma", email="gamma2@rabbitai.org"
         )
 
         gamma1_client_id = self.get_random_string()

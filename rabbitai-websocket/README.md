@@ -1,21 +1,39 @@
-# Rabbitai WebSocket Server
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
-A Node.js WebSocket server for sending async event data to the Rabbitai web application frontend.
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+# Superset WebSocket Server
+
+A Node.js WebSocket server for sending async event data to the Superset web application frontend.
 
 ## Requirements
 
 - Node.js 12+ (not tested with older versions)
 - Redis 5+
 
-To use this feature, Rabbitai needs to be configured to enable global async queries and to use WebSockets as the transport (see below).
+To use this feature, Superset needs to be configured to enable global async queries and to use WebSockets as the transport (see below).
 
 ## Architecture
 
-This implementation is based on the architecture defined in [SIP-39](https://github.com/pengsongbo2016/rabbitai/issues/9190).
+This implementation is based on the architecture defined in [SIP-39](https://github.com/apache/rabbitai/issues/9190).
 
 ### Streams
 
-Async events are pushed to [Redis Streams](https://redis.io/topics/streams-intro) from the [Rabbitai Flask app](https://github.com/preset-io/rabbitai/blob/master/rabbitai/utils/async_query_manager.py). An event for a particular user is published to two streams: 1) the global event stream that includes events for all users, and 2) a channel/session-specific stream only for the user. This approach provides a good balance of performance (reading off of a single global stream) and fault tolerance (dropped connections can "catch up" by reading from the channel-specific stream).
+Async events are pushed to [Redis Streams](https://redis.io/topics/streams-intro) from the [Superset Flask app](https://github.com/preset-io/rabbitai/blob/master/rabbitai/utils/async_query_manager.py). An event for a particular user is published to two streams: 1) the global event stream that includes events for all users, and 2) a channel/session-specific stream only for the user. This approach provides a good balance of performance (reading off of a single global stream) and fault tolerance (dropped connections can "catch up" by reading from the channel-specific stream).
 
 Note that Redis Stream [consumer groups](https://redis.io/topics/streams-intro#consumer-groups) are not used here due to the fact that each group receives a subset of the data for a stream, and WebSocket clients have a persistent connection to each app instance, requiring access to all data in a stream. Horizontal scaling of the WebSocket app requires having multiple WebSocket servers, each with full access to the Redis Stream data.
 
@@ -27,7 +45,7 @@ A user may have multiple WebSocket connections under a single channel (session) 
 
 ### Reconnection
 
-It is expected that a user's WebSocket connection may be dropped or interrupted due to fluctuating network conditions. The Rabbitai frontend code keeps track of the last received async event ID, and attempts to reconnect to the WebSocket server with a `last_id` query parameter in the initial HTTP request. If a connection includes a valid `last_id` value, events that may have already been received and sent unsuccessfully are read from the channel-based Redis Stream and re-sent to the new WebSocket connection. The global event stream flow then assumes responsibility for sending subsequent events to the connected socket(s).
+It is expected that a user's WebSocket connection may be dropped or interrupted due to fluctuating network conditions. The Superset frontend code keeps track of the last received async event ID, and attempts to reconnect to the WebSocket server with a `last_id` query parameter in the initial HTTP request. If a connection includes a valid `last_id` value, events that may have already been received and sent unsuccessfully are read from the channel-based Redis Stream and re-sent to the new WebSocket connection. The global event stream flow then assumes responsibility for sending subsequent events to the connected socket(s).
 
 ### Connection Management
 
@@ -48,16 +66,16 @@ Copy `config.example.json` to `config.json` and adjust the values for your envir
 
 Configuration via environment variables is also supported which can be helpful in certain contexts, e.g., deployment. `src/config.ts` can be consulted to see the full list of supported values.
 
-## Rabbitai Configuration
+## Superset Configuration
 
-Configure the Rabbitai Flask app to enable global async queries (in `rabbitai_config.py`):
+Configure the Superset Flask app to enable global async queries (in `rabbitai_config.py`):
 
 Enable the `GLOBAL_ASYNC_QUERIES` feature flag:
 ```
 "GLOBAL_ASYNC_QUERIES": True
 ```
 
-Configure the following Rabbitai values:
+Configure the following Superset values:
 ```
 GLOBAL_ASYNC_QUERIES_TRANSPORT = "ws"
 GLOBAL_ASYNC_QUERIES_WEBSOCKET_URL = "ws://<host>:<port>/"
@@ -65,7 +83,7 @@ GLOBAL_ASYNC_QUERIES_WEBSOCKET_URL = "ws://<host>:<port>/"
 
 Note that the WebSocket server must be run on the same hostname (different port) for cookies to be shared between the Flask app and the WebSocket server.
 
-Note also that `localhost` and `127.0.0.1` are not considered the same host. For example, if you're pointing your browser to `localhost:<port>` for Rabbitai, then the WebSocket url will need to be configured as `localhost:<port>`.
+Note also that `localhost` and `127.0.0.1` are not considered the same host. For example, if you're pointing your browser to `localhost:<port>` for Superset, then the WebSocket url will need to be configured as `localhost:<port>`.
 
 The following config values must contain the same values in both the Flask app config and `config.json`:
 ```
@@ -75,7 +93,7 @@ GLOBAL_ASYNC_QUERIES_JWT_COOKIE_NAME
 GLOBAL_ASYNC_QUERIES_JWT_SECRET
 ```
 
-More info on Rabbitai configuration values for async queries: https://github.com/apache/rabbitai/blob/master/CONTRIBUTING.md#async-chart-queries
+More info on Superset configuration values for async queries: https://github.com/apache/rabbitai/blob/master/CONTRIBUTING.md#async-chart-queries
 
 ## StatsD monitoring
 

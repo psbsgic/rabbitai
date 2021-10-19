@@ -2,7 +2,7 @@ slice_name: Members per Channel
 viz_type: treemap
 params:
   adhoc_filters: []
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   datasource: 57__table
   groupby:
   - channel_name

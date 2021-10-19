@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # pylint: disable=no-self-use, invalid-name
 from unittest import mock, skip
 from unittest.mock import patch
@@ -22,26 +6,26 @@ import pytest
 import yaml
 from sqlalchemy.exc import DBAPIError
 
-from superset import db, event_logger, security_manager
-from superset.commands.exceptions import CommandInvalidError
-from superset.commands.importers.exceptions import IncorrectVersionError
-from superset.connectors.sqla.models import SqlaTable
-from superset.databases.commands.exceptions import (
+from rabbitai import db, event_logger, security_manager
+from rabbitai.commands.exceptions import CommandInvalidError
+from rabbitai.commands.importers.exceptions import IncorrectVersionError
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.databases.commands.exceptions import (
     DatabaseNotFoundError,
     DatabaseSecurityUnsafeError,
     DatabaseTestConnectionDriverError,
     DatabaseTestConnectionFailedError,
     DatabaseTestConnectionUnexpectedError,
 )
-from superset.databases.commands.export import ExportDatabasesCommand
-from superset.databases.commands.importers.v1 import ImportDatabasesCommand
-from superset.databases.commands.test_connection import TestConnectionDatabaseCommand
-from superset.databases.commands.validate import ValidateDatabaseParametersCommand
-from superset.databases.schemas import DatabaseTestConnectionSchema
-from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.exceptions import SupersetErrorsException, SupersetSecurityException
-from superset.models.core import Database
-from superset.utils.core import backend, get_example_database
+from rabbitai.databases.commands.export import ExportDatabasesCommand
+from rabbitai.databases.commands.importers.v1 import ImportDatabasesCommand
+from rabbitai.databases.commands.test_connection import TestConnectionDatabaseCommand
+from rabbitai.databases.commands.validate import ValidateDatabaseParametersCommand
+from rabbitai.databases.schemas import DatabaseTestConnectionSchema
+from rabbitai.errors import ErrorLevel, SupersetError, SupersetErrorType
+from rabbitai.exceptions import SupersetErrorsException, SupersetSecurityException
+from rabbitai.models.core import Database
+from rabbitai.utils.core import backend, get_example_database
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.fixtures.birth_names_dashboard import (
     load_birth_names_dashboard_with_slices,
@@ -59,7 +43,7 @@ from tests.integration_tests.fixtures.importexport import (
 
 class TestExportDatabasesCommand(SupersetTestCase):
     @skip("Flaky")
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     @pytest.mark.usefixtures(
         "load_birth_names_dashboard_with_slices", "load_energy_table_with_slice"
     )
@@ -268,7 +252,7 @@ class TestExportDatabasesCommand(SupersetTestCase):
         expected_metadata["columns"].sort(key=lambda x: x["column_name"])
         assert metadata == expected_metadata
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_export_database_command_no_access(self, mock_g):
         """Test that users can't export databases they don't have access to"""
         mock_g.user = security_manager.find_user("gamma")
@@ -279,7 +263,7 @@ class TestExportDatabasesCommand(SupersetTestCase):
         with self.assertRaises(DatabaseNotFoundError):
             next(contents)
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_export_database_command_invalid_database(self, mock_g):
         """Test that an error is raised when exporting an invalid database"""
         mock_g.user = security_manager.find_user("admin")
@@ -288,7 +272,7 @@ class TestExportDatabasesCommand(SupersetTestCase):
         with self.assertRaises(DatabaseNotFoundError):
             next(contents)
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_export_database_command_key_order(self, mock_g):
         """Test that they keys in the YAML have the same order as export_fields"""
         mock_g.user = security_manager.find_user("admin")
@@ -505,7 +489,7 @@ class TestImportDatabasesCommand(SupersetTestCase):
             }
         }
 
-    @patch("superset.databases.commands.importers.v1.import_dataset")
+    @patch("rabbitai.databases.commands.importers.v1.import_dataset")
     def test_import_v1_rollback(self, mock_import_dataset):
         """Test than on an exception everything is rolled back"""
         num_databases = db.session.query(Database).count()
@@ -530,9 +514,9 @@ class TestImportDatabasesCommand(SupersetTestCase):
 
 
 class TestTestConnectionDatabaseCommand(SupersetTestCase):
-    @mock.patch("superset.databases.dao.Database.get_sqla_engine")
+    @mock.patch("rabbitai.databases.dao.Database.get_sqla_engine")
     @mock.patch(
-        "superset.databases.commands.test_connection.event_logger.log_with_context"
+        "rabbitai.databases.commands.test_connection.event_logger.log_with_context"
     )
     def test_connection_db_exception(self, mock_event_logger, mock_get_sqla_engine):
         """Test to make sure event_logger is called when an exception is raised"""
@@ -551,9 +535,9 @@ class TestTestConnectionDatabaseCommand(SupersetTestCase):
             )
         mock_event_logger.assert_called()
 
-    @mock.patch("superset.databases.dao.Database.get_sqla_engine")
+    @mock.patch("rabbitai.databases.dao.Database.get_sqla_engine")
     @mock.patch(
-        "superset.databases.commands.test_connection.event_logger.log_with_context"
+        "rabbitai.databases.commands.test_connection.event_logger.log_with_context"
     )
     def test_connection_do_ping_exception(
         self, mock_event_logger, mock_get_sqla_engine
@@ -576,11 +560,11 @@ class TestTestConnectionDatabaseCommand(SupersetTestCase):
             == SupersetErrorType.GENERIC_DB_ENGINE_ERROR
         )
 
-    @mock.patch("superset.databases.dao.Database.get_sqla_engine")
+    @mock.patch("rabbitai.databases.dao.Database.get_sqla_engine")
     @mock.patch(
-        "superset.databases.commands.test_connection.event_logger.log_with_context"
+        "rabbitai.databases.commands.test_connection.event_logger.log_with_context"
     )
-    def test_connection_superset_security_connection(
+    def test_connection_rabbitai_security_connection(
         self, mock_event_logger, mock_get_sqla_engine
     ):
         """Test to make sure event_logger is called when security
@@ -601,9 +585,9 @@ class TestTestConnectionDatabaseCommand(SupersetTestCase):
 
         mock_event_logger.assert_called()
 
-    @mock.patch("superset.databases.dao.Database.get_sqla_engine")
+    @mock.patch("rabbitai.databases.dao.Database.get_sqla_engine")
     @mock.patch(
-        "superset.databases.commands.test_connection.event_logger.log_with_context"
+        "rabbitai.databases.commands.test_connection.event_logger.log_with_context"
     )
     def test_connection_db_api_exc(self, mock_event_logger, mock_get_sqla_engine):
         """Test to make sure event_logger is called when DBAPIError is raised"""
@@ -626,9 +610,9 @@ class TestTestConnectionDatabaseCommand(SupersetTestCase):
         mock_event_logger.assert_called()
 
 
-@mock.patch("superset.db_engine_specs.base.is_hostname_valid")
-@mock.patch("superset.db_engine_specs.base.is_port_open")
-@mock.patch("superset.databases.commands.validate.DatabaseDAO")
+@mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
+@mock.patch("rabbitai.db_engine_specs.base.is_port_open")
+@mock.patch("rabbitai.databases.commands.validate.DatabaseDAO")
 def test_validate(DatabaseDAO, is_port_open, is_hostname_valid, app_context):
     """
     Test parameter validation.
@@ -641,8 +625,8 @@ def test_validate(DatabaseDAO, is_port_open, is_hostname_valid, app_context):
         "parameters": {
             "host": "localhost",
             "port": 5432,
-            "username": "superset",
-            "password": "superset",
+            "username": "rabbitai",
+            "password": "rabbitai",
             "database": "test",
             "query": {},
         },
@@ -651,8 +635,8 @@ def test_validate(DatabaseDAO, is_port_open, is_hostname_valid, app_context):
     command.run()
 
 
-@mock.patch("superset.db_engine_specs.base.is_hostname_valid")
-@mock.patch("superset.db_engine_specs.base.is_port_open")
+@mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
+@mock.patch("rabbitai.db_engine_specs.base.is_port_open")
 def test_validate_partial(is_port_open, is_hostname_valid, app_context):
     """
     Test parameter validation when only some parameters are present.
@@ -666,7 +650,7 @@ def test_validate_partial(is_port_open, is_hostname_valid, app_context):
             "host": "localhost",
             "port": 5432,
             "username": "",
-            "password": "superset",
+            "password": "rabbitai",
             "database": "test",
             "query": {},
         },
@@ -692,7 +676,7 @@ def test_validate_partial(is_port_open, is_hostname_valid, app_context):
     ]
 
 
-@mock.patch("superset.db_engine_specs.base.is_hostname_valid")
+@mock.patch("rabbitai.db_engine_specs.base.is_hostname_valid")
 def test_validate_partial_invalid_hostname(is_hostname_valid, app_context):
     """
     Test parameter validation when only some parameters are present.

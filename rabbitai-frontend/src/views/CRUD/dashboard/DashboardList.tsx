@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import { styled, SupersetClient, t } from '@superset-ui/core';
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
@@ -25,7 +7,6 @@ import {
   createFetchRelated,
   createErrorHandler,
   handleDashboardDelete,
-  CardStylesOverrides,
 } from 'src/views/CRUD/utils';
 import { useListViewResource, useFavoriteStatus } from 'src/views/CRUD/hooks';
 import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
@@ -139,6 +120,9 @@ function DashboardList(props: DashboardListProps) {
     showImportModal(false);
     refreshData();
   };
+
+  const { userId } = props.user;
+  const userKey = getFromLocalStorage(userId.toString(), null);
 
   const canCreate = hasPerm('can_write');
   const canEdit = hasPerm('can_write');
@@ -499,29 +483,25 @@ function DashboardList(props: DashboardListProps) {
   ];
 
   function renderCard(dashboard: Dashboard) {
-    const { userId } = props.user;
-    const userKey = getFromLocalStorage(userId.toString(), null);
     return (
-      <CardStylesOverrides>
-        <DashboardCard
-          dashboard={dashboard}
-          hasPerm={hasPerm}
-          bulkSelectEnabled={bulkSelectEnabled}
-          refreshData={refreshData}
-          showThumbnails={
-            userKey
-              ? userKey.thumbnails
-              : isFeatureEnabled(FeatureFlag.THUMBNAILS)
-          }
-          loading={loading}
-          addDangerToast={addDangerToast}
-          addSuccessToast={addSuccessToast}
-          openDashboardEditModal={openDashboardEditModal}
-          saveFavoriteStatus={saveFavoriteStatus}
-          favoriteStatus={favoriteStatus[dashboard.id]}
-          handleBulkDashboardExport={handleBulkDashboardExport}
-        />
-      </CardStylesOverrides>
+      <DashboardCard
+        dashboard={dashboard}
+        hasPerm={hasPerm}
+        bulkSelectEnabled={bulkSelectEnabled}
+        refreshData={refreshData}
+        showThumbnails={
+          userKey
+            ? userKey.thumbnails
+            : isFeatureEnabled(FeatureFlag.THUMBNAILS)
+        }
+        loading={loading}
+        addDangerToast={addDangerToast}
+        addSuccessToast={addSuccessToast}
+        openDashboardEditModal={openDashboardEditModal}
+        saveFavoriteStatus={saveFavoriteStatus}
+        favoriteStatus={favoriteStatus[dashboard.id]}
+        handleBulkDashboardExport={handleBulkDashboardExport}
+      />
     );
   }
 
@@ -614,6 +594,11 @@ function DashboardList(props: DashboardListProps) {
                 initialSort={initialSort}
                 loading={loading}
                 pageSize={PAGE_SIZE}
+                showThumbnails={
+                  userKey
+                    ? userKey.thumbnails
+                    : isFeatureEnabled(FeatureFlag.THUMBNAILS)
+                }
                 renderCard={renderCard}
                 defaultViewMode={
                   isFeatureEnabled(FeatureFlag.LISTVIEWS_DEFAULT_CARD_VIEW)

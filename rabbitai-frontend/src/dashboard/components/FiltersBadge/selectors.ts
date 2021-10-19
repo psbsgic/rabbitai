@@ -1,26 +1,13 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import { NO_TIME_RANGE, TIME_FILTER_MAP } from 'src/explore/constants';
 import { getChartIdsInFilterScope } from 'src/dashboard/util/activeDashboardFilters';
 import { ChartConfiguration, Filters } from 'src/dashboard/reducers/types';
 import { DataMaskStateWithId, DataMaskType } from 'src/dataMask/types';
-import { FeatureFlag, isFeatureEnabled } from '@superset-ui/core';
+import {
+  ensureIsArray,
+  FeatureFlag,
+  FilterState,
+  isFeatureEnabled,
+} from '@superset-ui/core';
 import { Layout } from '../../types';
 import { getTreeCheckedItems } from '../nativeFilters/FiltersConfigModal/FiltersConfigForm/FilterScope/utils';
 
@@ -33,7 +20,7 @@ export enum IndicatorStatus {
 
 const TIME_GRANULARITY_FIELDS = new Set(Object.values(TIME_FILTER_MAP));
 
-// As of 2020-09-28, the DatasourceMeta type in superset-ui is incorrect.
+// As of 2020-09-28, the DatasourceMeta type in rabbitai-ui is incorrect.
 // Should patch it here until the DatasourceMeta type is updated.
 type Datasource = {
   time_grain_sqla?: [string, string][];
@@ -48,6 +35,16 @@ type Filter = {
   isDateFilter: boolean;
   directPathToFilter: string[];
   datasourceId: string;
+};
+
+const extractLabel = (filter?: FilterState): string | null => {
+  if (filter?.label) {
+    return filter.label;
+  }
+  if (filter?.value) {
+    return ensureIsArray(filter?.value).join(', ');
+  }
+  return null;
 };
 
 const selectIndicatorValue = (
@@ -182,16 +179,16 @@ export const selectNativeIndicatorsForChart = (
   const rejectedColumns = getRejectedColumns(chart);
 
   const getStatus = ({
-    value,
+    label,
     column,
     type = DataMaskType.NativeFilters,
   }: {
-    value: any;
+    label: string | null;
     column?: string;
     type?: DataMaskType;
   }): IndicatorStatus => {
     // a filter is only considered unset if it's value is null
-    const hasValue = value !== null;
+    const hasValue = label !== null;
     if (type === DataMaskType.CrossFilters && hasValue) {
       return IndicatorStatus.CrossFilterApplied;
     }
@@ -220,19 +217,14 @@ export const selectNativeIndicatorsForChart = (
         )
         .map(nativeFilter => {
           const column = nativeFilter.targets[0]?.column?.name;
-          let value =
-            dataMask[nativeFilter.id]?.filterState?.label ??
-            dataMask[nativeFilter.id]?.filterState?.value ??
-            null;
-          if (!Array.isArray(value) && value !== null) {
-            value = [value];
-          }
+          const filterState = dataMask[nativeFilter.id]?.filterState;
+          const label = extractLabel(filterState);
           return {
             column,
             name: nativeFilter.name,
             path: [nativeFilter.id],
-            status: getStatus({ value, column }),
-            value,
+            status: getStatus({ label, column }),
+            value: label,
           };
         });
   }
@@ -249,23 +241,26 @@ export const selectNativeIndicatorsForChart = (
         ),
       )
       .map(chartConfig => {
-        let value =
-          dataMask[chartConfig.id]?.filterState?.label ??
-          dataMask[chartConfig.id]?.filterState?.value ??
-          null;
-        if (!Array.isArray(value) && value !== null) {
-          value = [value];
-        }
+        const filterState = dataMask[chartConfig.id]?.filterState;
+        const label = extractLabel(filterState);
+        const filtersState = filterState?.filters;
+        const column = filtersState && Object.keys(filtersState)[0];
+
+        const dashboardLayoutItem = Object.values(dashboardLayout).find(
+          layoutItem => layoutItem?.meta?.chartId === chartConfig.id,
+        );
         return {
-          name: Object.values(dashboardLayout).find(
-            layoutItem => layoutItem?.meta?.chartId === chartConfig.id,
-          )?.meta?.sliceName as string,
-          path: [`${chartConfig.id}`],
+          column,
+          name: dashboardLayoutItem?.meta?.sliceName as string,
+          path: [
+            ...(dashboardLayoutItem?.parents ?? []),
+            dashboardLayoutItem?.id,
+          ],
           status: getStatus({
-            value,
+            label,
             type: DataMaskType.CrossFilters,
           }),
-          value,
+          value: label,
         };
       })
       .filter(filter => filter.status === IndicatorStatus.CrossFilterApplied);

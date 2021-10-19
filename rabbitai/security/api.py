@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 
 from flask import Response
@@ -12,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class SecurityRestApi(BaseApi):
+    """安全管理API。"""
+
     resource_name = "security"
     allow_browser_login = True
     openapi_spec_tag = "Security"

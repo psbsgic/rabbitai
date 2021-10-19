@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Compatibility layer for different database engines
 
 This modules stores logic specific to different database engines. Things
@@ -38,12 +40,8 @@ def is_engine_spec(attr: Any) -> bool:
     )
 
 
-def get_engine_specs() -> Dict[str, Type[BaseEngineSpec]]:
-    """
-    获取数据库引擎规范，从当前目录加载所有 BaseEngineSpec 的派生类。
-
-    :return:
-    """
+def load_engine_specs() -> List[Type[BaseEngineSpec]]:
+    """加载并返回该模块定义的数据库引擎规范。"""
 
     engine_specs: List[Type[BaseEngineSpec]] = []
 
@@ -66,6 +64,14 @@ def get_engine_specs() -> Dict[str, Type[BaseEngineSpec]]:
             continue
         engine_specs.append(engine_spec)
 
+    return engine_specs
+
+
+def get_engine_specs() -> Dict[str, Type[BaseEngineSpec]]:
+    """返回该模块定义的数据库引擎规范的字典（名称和实例）。"""
+
+    engine_specs = load_engine_specs()
+
     # build map from name/alias -> spec
     engine_specs_map: Dict[str, Type[BaseEngineSpec]] = {}
     for engine_spec in engine_specs:
@@ -80,7 +86,9 @@ def get_engine_specs() -> Dict[str, Type[BaseEngineSpec]]:
 
 
 def get_available_engine_specs() -> Dict[Type[BaseEngineSpec], Set[str]]:
-    """返回可用的发动机规格和安装的驱动程序。"""
+    """
+    Return available engine specs and installed drivers for them.
+    """
 
     drivers: Dict[str, Set[str]] = defaultdict(set)
 
@@ -97,7 +105,7 @@ def get_available_engine_specs() -> Dict[Type[BaseEngineSpec], Set[str]]:
                     attribute.dialect.dbapi()
                 except ModuleNotFoundError:
                     continue
-                except Exception as ex:  # pylint: disable=broad-except
+                except Exception as ex:
                     logger.warning(
                         "Unable to load dialect %s: %s", attribute.dialect, ex
                     )
@@ -108,14 +116,19 @@ def get_available_engine_specs() -> Dict[Type[BaseEngineSpec], Set[str]]:
     for ep in iter_entry_points("sqlalchemy.dialects"):
         try:
             dialect = ep.load()
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             logger.warning("Unable to load SQLAlchemy dialect: %s", dialect)
         else:
-            drivers[dialect.name].add(dialect.driver)
+            backend = dialect.name
+            if isinstance(backend, bytes):
+                backend = backend.decode()
+            driver = getattr(dialect, "driver", dialect.name)
+            if isinstance(driver, bytes):
+                driver = driver.decode()
+            drivers[backend].add(driver)
 
-    engine_specs = get_engine_specs()
-    return {
-        engine_specs[backend]: drivers
-        for backend, drivers in drivers.items()
-        if backend in engine_specs
-    }
+    available_engines = {}
+    for engine_spec in load_engine_specs():
+        available_engines[engine_spec] = drivers[engine_spec.engine]
+
+    return available_engines

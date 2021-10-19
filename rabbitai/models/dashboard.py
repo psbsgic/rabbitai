@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 import json
 import logging
+from collections import defaultdict
 from functools import partial
-from typing import Any, Callable, Dict, List, Set, Union
+from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union
 
 import sqlalchemy as sqla
 from flask_appbuilder import Model
@@ -52,13 +55,14 @@ def copy_dashboard(
     _mapper: Mapper, connection: Connection, target: "Dashboard"
 ) -> None:
     """
-    复制仪表盘，插入一个用户对象到数据库后，调用该方法。
+    复制仪表盘。
 
     :param _mapper:
     :param connection:
     :param target:
     :return:
     """
+
     dashboard_id = config["DASHBOARD_TEMPLATE_ID"]
     if dashboard_id is None:
         return
@@ -100,7 +104,7 @@ dashboard_slices = Table(
     Column("slice_id", Integer, ForeignKey("slices.id")),
     UniqueConstraint("dashboard_id", "slice_id"),
 )
-"""仪表盘和切片关系数据表"""
+"""仪表盘和切片多对多关系中间数据表。"""
 
 dashboard_user = Table(
     "dashboard_user",
@@ -109,7 +113,7 @@ dashboard_user = Table(
     Column("user_id", Integer, ForeignKey("ab_user.id")),
     Column("dashboard_id", Integer, ForeignKey("dashboards.id")),
 )
-"""仪表盘和用户关系数据表"""
+"""仪表盘和用户多对多关系中间数据表。"""
 
 DashboardRoles = Table(
     "dashboard_roles",
@@ -118,13 +122,14 @@ DashboardRoles = Table(
     Column("dashboard_id", Integer, ForeignKey("dashboards.id"), nullable=False),
     Column("role_id", Integer, ForeignKey("ab_role.id"), nullable=False),
 )
-"""仪表盘和角色关系数据表"""
+"""仪表盘和角色多对多关系中间数据表。"""
 
 
 class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
     """仪表盘对象关系模型。"""
 
     __tablename__ = "dashboards"
+
     id = Column(Integer, primary_key=True)
     dashboard_title = Column(String(500))
     position_json = Column(utils.MediumText())
@@ -136,6 +141,7 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
     owners = relationship(security_manager.user_model, secondary=dashboard_user)
     published = Column(Boolean, default=False)
     roles = relationship(security_manager.role_model, secondary=DashboardRoles)
+
     export_fields = [
         "dashboard_title",
         "position_json",
@@ -150,7 +156,6 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def table_names(self) -> str:
-        # pylint: disable=no-member
         return ", ".join(str(s.datasource.full_name) for s in self.slices)
 
     @property
@@ -159,8 +164,21 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def datasources(self) -> Set[BaseDatasource]:
-        # pylint: disable=using-constant-test
-        return {slc.datasource for slc in self.slices if slc.datasource}
+        # Verbose but efficient database enumeration of dashboard datasources.
+        datasources_by_cls_model: Dict[Type["BaseDatasource"], Set[int]] = defaultdict(
+            set
+        )
+
+        for slc in self.slices:
+            datasources_by_cls_model[slc.cls_model].add(slc.datasource_id)
+
+        return {
+            datasource
+            for cls_model, datasource_ids in datasources_by_cls_model.items()
+            for datasource in db.session.query(cls_model)
+            .filter(cls_model.id.in_(datasource_ids))
+            .all()
+        }
 
     @property
     def charts(self) -> List[BaseDatasource]:
@@ -234,13 +252,26 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
         unless=lambda: not is_feature_enabled("DASHBOARD_CACHE"),
     )
     def datasets_trimmed_for_slices(self) -> List[Dict[str, Any]]:
-        datasource_slices = utils.indexed(self.slices, "datasource")
-        return [
-            # Filter out unneeded fields from the datasource payload
-            datasource.data_for_slices(slices)
-            for datasource, slices in datasource_slices.items()
-            if datasource
-        ]
+        # Verbose but efficient database enumeration of dashboard datasources.
+        slices_by_datasource: Dict[
+            Tuple[Type["BaseDatasource"], int], Set[Slice]
+        ] = defaultdict(set)
+
+        for slc in self.slices:
+            slices_by_datasource[(slc.cls_model, slc.datasource_id)].add(slc)
+
+        result: List[Dict[str, Any]] = []
+
+        for (cls_model, datasource_id), slices in slices_by_datasource.items():
+            datasource = (
+                db.session.query(cls_model).filter_by(id=datasource_id).one_or_none()
+            )
+
+            if datasource:
+                # Filter out unneeded fields from the datasource payload
+                result.append(datasource.data_for_slices(slices))
+
+        return result
 
     @property  # type: ignore
     def params(self) -> str:  # type: ignore
@@ -320,6 +351,20 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
                 # set slices without creating ORM relations
                 slices = copied_dashboard.__dict__.setdefault("slices", [])
                 slices.append(copied_slc)
+
+            json_metadata = json.loads(dashboard.json_metadata)
+            native_filter_configuration: List[Dict[str, Any]] = json_metadata.get(
+                "native_filter_configuration", []
+            )
+            for native_filter in native_filter_configuration:
+                session = db.session()
+                for target in native_filter.get("targets", []):
+                    id_ = target.get("datasetId")
+                    if id_ is None:
+                        continue
+                    datasource = ConnectorRegistry.get_datasource_by_id(session, id_)
+                    datasource_ids.add((datasource.id, datasource.type))
+
             copied_dashboard.alter_params(remote_id=dashboard_id)
             copied_dashboards.append(copied_dashboard)
 

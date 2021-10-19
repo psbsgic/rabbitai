@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 import re
 from typing import Any, Dict, NamedTuple, List, Pattern, Tuple, Union
@@ -22,13 +6,13 @@ import pytest
 
 import sqlalchemy as sa
 
-from superset import db
-from superset.connectors.sqla.models import SqlaTable, TableColumn
-from superset.db_engine_specs.bigquery import BigQueryEngineSpec
-from superset.db_engine_specs.druid import DruidEngineSpec
-from superset.exceptions import QueryObjectValidationError
-from superset.models.core import Database
-from superset.utils.core import (
+from rabbitai import db
+from rabbitai.connectors.sqla.models import SqlaTable, TableColumn
+from rabbitai.db_engine_specs.bigquery import BigQueryEngineSpec
+from rabbitai.db_engine_specs.druid import DruidEngineSpec
+from rabbitai.exceptions import QueryObjectValidationError
+from rabbitai.models.core import Database
+from rabbitai.utils.core import (
     AdhocMetricExpressionType,
     FilterOperator,
     GenericDataType,
@@ -115,7 +99,7 @@ class TestDatabaseModel(SupersetTestCase):
             col = TableColumn(column_name="foo", type=str_type, table=tbl, is_dttm=True)
             self.assertTrue(col.is_temporal)
 
-    @patch("superset.jinja_context.g")
+    @patch("rabbitai.jinja_context.g")
     def test_extra_cache_keys(self, flask_g):
         flask_g.user.username = "abc"
         base_query_obj = {
@@ -177,7 +161,7 @@ class TestDatabaseModel(SupersetTestCase):
             db.session.delete(table)
         db.session.commit()
 
-    @patch("superset.jinja_context.g")
+    @patch("rabbitai.jinja_context.g")
     def test_jinja_metrics_and_calc_columns(self, flask_g):
         flask_g.user.username = "abc"
         base_query_obj = {
@@ -431,7 +415,7 @@ class TestDatabaseModel(SupersetTestCase):
         assert VIRTUAL_TABLE_STRING_TYPES[backend].match(cols["mycase"].type)
         assert cols["expr"].expression == "case when 1 then 1 else 0 end"
 
-    @patch("superset.models.core.Database.db_engine_spec", BigQueryEngineSpec)
+    @patch("rabbitai.models.core.Database.db_engine_spec", BigQueryEngineSpec)
     def test_labels_expected_on_mutated_query(self):
         query_obj = {
             "granularity": None,

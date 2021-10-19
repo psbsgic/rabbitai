@@ -1,7 +1,7 @@
 {
-  "name": "superset-cypress",
+  "name": "rabbitai-cypress",
   "version": "1.0.0",
-  "description": "run cypress against superset",
+  "description": "run cypress against rabbitai",
   "scripts": {
     "cypress": "cypress",
     "cypress-run-chrome": "cypress run --browser chrome --headless",

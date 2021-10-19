@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Optional
 
 from flask import make_response, Response
@@ -12,7 +14,7 @@ from rabbitai.models.dynamic_plugins import DynamicPlugin
 
 
 class DynamicPluginsView(ModelView):
-    """动态插件CRUD视图 -- 将由 react 用户界面所取代"""
+    """Dynamic plugin crud views -- To be replaced by fancy react UI"""
 
     route_base = "/dynamic-plugins"
     datamodel = SQLAInterface(DynamicPlugin)
@@ -25,7 +27,7 @@ class DynamicPluginsView(ModelView):
     show_columns = add_columns + ["id"]
     list_columns = show_columns
 
-    label_columns = {"name": "名称", "key": "可视类型", "bundle_url": "打包 URL"}
+    label_columns = {"name": "Name", "key": "Key", "bundle_url": "Bundle URL"}
 
     description_columns = {
         "name": _("A human-friendly name"),

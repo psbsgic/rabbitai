@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import cx from 'classnames';
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -68,9 +50,9 @@ const propTypes = {
   editMode: PropTypes.bool.isRequired,
   isExpanded: PropTypes.bool.isRequired,
   isCached: PropTypes.bool,
-  supersetCanExplore: PropTypes.bool.isRequired,
-  supersetCanShare: PropTypes.bool.isRequired,
-  supersetCanCSV: PropTypes.bool.isRequired,
+  rabbitaiCanExplore: PropTypes.bool.isRequired,
+  rabbitaiCanShare: PropTypes.bool.isRequired,
+  rabbitaiCanCSV: PropTypes.bool.isRequired,
   sliceCanEdit: PropTypes.bool.isRequired,
   addSuccessToast: PropTypes.func.isRequired,
   addDangerToast: PropTypes.func.isRequired,
@@ -277,9 +259,9 @@ export default class Chart extends React.Component {
       sliceName,
       toggleExpandSlice,
       timeout,
-      supersetCanExplore,
-      supersetCanShare,
-      supersetCanCSV,
+      rabbitaiCanExplore,
+      rabbitaiCanShare,
+      rabbitaiCanCSV,
       sliceCanEdit,
       addSuccessToast,
       addDangerToast,
@@ -335,9 +317,9 @@ export default class Chart extends React.Component {
           exportFullCSV={this.exportFullCSV}
           updateSliceName={updateSliceName}
           sliceName={sliceName}
-          supersetCanExplore={supersetCanExplore}
-          supersetCanShare={supersetCanShare}
-          supersetCanCSV={supersetCanCSV}
+          rabbitaiCanExplore={rabbitaiCanExplore}
+          rabbitaiCanShare={rabbitaiCanShare}
+          rabbitaiCanCSV={rabbitaiCanCSV}
           sliceCanEdit={sliceCanEdit}
           componentId={componentId}
           dashboardId={dashboardId}
@@ -353,9 +335,9 @@ export default class Chart extends React.Component {
         {/*
           This usage of dangerouslySetInnerHTML is safe since it is being used to render
           markdown that is sanitized with bleach. See:
-             https://github.com/apache/superset/pull/4390
+             https://github.com/apache/rabbitai/pull/4390
           and
-             https://github.com/apache/superset/commit/b6fcc22d5a2cb7a5e92599ed5795a0169385a825
+             https://github.com/apache/rabbitai/commit/b6fcc22d5a2cb7a5e92599ed5795a0169385a825
         */}
         {isExpanded && slice.description_markeddown && (
           <div

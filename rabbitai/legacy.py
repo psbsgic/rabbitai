@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 """Code related with dealing with legacy / change management"""
+
 from typing import Any, Dict
 
 

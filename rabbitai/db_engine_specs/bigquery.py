@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import re
+import urllib
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Pattern, Tuple, TYPE_CHECKING
 
@@ -6,21 +9,22 @@ import pandas as pd
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from flask_babel import gettext as __
-from marshmallow import Schema
+from marshmallow import fields, Schema
+from marshmallow.exceptions import ValidationError
 from sqlalchemy import literal_column
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.sql.expression import ColumnClause
 from typing_extensions import TypedDict
 
 from rabbitai.databases.schemas import encrypted_field_properties, EncryptedField
 from rabbitai.db_engine_specs.base import BaseEngineSpec
-from rabbitai.errors import RabbitaiErrorType
-from rabbitai.exceptions import RabbitaiGenericDBErrorException
+from rabbitai.errors import RabbitaiError, RabbitaiErrorType
 from rabbitai.sql_parse import Table
 from rabbitai.utils import core as utils
 from rabbitai.utils.hashing import md5_sha_from_str
 
 if TYPE_CHECKING:
-    from rabbitai.models.core import Database
+    from rabbitai.models.core import Database  # pragma: no cover
 
 
 CONNECTION_DATABASE_PERMISSIONS_REGEX = re.compile(
@@ -28,17 +32,37 @@ CONNECTION_DATABASE_PERMISSIONS_REGEX = re.compile(
     + "permission in project (?P<project>.+?)"
 )
 
+TABLE_DOES_NOT_EXIST_REGEX = re.compile(
+    'Table name "(?P<table>.*?)" missing dataset while no default '
+    "dataset is set in the request"
+)
+
+COLUMN_DOES_NOT_EXIST_REGEX = re.compile(
+    r"Unrecognized name: (?P<column>.*?) at \[(?P<location>.+?)\]"
+)
+
+SCHEMA_DOES_NOT_EXIST_REGEX = re.compile(
+    r"bigquery error: 404 Not found: Dataset (?P<dataset>.*?):"
+    r"(?P<schema>.*?) was not found in location"
+)
+
+SYNTAX_ERROR_REGEX = re.compile(
+    'Syntax error: Expected end of input but got identifier "(?P<syntax_error>.+?)"'
+)
+
 ma_plugin = MarshmallowPlugin()
 
 
 class BigQueryParametersSchema(Schema):
     credentials_info = EncryptedField(
-        required=True, description="Contents of BigQuery JSON credentials.",
+        required=False, description="Contents of BigQuery JSON credentials.",
     )
+    query = fields.Dict(required=False)
 
 
 class BigQueryParametersType(TypedDict):
     credentials_info: Dict[str, Any]
+    query: Dict[str, Any]
 
 
 class BigQueryEngineSpec(BaseEngineSpec):
@@ -109,6 +133,35 @@ class BigQueryEngineSpec(BaseEngineSpec):
                 "and Job User roles on the project."
             ),
             RabbitaiErrorType.CONNECTION_DATABASE_PERMISSIONS_ERROR,
+            {},
+        ),
+        TABLE_DOES_NOT_EXIST_REGEX: (
+            __(
+                'The table "%(table)s" does not exist. '
+                "A valid table must be used to run this query.",
+            ),
+            RabbitaiErrorType.TABLE_DOES_NOT_EXIST_ERROR,
+            {},
+        ),
+        COLUMN_DOES_NOT_EXIST_REGEX: (
+            __('We can\'t seem to resolve column "%(column)s" at line %(location)s.'),
+            RabbitaiErrorType.COLUMN_DOES_NOT_EXIST_ERROR,
+            {},
+        ),
+        SCHEMA_DOES_NOT_EXIST_REGEX: (
+            __(
+                'The schema "%(schema)s" does not exist. '
+                "A valid schema must be used to run this query."
+            ),
+            RabbitaiErrorType.SCHEMA_DOES_NOT_EXIST_ERROR,
+            {},
+        ),
+        SYNTAX_ERROR_REGEX: (
+            __(
+                "Please check your query for syntax errors at or near "
+                '"%(syntax_error)s". Then, try running your query again.'
+            ),
+            RabbitaiErrorType.SYNTAX_ERROR,
             {},
         ),
     }
@@ -291,29 +344,40 @@ class BigQueryEngineSpec(BaseEngineSpec):
 
     @classmethod
     def build_sqlalchemy_uri(
-        cls, _: BigQueryParametersType, encrypted_extra: Optional[Dict[str, Any]] = None
+        cls,
+        parameters: BigQueryParametersType,
+        encrypted_extra: Optional[Dict[str, Any]] = None,
     ) -> str:
-        if encrypted_extra:
-            project_id = encrypted_extra.get("credentials_info", {}).get("project_id")
+        query = parameters.get("query", {})
+        query_params = urllib.parse.urlencode(query)
+
+        if not encrypted_extra:
+            raise ValidationError("Missing service credentials")
+
+        project_id = encrypted_extra.get("credentials_info", {}).get("project_id")
 
         if project_id:
-            return f"{cls.engine}+{cls.default_driver}://{project_id}"
+            return f"{cls.default_driver}://{project_id}/?{query_params}"
 
-        raise RabbitaiGenericDBErrorException(
-            message="Big Query encrypted_extra is not available.",
-        )
+        raise ValidationError("Invalid service credentials")
 
     @classmethod
     def get_parameters_from_uri(
-        cls, _: str, encrypted_extra: Optional[Dict[str, str]] = None
+        cls, uri: str, encrypted_extra: Optional[Dict[str, str]] = None
     ) -> Any:
-        # BigQuery doesn't have parameters
-        if encrypted_extra:
-            return encrypted_extra
+        value = make_url(uri)
 
-        raise RabbitaiGenericDBErrorException(
-            message="Big Query encrypted_extra is not available.",
-        )
+        # Building parameters from encrypted_extra and uri
+        if encrypted_extra:
+            return {**encrypted_extra, "query": value.query}
+
+        raise ValidationError("Invalid service credentials")
+
+    @classmethod
+    def validate_parameters(
+        cls, parameters: BigQueryParametersType  # pylint: disable=unused-argument
+    ) -> List[RabbitaiError]:
+        return []
 
     @classmethod
     def parameters_json_schema(cls) -> Any:

@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass  # pylint: disable=wrong-import-order
 from enum import Enum
 from typing import List, Optional, Set
 from urllib import parse
@@ -64,7 +66,9 @@ def strip_comments_from_sql(statement: str) -> str:
 
 @dataclass(eq=True, frozen=True)
 class Table:
-    """表示一个数据表：[[catalog.]schema.]table。"""
+    """
+    A fully qualified SQL table conforming to [[catalog.]schema.]table.
+    """
 
     table: str
     schema: Optional[str] = None
@@ -83,7 +87,7 @@ class Table:
 
 
 class ParsedQuery:
-    """已解析的查询，依据给定SQL语句，解析为查询对象。"""
+    """解析的查询，提供将SQL语句解析为数据库对象的功能。"""
 
     def __init__(self, sql_statement: str, strip_comments: bool = False):
         if strip_comments:
@@ -242,14 +246,16 @@ class ParsedQuery:
         """
         exec_sql = ""
         sql = self.stripped()
-        # TODO: quote full_table_name
+        # TODO(bkyryliuk): quote full_table_name
         full_table_name = f"{schema_name}.{table_name}" if schema_name else table_name
         if overwrite:
             exec_sql = f"DROP {method} IF EXISTS {full_table_name};\n"
         exec_sql += f"CREATE {method} {full_table_name} AS \n{sql}"
         return exec_sql
 
-    def _extract_from_token(self, token: Token) -> None:
+    def _extract_from_token(  # pylint: disable=too-many-branches
+        self, token: Token
+    ) -> None:
         """
         <Identifier> store a list of subtokens and <IdentifierList> store lists of
         subtoken list.

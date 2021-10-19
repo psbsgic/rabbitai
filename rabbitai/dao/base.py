@@ -16,20 +16,22 @@ from rabbitai.extensions import db
 
 
 class BaseDAO:
-    """基本 DAO, 实现基本的 CRUD sqlalchemy 操作。"""
+    """
+    数据访问对象，实现 CRUD sqlalchemy 基本操作。
+    """
 
     model_cls: Optional[Type[Model]] = None
-    """对象关系模型的类型，子类需要状态化模型类，以便它们不需要实现基本的 create, update, delete 等方法"""
+    """模型类，子类需要声明模型类，这样它们就不需要实现基本的创建、更新和删除方法"""
     base_filter: Optional[BaseFilter] = None
-    """基本过滤器，子类可以注册基本过滤器以便应用于所有过滤方法。"""
+    """基本过滤器，子类可以登记基础过滤，以应用到所有过滤方法"""
 
     @classmethod
     def find_by_id(cls, model_id: int, session: Session = None) -> Model:
         """
-        依据指定标识查找相应的模型，如果定义 `base_filter` 则应用它。
+        按照指定模式标识从数据库中查找模型实例，自动应用基础过滤器。
 
-        :param model_id: 模型标识。
-        :param session: 数据库会话。
+        :param model_id:
+        :param session:
         :return:
         """
 
@@ -44,16 +46,15 @@ class BaseDAO:
     @classmethod
     def find_by_ids(cls, model_ids: List[int]) -> List[Model]:
         """
-        依据指定标识列表查找相应的模型，如果定义 `base_filter` 则应用它。
+        按照指定模式标识列表从数据库中查找模型实例的列表，自动应用基础过滤器。
 
-        :param model_ids: 模型标识列表。
-        :return: 模型列表。
+        :param model_ids:
+        :return:
         """
 
         id_col = getattr(cls.model_cls, "id", None)
         if id_col is None:
             return []
-
         query = db.session.query(cls.model_cls).filter(id_col.in_(model_ids))
         if cls.base_filter:
             data_model = SQLAInterface(cls.model_cls, db.session)
@@ -63,7 +64,11 @@ class BaseDAO:
 
     @classmethod
     def find_all(cls) -> List[Model]:
-        """返回所有对象模型。"""
+        """
+        查找所有满足基本过滤条件的模型实例。
+
+        :return:
+        """
         query = db.session.query(cls.model_cls)
         if cls.base_filter:
             data_model = SQLAInterface(cls.model_cls, db.session)
@@ -73,20 +78,25 @@ class BaseDAO:
     @classmethod
     def create(cls, properties: Dict[str, Any], commit: bool = True) -> Model:
         """
-        创建并返回对象模型。
+        依据指定属性字典，创建模型实例，并指定是否提交到数据库。
 
         :raises: DAOCreateFailedError
+
+        :param properties:
+        :param commit:
+        :return:
         """
+
         if cls.model_cls is None:
             raise DAOConfigError()
-        model = cls.model_cls()
+        model = cls.model_cls()  # pylint: disable=not-callable
         for key, value in properties.items():
             setattr(model, key, value)
         try:
             db.session.add(model)
             if commit:
                 db.session.commit()
-        except SQLAlchemyError as ex:
+        except SQLAlchemyError as ex:  # pragma: no cover
             db.session.rollback()
             raise DAOCreateFailedError(exception=ex)
         return model
@@ -96,7 +106,7 @@ class BaseDAO:
         cls, model: Model, properties: Dict[str, Any], commit: bool = True
     ) -> Model:
         """
-        更新指定对象模型。
+        依据指定属性字典更新模型实例，并指定是否提交到数据库。
 
         :raises: DAOCreateFailedError
         """
@@ -106,7 +116,7 @@ class BaseDAO:
             db.session.merge(model)
             if commit:
                 db.session.commit()
-        except SQLAlchemyError as ex:
+        except SQLAlchemyError as ex:  # pragma: no cover
             db.session.rollback()
             raise DAOUpdateFailedError(exception=ex)
         return model
@@ -114,7 +124,7 @@ class BaseDAO:
     @classmethod
     def delete(cls, model: Model, commit: bool = True) -> Model:
         """
-        删除指定对象模型。
+        从数据库中删除指定模型。
 
         :raises: DAOCreateFailedError
         """
@@ -122,7 +132,7 @@ class BaseDAO:
             db.session.delete(model)
             if commit:
                 db.session.commit()
-        except SQLAlchemyError as ex:
+        except SQLAlchemyError as ex:  # pragma: no cover
             db.session.rollback()
             raise DAODeleteFailedError(exception=ex)
         return model

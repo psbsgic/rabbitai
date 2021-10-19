@@ -3,18 +3,21 @@ from typing import Any
 
 
 class BaseCommand(ABC):
-    """命令抽象基类，定义方法：run、validate。"""
+    """
+        Base class for all Command like Rabbitai Logic objects
+    """
 
     @abstractmethod
     def run(self) -> Any:
         """
-        执行该命令。如果失败触发异常，
-        :raises: CommandException。
+        Run executes the command. Can raise command exceptions
+        :raises: CommandException
         """
 
     @abstractmethod
     def validate(self) -> None:
         """
-        在执行命令前验证数据的有效性，如果验证失败则触发异常，
-        :raises: CommandException。
+        Validate is normally called by run to validate data.
+        Will raise exception if validation fails
+        :raises: CommandException
         """

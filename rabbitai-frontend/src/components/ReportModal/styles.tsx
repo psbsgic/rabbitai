@@ -1,29 +1,16 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 import { styled, css, SupersetTheme } from '@superset-ui/core';
 import Modal from 'src/components/Modal';
 import Button from 'src/components/Button';
+import { Radio } from 'src/components/Radio';
+import { CronPicker } from 'src/components/CronPicker';
 
 export const StyledModal = styled(Modal)`
   .ant-modal-body {
     padding: 0;
+  }
+
+  h4 {
+    font-weight: 600;
   }
 `;
 
@@ -61,6 +48,14 @@ export const StyledIconWrapper = styled.span`
 
 export const StyledScheduleTitle = styled.div`
   margin-bottom: ${({ theme }) => theme.gridUnit * 7}px;
+
+  h4 {
+    margin-bottom: ${({ theme }) => theme.gridUnit * 3}px;
+  }
+`;
+
+export const StyledCronPicker = styled(CronPicker)`
+  margin-bottom: ${({ theme }) => theme.gridUnit * 3}px;
 `;
 
 export const StyledCronError = styled.p`
@@ -82,4 +77,18 @@ export const TimezoneHeaderStyle = (theme: SupersetTheme) => css`
 export const SectionHeaderStyle = (theme: SupersetTheme) => css`
   margin: ${theme.gridUnit * 3}px 0;
   font-weight: ${theme.typography.weights.bold};
+`;
+
+export const StyledMessageContentTitle = styled.div`
+  margin: ${({ theme }) => theme.gridUnit * 8}px 0
+    ${({ theme }) => theme.gridUnit * 4}px;
+`;
+
+export const StyledRadio = styled(Radio)`
+  display: block;
+  line-height: ${({ theme }) => theme.gridUnit * 8}px;
+`;
+
+export const StyledRadioGroup = styled(Radio.Group)`
+  margin-left: ${({ theme }) => theme.gridUnit * 0.5}px;
 `;

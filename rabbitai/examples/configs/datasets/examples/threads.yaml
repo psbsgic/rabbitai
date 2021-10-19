@@ -1,4 +1,4 @@
-table_name: threads
+table_name: Slack Threads
 main_dttm_col: ts
 description: null
 default_endpoint: null
@@ -8,7 +8,7 @@ schema: null
 sql: null
 params: null
 template_params: null
-filter_select_enabled: false
+filter_select_enabled: true
 fetch_values_predicate: null
 extra: null
 uuid: d7438be6-6078-17dd-cf9a-56f0ef546c80
@@ -164,4 +164,4 @@ columns:
   python_date_format: null
 version: 1.0.0
 database_uuid: a2dc77af-e654-49bb-b321-40f6b559a1ee
-data: https://raw.githubusercontent.com/apache-superset/examples-data/master/datasets/examples/slack/threads.csv
+data: https://raw.githubusercontent.com/apache-rabbitai/examples-data/master/datasets/examples/slack/threads.csv

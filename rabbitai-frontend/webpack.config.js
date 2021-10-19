@@ -1,22 +1,4 @@
 /* eslint-disable no-console */
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
@@ -31,13 +13,15 @@ const TerserPlugin = require('terser-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const parsedArgs = require('yargs').argv;
+
 const getProxyConfig = require('./webpack.proxy-config');
 const packageConfig = require('./package.json');
 
-// input dir
+// 应用（项目）目录，即该文件所在目录
 const APP_DIR = path.resolve(__dirname, './');
-// output dir
-const BUILD_DIR = path.resolve(__dirname, '../superset/static/assets');
+// 构建目录，即用于存储打包资源的目录，当前目录的父目录下的rabbitai/static/assets子目录
+const BUILD_DIR = path.resolve(__dirname, '../rabbitai/static/assets');
+// 根目录，即当前目录的父目录
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const {
@@ -50,8 +34,10 @@ const {
 } = parsedArgs;
 const isDevMode = mode !== 'production';
 const isDevServer = process.argv[1].includes('webpack-dev-server');
+// 资源基地址，由环境变量指定，如果未指定则为：''
 const ASSET_BASE_URL = process.env.ASSET_BASE_URL || '';
 
+// 输出对象，包括：path（构建目录）、publicPath（资源目录）、filename、chunkFilename等。
 const output = {
   path: BUILD_DIR,
   publicPath: `${ASSET_BASE_URL}/static/assets/`,
@@ -67,11 +53,12 @@ if (isDevMode) {
   output.chunkFilename = '[chunkhash].chunk.js';
 }
 
+// 插件列表
 const plugins = [
   // creates a manifest.json mapping of name to hashed output used in template files
   new ManifestPlugin({
     publicPath: output.publicPath,
-    seed: { app: 'superset' },
+    seed: { app: 'rabbitai' },
     // This enables us to include all relevant files for an entry
     generate: (seed, files, entrypoints) => {
       // Each entrypoint's chunk files in the format of
@@ -164,17 +151,24 @@ if (!isDevMode) {
   plugins.push(new OptimizeCSSAssetsPlugin());
 }
 
+// 初始入口文件路径列表
 const PREAMBLE = [path.join(APP_DIR, '/src/preamble.ts')];
 if (isDevMode) {
-  // A Superset webpage normally includes two JS bundles in dev, `theme.ts` and
-  // the main entrypoint. Only the main entry should have the dev server client,
-  // otherwise the websocket client will initialize twice, creating two sockets.
-  // Ref: https://github.com/gaearon/react-hot-loader/issues/141
+  // 在开发模式中 Rabbitai Web页面正常包括两个JS打包，`theme.ts` 和主入口点。
+  // 只有主入口点应该有开发服务器客户端，否则 websocket 客户端将初始化两次，创建两个 sockets。
+  // 参见：https://github.com/gaearon/react-hot-loader/issues/141
   PREAMBLE.unshift(
     `webpack-dev-server/client?http://localhost:${devserverPort}`,
   );
 }
 
+/**
+ * 添加指定入口到初始文件列表。
+ *
+ * @param entry 入口文件路径。
+ *
+ * @returns {string[]}
+ */
 function addPreamble(entry) {
   return PREAMBLE.concat([path.join(APP_DIR, entry)]);
 }
@@ -342,13 +336,13 @@ const config = {
       },
       {
         test: /\.jsx?$/,
-        // include source code for plugins, but exclude node_modules and test files within them
+        // include source code for plugins, but exclude node_modules and test files within them /@encodable/,
         exclude: [/superset-ui.*\/node_modules\//, /\.test.jsx?$/],
         include: [
           new RegExp(`${APP_DIR}/src`),
           /superset-ui.*\/src/,
+          path.resolve(__dirname, './src'),
           new RegExp(`${APP_DIR}/.storybook`),
-          /@encodable/,
         ],
         use: [babelLoader],
       },
@@ -496,7 +490,7 @@ if (isDevMode) {
     const srcPath = `./node_modules/${pkg}/src`;
     if (/superset-ui/.test(pkg) && fs.existsSync(srcPath)) {
       console.log(
-        `[Superset Plugin] Use symlink source for ${pkg} @ ${version}`,
+        `[Rabbitai Plugin] Use symlink source for ${pkg} @ ${version}`,
       );
       // only allow exact match so imports like `@superset-ui/plugin-name/lib`
       // and `@superset-ui/plugin-name/esm` can still work.

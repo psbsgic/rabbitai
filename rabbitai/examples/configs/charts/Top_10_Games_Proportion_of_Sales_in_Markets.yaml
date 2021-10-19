@@ -13,7 +13,7 @@ params:
     subject: rank
   bar_stacked: true
   bottom_margin: auto
-  color_scheme: rabbitaiColors
+  color_scheme: supersetColors
   columns: []
   contribution: true
   datasource: 21__table

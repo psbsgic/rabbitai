@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Any
 
 from flask import g
@@ -11,7 +13,7 @@ from rabbitai.views.base import BaseFilter
 from rabbitai.views.base_api import BaseFavoriteFilter
 
 
-class SavedQueryAllTextFilter(BaseFilter):  # pylint: disable=too-few-public-methods
+class SavedQueryAllTextFilter(BaseFilter):
     name = _("All Text")
     arg_name = "all_text"
 
@@ -29,9 +31,7 @@ class SavedQueryAllTextFilter(BaseFilter):  # pylint: disable=too-few-public-met
         )
 
 
-class SavedQueryFavoriteFilter(
-    BaseFavoriteFilter
-):  # pylint: disable=too-few-public-methods
+class SavedQueryFavoriteFilter(BaseFavoriteFilter):
     """
     Custom filter for the GET list that filters all saved queries that a user has
     favored
@@ -42,13 +42,11 @@ class SavedQueryFavoriteFilter(
     model = SavedQuery
 
 
-class SavedQueryFilter(BaseFilter):  # pylint: disable=too-few-public-methods
+class SavedQueryFilter(BaseFilter):
     def apply(self, query: BaseQuery, value: Any) -> BaseQuery:
         """
         Filter saved queries to only those created by current user.
 
         :returns: flask-sqlalchemy query
         """
-        return query.filter(
-            SavedQuery.created_by == g.user  # pylint: disable=comparison-with-callable
-        )
+        return query.filter(SavedQuery.created_by == g.user)

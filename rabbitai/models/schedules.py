@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 """Models for scheduled execution of jobs"""
+
 import enum
 from typing import Optional, Type
 
@@ -11,7 +14,7 @@ from rabbitai import security_manager
 from rabbitai.models.alerts import Alert
 from rabbitai.models.helpers import AuditMixinNullable, ImportExportMixin
 
-metadata = Model.metadata  # pylint: disable=no-member
+metadata = Model.metadata
 
 
 class ScheduleType(str, enum.Enum):

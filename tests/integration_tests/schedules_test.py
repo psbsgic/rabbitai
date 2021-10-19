@@ -1,22 +1,6 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 from datetime import datetime, timedelta
-from superset.views.schedules import DashboardEmailScheduleView, SliceEmailScheduleView
+from rabbitai.views.schedules import DashboardEmailScheduleView, SliceEmailScheduleView
 from unittest.mock import Mock, patch, PropertyMock
 
 from flask_babel import gettext as __
@@ -28,29 +12,29 @@ from tests.integration_tests.fixtures.world_bank_dashboard import (
     load_world_bank_dashboard_with_slices,
 )
 from tests.integration_tests.test_app import app
-from superset import db
-from superset.models.dashboard import Dashboard
-from superset.models.schedules import (
+from rabbitai import db
+from rabbitai.models.dashboard import Dashboard
+from rabbitai.models.schedules import (
     DashboardEmailSchedule,
     EmailDeliveryType,
     SliceEmailReportFormat,
     SliceEmailSchedule,
 )
-from superset.tasks.schedules import (
+from rabbitai.tasks.schedules import (
     create_webdriver,
     deliver_dashboard,
     deliver_slice,
     next_schedules,
 )
-from superset.models.slice import Slice
+from rabbitai.models.slice import Slice
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.utils import read_fixture
 
 
 class TestSchedules(SupersetTestCase):
 
-    RECIPIENTS = "recipient1@superset.com, recipient2@superset.com"
-    BCC = "bcc@superset.com"
+    RECIPIENTS = "recipient1@rabbitai.com, recipient2@rabbitai.com"
+    BCC = "bcc@rabbitai.com"
     CSV = read_fixture("trends.csv")
 
     @pytest.fixture()
@@ -168,7 +152,7 @@ class TestSchedules(SupersetTestCase):
         self.assertEqual(schedules[59], datetime.strptime("2018-03-30 17:40:00", fmt))
         self.assertEqual(schedules[60], datetime.strptime("2018-05-04 17:10:00", fmt))
 
-    @patch("superset.tasks.schedules.firefox.webdriver.WebDriver")
+    @patch("rabbitai.tasks.schedules.firefox.webdriver.WebDriver")
     def test_create_driver(self, mock_driver_class):
         mock_driver = Mock()
         mock_driver_class.return_value = mock_driver
@@ -180,9 +164,9 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.schedules.firefox.webdriver.WebDriver")
-    @patch("superset.tasks.schedules.send_email_smtp")
-    @patch("superset.tasks.schedules.time")
+    @patch("rabbitai.tasks.schedules.firefox.webdriver.WebDriver")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.schedules.time")
     def test_deliver_dashboard_inline(self, mtime, send_email_smtp, driver_class):
         element = Mock()
         driver = Mock()
@@ -216,9 +200,9 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.schedules.firefox.webdriver.WebDriver")
-    @patch("superset.tasks.schedules.send_email_smtp")
-    @patch("superset.tasks.schedules.time")
+    @patch("rabbitai.tasks.schedules.firefox.webdriver.WebDriver")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.schedules.time")
     def test_deliver_dashboard_as_attachment(
         self, mtime, send_email_smtp, driver_class
     ):
@@ -262,9 +246,9 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.schedules.firefox.webdriver.WebDriver")
-    @patch("superset.tasks.schedules.send_email_smtp")
-    @patch("superset.tasks.schedules.time")
+    @patch("rabbitai.tasks.schedules.firefox.webdriver.WebDriver")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.schedules.time")
     def test_dashboard_chrome_like(self, mtime, send_email_smtp, driver_class):
         # Test functionality for chrome driver which does not support
         # element snapshots
@@ -308,9 +292,9 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.schedules.firefox.webdriver.WebDriver")
-    @patch("superset.tasks.schedules.send_email_smtp")
-    @patch("superset.tasks.schedules.time")
+    @patch("rabbitai.tasks.schedules.firefox.webdriver.WebDriver")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.schedules.time")
     def test_deliver_email_options(self, mtime, send_email_smtp, driver_class):
         element = Mock()
         driver = Mock()
@@ -352,10 +336,10 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.slack_util.WebClient.files_upload")
-    @patch("superset.tasks.schedules.firefox.webdriver.WebDriver")
-    @patch("superset.tasks.schedules.send_email_smtp")
-    @patch("superset.tasks.schedules.time")
+    @patch("rabbitai.tasks.slack_util.WebClient.files_upload")
+    @patch("rabbitai.tasks.schedules.firefox.webdriver.WebDriver")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.schedules.time")
     def test_deliver_slice_inline_image(
         self, mtime, send_email_smtp, driver_class, files_upload
     ):
@@ -400,7 +384,7 @@ class TestSchedules(SupersetTestCase):
             {
                 "channels": "#test_channel",
                 "file": element.screenshot_as_png,
-                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/superset/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
+                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/rabbitai/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
                 "title": "[Report]  Region Filter",
             },
         )
@@ -408,10 +392,10 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.slack_util.WebClient.files_upload")
-    @patch("superset.tasks.schedules.firefox.webdriver.WebDriver")
-    @patch("superset.tasks.schedules.send_email_smtp")
-    @patch("superset.tasks.schedules.time")
+    @patch("rabbitai.tasks.slack_util.WebClient.files_upload")
+    @patch("rabbitai.tasks.schedules.firefox.webdriver.WebDriver")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.schedules.time")
     def test_deliver_slice_attachment(
         self, mtime, send_email_smtp, driver_class, files_upload
     ):
@@ -457,7 +441,7 @@ class TestSchedules(SupersetTestCase):
             {
                 "channels": "#test_channel",
                 "file": element.screenshot_as_png,
-                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/superset/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
+                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/rabbitai/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
                 "title": "[Report]  Region Filter",
             },
         )
@@ -465,10 +449,10 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.slack_util.WebClient.files_upload")
-    @patch("superset.tasks.schedules.urllib.request.OpenerDirector.open")
-    @patch("superset.tasks.schedules.urllib.request.urlopen")
-    @patch("superset.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.slack_util.WebClient.files_upload")
+    @patch("rabbitai.tasks.schedules.urllib.request.OpenerDirector.open")
+    @patch("rabbitai.tasks.schedules.urllib.request.urlopen")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
     def test_deliver_slice_csv_attachment(
         self, send_email_smtp, mock_open, mock_urlopen, files_upload
     ):
@@ -506,7 +490,7 @@ class TestSchedules(SupersetTestCase):
             {
                 "channels": "#test_channel",
                 "file": self.CSV,
-                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/superset/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
+                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/rabbitai/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
                 "title": "[Report]  Region Filter",
             },
         )
@@ -514,10 +498,10 @@ class TestSchedules(SupersetTestCase):
     @pytest.mark.usefixtures(
         "load_world_bank_dashboard_with_slices", "add_schedule_slice_and_dashboard"
     )
-    @patch("superset.tasks.slack_util.WebClient.files_upload")
-    @patch("superset.tasks.schedules.urllib.request.urlopen")
-    @patch("superset.tasks.schedules.urllib.request.OpenerDirector.open")
-    @patch("superset.tasks.schedules.send_email_smtp")
+    @patch("rabbitai.tasks.slack_util.WebClient.files_upload")
+    @patch("rabbitai.tasks.schedules.urllib.request.urlopen")
+    @patch("rabbitai.tasks.schedules.urllib.request.OpenerDirector.open")
+    @patch("rabbitai.tasks.schedules.send_email_smtp")
     def test_deliver_slice_csv_inline(
         self, send_email_smtp, mock_open, mock_urlopen, files_upload
     ):
@@ -553,7 +537,7 @@ class TestSchedules(SupersetTestCase):
             {
                 "channels": "#test_channel",
                 "file": self.CSV,
-                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/superset/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
+                "initial_comment": f"\n        *Region Filter*\n\n        <http://0.0.0.0:8080/rabbitai/slice/{schedule.slice_id}/|Explore in Superset>\n        ",
                 "title": "[Report]  Region Filter",
             },
         )

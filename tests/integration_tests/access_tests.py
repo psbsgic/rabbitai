@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset"""
 import json
@@ -32,12 +16,12 @@ from tests.integration_tests.fixtures.energy_dashboard import (
     load_energy_table_with_slice,
 )
 from tests.integration_tests.test_app import app  # isort:skip
-from superset import db, security_manager
-from superset.connectors.connector_registry import ConnectorRegistry
-from superset.connectors.druid.models import DruidDatasource
-from superset.connectors.sqla.models import SqlaTable
-from superset.models import core as models
-from superset.models.datasource_access_request import DatasourceAccessRequest
+from rabbitai import db, security_manager
+from rabbitai.connectors.connector_registry import ConnectorRegistry
+from rabbitai.connectors.druid.models import DruidDatasource
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.models import core as models
+from rabbitai.models.datasource_access_request import DatasourceAccessRequest
 
 from .base_tests import SupersetTestCase
 
@@ -69,11 +53,11 @@ ROLE_ALL_PERM_DATA = {
 }
 
 EXTEND_ROLE_REQUEST = (
-    "/superset/approve?datasource_type={}&datasource_id={}&"
+    "/rabbitai/approve?datasource_type={}&datasource_id={}&"
     "created_by={}&role_to_extend={}"
 )
 GRANT_ROLE_REQUEST = (
-    "/superset/approve?datasource_type={}&datasource_id={}&"
+    "/rabbitai/approve?datasource_type={}&datasource_id={}&"
     "created_by={}&role_to_grant={}"
 )
 TEST_ROLE_1 = "test_role1"
@@ -143,7 +127,7 @@ class TestRequestAccess(SupersetTestCase):
         self.logout()
         self.login("alpha")
         response = self.client.post(
-            "/superset/override_role_permissions/",
+            "/rabbitai/override_role_permissions/",
             data=json.dumps(ROLE_TABLES_PERM_DATA),
             content_type="application/json",
             follow_redirects=True,
@@ -153,7 +137,7 @@ class TestRequestAccess(SupersetTestCase):
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     def test_override_role_permissions_1_table(self):
         response = self.client.post(
-            "/superset/override_role_permissions/",
+            "/rabbitai/override_role_permissions/",
             data=json.dumps(ROLE_TABLES_PERM_DATA),
             content_type="application/json",
         )
@@ -172,7 +156,7 @@ class TestRequestAccess(SupersetTestCase):
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     def test_override_role_permissions_druid_and_table(self):
         response = self.client.post(
-            "/superset/override_role_permissions/",
+            "/rabbitai/override_role_permissions/",
             data=json.dumps(ROLE_ALL_PERM_DATA),
             content_type="application/json",
         )
@@ -211,7 +195,7 @@ class TestRequestAccess(SupersetTestCase):
         db.session.flush()
 
         response = self.client.post(
-            "/superset/override_role_permissions/",
+            "/rabbitai/override_role_permissions/",
             data=json.dumps(ROLE_TABLES_PERM_DATA),
             content_type="application/json",
         )
@@ -378,7 +362,7 @@ class TestRequestAccess(SupersetTestCase):
 
         session.commit()
 
-    @mock.patch("superset.utils.core.send_mime_email")
+    @mock.patch("rabbitai.utils.core.send_mime_email")
     def test_approve(self, mock_send_mime):
         if app.config["ENABLE_ACCESS_REQUEST"]:
             session = db.session
@@ -517,13 +501,13 @@ class TestRequestAccess(SupersetTestCase):
             session.commit()
 
             ACCESS_REQUEST = (
-                "/superset/request_access?"
+                "/rabbitai/request_access?"
                 "datasource_type={}&"
                 "datasource_id={}&"
                 "action={}&"
             )
             ROLE_GRANT_LINK = (
-                '<a href="/superset/approve?datasource_type={}&datasource_id={}&'
+                '<a href="/rabbitai/approve?datasource_type={}&datasource_id={}&'
                 'created_by={}&role_to_grant={}">Grant {} Role</a>'
             )
 

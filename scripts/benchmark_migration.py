@@ -9,10 +9,13 @@ from types import ModuleType
 from typing import Dict, List, Set, Type
 
 import click
+from flask import current_app
 from flask_appbuilder import Model
 from flask_migrate import downgrade, upgrade
 from graphlib import TopologicalSorter  # pylint: disable=wrong-import-order
-from sqlalchemy import inspect
+from progress.bar import ChargingBar
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.ext.automap import automap_base
 
 from rabbitai import db
 from rabbitai.utils.mock_data import add_sample_rows
@@ -22,23 +25,21 @@ logger = logging.getLogger(__name__)
 
 def import_migration_script(filepath: Path) -> ModuleType:
     """
-    像导入模块一样导入迁移脚本。
-
-    :param filepath: 文件路径对象。
-    :return:
+    Import migration script as if it were a module.
     """
-
     spec = importlib.util.spec_from_file_location(filepath.stem, filepath)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    spec.loader.exec_module(module)  # type: ignore
     return module
 
 
 def extract_modified_tables(module: ModuleType) -> Set[str]:
     """
-    提取由迁移脚本修改的表。
+    Extract the tables being modified by a migration script.
 
-    此函数使用一种简单的方法来查看迁移脚本的源代码以查找模式。它可以通过实际遍历AST来改进。
+    This function uses a simple approach of looking at the source code of
+    the migration script looking for patterns. It could be improved by
+    actually traversing the AST.
     """
 
     tables: Set[str] = set()
@@ -53,16 +54,12 @@ def extract_modified_tables(module: ModuleType) -> Set[str]:
 
 def find_models(module: ModuleType) -> List[Type[Model]]:
     """
-    在迁移脚本中查找所有模型。
-
-    :param module:
-    :return:
+    Find all models in a migration script.
     """
-
     models: List[Type[Model]] = []
     tables = extract_modified_tables(module)
 
-    # 添加在迁移脚本中显式定义的模型
+    # add models defined explicitly in the migration script
     queue = list(module.__dict__.values())
     while queue:
         obj = queue.pop()
@@ -73,19 +70,41 @@ def find_models(module: ModuleType) -> List[Type[Model]]:
         elif isinstance(obj, dict):
             queue.extend(obj.values())
 
-    # 添加隐式模型
-    for obj in Model._decl_class_registry.values():
-        if hasattr(obj, "__table__") and obj.__table__.fullname in tables:
-            models.append(obj)
+    # build models by automapping the existing tables, instead of using current
+    # code; this is needed for migrations that modify schemas (eg, add a column),
+    # where the current model is out-of-sync with the existing table after a
+    # downgrade
+    sqlalchemy_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
+    engine = create_engine(sqlalchemy_uri)
+    Base = automap_base()
+    Base.prepare(engine, reflect=True)
+    seen = set()
+    while tables:
+        table = tables.pop()
+        seen.add(table)
+        model = getattr(Base.classes, table)
+        model.__tablename__ = table
+        models.append(model)
 
-    # 按拓扑排序，这样我们可以按顺序创建实体并维护关系（例如，在创建切片之前创建数据库）
+        # add other models referenced in foreign keys
+        inspector = inspect(model)
+        for column in inspector.columns.values():
+            for foreign_key in column.foreign_keys:
+                table = foreign_key.column.table.name
+                if table not in seen:
+                    tables.add(table)
+
+    # sort topologically so we can create entities in order and
+    # maintain relationships (eg, create a database before creating
+    # a slice)
     sorter = TopologicalSorter()
     for model in models:
         inspector = inspect(model)
         dependent_tables: List[str] = []
         for column in inspector.columns.values():
             for foreign_key in column.foreign_keys:
-                dependent_tables.append(foreign_key.target_fullname.split(".")[0])
+                if foreign_key.column.table.name != model.__tablename__:
+                    dependent_tables.append(foreign_key.column.table.name)
         sorter.add(model.__tablename__, *dependent_tables)
     order = list(sorter.static_order())
     models.sort(key=lambda model: order.index(model.__tablename__))
@@ -120,6 +139,16 @@ def main(
     ).scalar()
     print(f"Current version of the DB is {current_revision}")
 
+    if current_revision != down_revision:
+        if not force:
+            click.confirm(
+                "\nRunning benchmark will downgrade the Superset DB to "
+                f"{down_revision} and upgrade to {revision} again. There may "
+                "be data loss in downgrades. Continue?",
+                abort=True,
+            )
+        downgrade(revision=down_revision)
+
     print("\nIdentifying models used in the migration:")
     models = find_models(module)
     model_rows: Dict[Type[Model], int] = {}
@@ -128,16 +157,6 @@ def main(
         print(f"- {model.__name__} ({rows} rows in table {model.__tablename__})")
         model_rows[model] = rows
     session.close()
-
-    if current_revision != down_revision:
-        if not force:
-            click.confirm(
-                "\nRunning benchmark will downgrade the Rabbitai DB to "
-                f"{down_revision} and upgrade to {revision} again. There may "
-                "be data loss in downgrades. Continue?",
-                abort=True,
-            )
-        downgrade(revision=down_revision)
 
     print("Benchmarking migration")
     results: Dict[str, float] = {}
@@ -155,24 +174,33 @@ def main(
         for model in models:
             missing = min_entities - model_rows[model]
             if missing > 0:
+                entities: List[Model] = []
                 print(f"- Adding {missing} entities to the {model.__name__} model")
+                bar = ChargingBar("Processing", max=missing)
                 try:
-                    added_models = add_sample_rows(session, model, missing)
+                    for entity in add_sample_rows(session, model, missing):
+                        entities.append(entity)
+                        bar.next()
                 except Exception:
                     session.rollback()
                     raise
+                bar.finish()
                 model_rows[model] = min_entities
+                session.add_all(entities)
                 session.commit()
 
                 if auto_cleanup:
-                    new_models[model].extend(added_models)
-
+                    new_models[model].extend(entities)
         start = time.time()
         upgrade(revision=revision)
         duration = time.time() - start
         print(f"Migration for {min_entities}+ entities took: {duration:.2f} seconds")
         results[f"{min_entities}+"] = duration
         min_entities *= 10
+
+    print("\nResults:\n")
+    for label, duration in results.items():
+        print(f"{label}: {duration:.2f} s")
 
     if auto_cleanup:
         print("Cleaning up DB")
@@ -188,14 +216,11 @@ def main(
         upgrade(revision=revision)
         print("Reverted")
 
-    print("\nResults:\n")
-    for label, duration in results.items():
-        print(f"{label}: {duration:.2f} s")
-
 
 if __name__ == "__main__":
     from rabbitai.app import create_app
 
     app = create_app()
     with app.app_context():
+        # pylint: disable=no-value-for-parameter
         main()

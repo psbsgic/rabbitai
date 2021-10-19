@@ -3043,7 +3043,7 @@ msgstr "在 SQL 编辑器中允许 CREATE TABLE AS 选项"
 #: rabbitai-frontend/src/views/CRUD/data/database/DatabaseModal.tsx:493
 #: rabbitai/views/database/mixins.py:113
 msgid "Allow CREATE VIEW AS option in SQL Lab"
-msgstr "在 SQL 编辑器中允许 CREATE TABLE AS 选项"
+msgstr "在 SQL 编辑器中允许 CREATE VIEW AS 选项"
 
 #: rabbitai/views/database/mixins.py:114
 msgid ""
@@ -3110,7 +3110,7 @@ msgstr "允许 CREATE TABLE AS"
 #: rabbitai-frontend/src/views/CRUD/data/database/DatabaseModal.tsx:491
 #: rabbitai/views/database/mixins.py:187
 msgid "Allow CREATE VIEW AS"
-msgstr "允许 CREATE TABLE AS"
+msgstr "允许 CREATE VIEW AS"
 
 #: rabbitai-frontend/src/views/CRUD/data/database/DatabaseModal.tsx:505
 #: rabbitai/views/database/mixins.py:188
@@ -3878,7 +3878,7 @@ msgstr "允许 CREATE TABLE AS"
 
 #: rabbitai-frontend/src/SqlLab/components/SqlEditor.jsx:610
 msgid "CREATE VIEW AS"
-msgstr "允许 CREATE TABLE AS"
+msgstr "允许 CREATE VIEW AS"
 
 #: rabbitai-frontend/src/SqlLab/components/SqlEditor.jsx:645
 msgid "Estimate the cost before running a query"
@@ -8361,7 +8361,7 @@ msgstr "失败"
 msgid "cannot be empty"
 msgstr "不能为空"
 
-# 以下部分来源于 superset-ui 项目
+# 以下部分来源于 rabbitai-ui 项目
 msgid "Options"
 msgstr "设置"
 

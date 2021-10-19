@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+import dataclasses
 import logging
 import re
 from contextlib import closing
@@ -56,13 +59,18 @@ from rabbitai.dashboards.dao import DashboardDAO
 from rabbitai.databases.dao import DatabaseDAO
 from rabbitai.databases.filters import DatabaseFilter
 from rabbitai.datasets.commands.exceptions import DatasetNotFoundError
+from rabbitai.errors import ErrorLevel, RabbitaiError, RabbitaiErrorType
 from rabbitai.exceptions import (
     CacheLoadError,
     CertificateException,
     DatabaseNotFound,
     SerializationError,
+    RabbitaiCancelQueryException,
+    RabbitaiErrorException,
+    RabbitaiErrorsException,
     RabbitaiException,
     RabbitaiGenericDBErrorException,
+    RabbitaiGenericErrorException,
     RabbitaiSecurityException,
     RabbitaiTemplateParamsErrorException,
     RabbitaiTimeoutException,
@@ -142,6 +150,7 @@ DATABASE_KEYS = [
     "force_ctas_schema",
     "id",
 ]
+"""数据库键列表。"""
 
 DATASOURCE_MISSING_ERR = __("The data source seems to have been deleted")
 USER_MISSING_ERR = __("The user seems to have been deleted")
@@ -153,7 +162,64 @@ PARAMETER_MISSING_ERR = (
 
 
 class Rabbitai(BaseRabbitaiView):
-    """Rabbitai 视图，定义注册API及其路由。"""
+    """
+    Rabbitai 视图，处理来自客户端请求的基本API及其路由。
+
+    定义终结点（路由）：
+
+    /datasources/
+    /override_role_permissions/
+    /request_access/
+    /approve
+    /slice/<int:slice_id>/
+    /slice_json/<int:slice_id>
+    /annotation_json/<int:layer_id>
+    /explore_json/data/<cache_key>
+    /explore_json/、/explore_json/<datasource_type>/<int:datasource_id>/
+    /import_dashboards/
+    /explore/、/explore/<datasource_type>/<int:datasource_id>/
+    /filter/<datasource_type>/<int:datasource_id>/<column>/
+    /schemas/<int:db_id>/、/schemas/<int:db_id>/<force_refresh>/
+    /tables/<int:db_id>/<schema>/<substr>/、/tables/<int:db_id>/<schema>/<substr>/<force_refresh>/
+    /copy_dash/<int:dashboard_id>/
+    /save_dash/<int:dashboard_id>/
+    /add_slices/<int:dashboard_id>/
+    /testconn
+    /recent_activity/<int:user_id>/
+    /csrf_token/
+    /available_domains/
+    /fave_dashboards_by_username/<username>/
+    /fave_dashboards/<int:user_id>/
+    /created_dashboards/<int:user_id>/
+    /user_slices、/user_slices/<int:user_id>/
+    /created_slices、/created_slices/<int:user_id>/
+    /fave_slices、/fave_slices/<int:user_id>/
+    /warm_up_cache/
+    /favstar/<class_name>/<int:obj_id>/<action>/
+    /dashboard/<int:dashboard_id>/published/
+    /dashboard/<dashboard_id_or_slug>/
+    /log/
+    /sync_druid/
+    /get_or_create_table/
+    /sqllab_viz/
+    /extra_table_metadata/<int:database_id>/<table_name>/<schema>/
+    /select_star/<int:database_id>/<table_name>、/select_star/<int:database_id>/<table_name>/<schema>
+    /estimate_query_cost/<int:database_id>/、/estimate_query_cost/<int:database_id>/<schema>/
+    /theme/
+    /results/<key>/
+    /stop_query/
+    /validate_sql_json/
+    /sql_json/
+    /csv/<client_id>
+    /fetch_datasource_metadata
+    /queries/<float:last_updated_ms>、/queries/<int:last_updated_ms>
+    /search_queries
+    /welcome/
+    /profile/<username>/
+    /sqllab/
+    /sqllab/history/
+    /schemas_access_for_csv_upload
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -161,11 +227,13 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/datasources/")
     def datasources(self) -> FlaskResponse:
+        """获取所有数据源。"""
+
         return self.json_response(
             sorted(
                 [
                     datasource.short_data
-                    for datasource in ConnectorRegistry.get_all_datasources(db.session)
+                    for datasource in security_manager.get_user_datasources()
                     if datasource.short_data.get("name")
                 ],
                 key=lambda datasource: datasource["name"],
@@ -176,10 +244,9 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/override_role_permissions/", methods=["POST"])
     def override_role_permissions(self) -> FlaskResponse:
-        """Updates the role with the give datasource permissions.
+        """更新给定数据库的权限。
 
-          Permissions not in the request will be revoked. This endpoint should
-          be available to admins only. Expects JSON in the format:
+          不在请求中的权限将被吊销。此端点应仅对管理员可用。需要以下格式的JSON：
            {
             'role_name': '{role_name}',
             'database': [{
@@ -192,6 +259,7 @@ class Rabbitai(BaseRabbitaiView):
             }]
         }
         """
+
         data = request.get_json(force=True)
         role_name = data["role_name"]
         databases = data["database"]
@@ -229,6 +297,8 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/request_access/")
     def request_access(self) -> FlaskResponse:
+        """请求访问。"""
+
         datasources = set()
         dashboard_id = request.args.get("dashboard_id")
         if dashboard_id:
@@ -271,7 +341,9 @@ class Rabbitai(BaseRabbitaiView):
     @has_access
     @event_logger.log_this
     @expose("/approve")
-    def approve(self) -> FlaskResponse:
+    def approve(self) -> FlaskResponse:  # pylint: disable=too-many-locals,no-self-use
+        """批准"""
+
         def clean_fulfilled_requests(session: Session) -> None:
             for dar in session.query(DAR).all():
                 datasource = ConnectorRegistry.get_datasource(
@@ -375,7 +447,14 @@ class Rabbitai(BaseRabbitaiView):
     @has_access
     @event_logger.log_this
     @expose("/slice/<int:slice_id>/")
-    def slice(self, slice_id: int) -> FlaskResponse:
+    def slice(self, slice_id: int) -> FlaskResponse:  # pylint: disable=no-self-use
+        """
+        切片。
+
+        :param slice_id:
+        :return:
+        """
+
         _, slc = get_form_data(slice_id, use_slice_data=True)
         if not slc:
             abort(404)
@@ -389,12 +468,19 @@ class Rabbitai(BaseRabbitaiView):
         return redirect(endpoint)
 
     def get_query_string_response(self, viz_obj: BaseViz) -> FlaskResponse:
+        """
+        获取查询字符串。
+
+        :param viz_obj: 可视对象。
+        :return:
+        """
+
         query = None
         try:
             query_obj = viz_obj.query_obj()
             if query_obj:
                 query = viz_obj.datasource.get_query_str(query_obj)
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-except
             err_msg = utils.error_msg_from_exception(ex)
             logger.exception(err_msg)
             return json_error_response(err_msg)
@@ -407,15 +493,50 @@ class Rabbitai(BaseRabbitaiView):
         )
 
     def get_raw_results(self, viz_obj: BaseViz) -> FlaskResponse:
+        """
+        获取指定可视对象的原始结果。
+
+        :param viz_obj: 可视对象。
+        :return:
+        """
+
         payload = viz_obj.get_df_payload()
         if viz_obj.has_error(payload):
             return json_error_response(payload=payload, status=400)
+
         return self.json_response({"data": payload["df"].to_dict("records")})
 
     def get_samples(self, viz_obj: BaseViz) -> FlaskResponse:
+        """
+        获取指定可视对象的样本数据。
+
+        :param viz_obj: 可视对象。
+        :return:
+        """
         return self.json_response({"data": viz_obj.get_samples()})
 
-    def generate_json(self, viz_obj: BaseViz, response_type: Optional[str] = None) -> FlaskResponse:
+    @staticmethod
+    def send_data_payload_response(viz_obj: BaseViz, payload: Any) -> FlaskResponse:
+        """
+        发送Json格式的数据载荷。
+
+        :param viz_obj: 可视对象。
+        :param payload: 载荷。
+        :return:
+        """
+        return data_payload_response(*viz_obj.payload_json_and_has_error(payload))
+
+    def generate_json(
+        self, viz_obj: BaseViz, response_type: Optional[str] = None
+    ) -> FlaskResponse:
+        """
+        生成Json。
+
+        :param viz_obj:
+        :param response_type:
+        :return:
+        """
+
         if response_type == utils.ChartDataResultFormat.CSV:
             return CsvResponse(
                 viz_obj.get_csv(), headers=generate_download_headers("csv")
@@ -431,7 +552,7 @@ class Rabbitai(BaseRabbitaiView):
             return self.get_samples(viz_obj)
 
         payload = viz_obj.get_payload()
-        return data_payload_response(*viz_obj.payload_json_and_has_error(payload))
+        return self.send_data_payload_response(viz_obj, payload)
 
     @event_logger.log_this
     @api
@@ -440,6 +561,8 @@ class Rabbitai(BaseRabbitaiView):
     @etag_cache()
     @check_resource_permissions(check_slice_perms)
     def slice_json(self, slice_id: int) -> FlaskResponse:
+        """处理切片的Json格式数据请求。"""
+
         form_data, slc = get_form_data(slice_id, use_slice_data=True)
         if not slc:
             return json_error_response("The slice does not exist")
@@ -468,8 +591,7 @@ class Rabbitai(BaseRabbitaiView):
 
         form_data["layer_id"] = layer_id
         form_data["filters"] = [{"col": "layer_id", "op": "==", "val": layer_id}]
-        # Set all_columns to ensure the TableViz returns the necessary columns to the
-        # frontend.
+        # Set all_columns to ensure the TableViz returns the necessary columns to the frontend.
         form_data["all_columns"] = [
             "created_on",
             "changed_on",
@@ -504,6 +626,7 @@ class Rabbitai(BaseRabbitaiView):
         TODO: form_data should not be loaded twice from cache
           (also loaded in `check_explore_cache_perms`)
         """
+
         try:
             cached = cache_manager.cache.get(cache_key)
             if not cached:
@@ -573,7 +696,6 @@ class Rabbitai(BaseRabbitaiView):
             )
 
         form_data = get_form_data()[0]
-
         try:
             datasource_id, datasource_type = get_datasource_info(
                 datasource_id, datasource_type, form_data
@@ -586,6 +708,29 @@ class Rabbitai(BaseRabbitaiView):
                 is_feature_enabled("GLOBAL_ASYNC_QUERIES")
                 and response_type == utils.ChartDataResultFormat.JSON
             ):
+                # First, look for the chart query results in the cache.
+                try:
+                    viz_obj = get_viz(
+                        datasource_type=cast(str, datasource_type),
+                        datasource_id=datasource_id,
+                        form_data=form_data,
+                        force_cached=True,
+                        force=force,
+                    )
+                    payload = viz_obj.get_payload()
+                except CacheLoadError:
+                    payload = None  # type: ignore
+
+                already_cached_result = payload is not None
+
+                # If the chart query has already been cached, return it immediately.
+                if already_cached_result:
+                    return self.send_data_payload_response(viz_obj, payload)
+
+                # Otherwise, kick off a background job to run the chart query.
+                # Clients will either poll or be notified of query completion,
+                # at which point they will call the /explore_json/data/<cache_key>
+                # endpoint to retrieve the results.
                 try:
                     async_channel_id = async_query_manager.parse_jwt_from_request(
                         request
@@ -616,7 +761,8 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/import_dashboards/", methods=["GET", "POST"])
     def import_dashboards(self) -> FlaskResponse:
-        """Overrides the dashboards using json instances from the file."""
+        """从文件导入仪表盘实例。"""
+
         import_file = request.files.get("file")
         if request.method == "POST" and import_file:
             success = False
@@ -664,7 +810,7 @@ class Rabbitai(BaseRabbitaiView):
     ) -> FlaskResponse:
         user_id = g.user.get_id() if g.user else None
         form_data, slc = get_form_data(use_slice_data=True)
-
+        query_context = request.form.get("query_context")
         # Flash the SIP-15 message if the slice is owned by the current user and has not
         # been updated, i.e., is not using the [start, end) interval.
         if (
@@ -771,6 +917,7 @@ class Rabbitai(BaseRabbitaiView):
                 datasource.id,
                 datasource.type,
                 datasource.name,
+                query_context,
             )
         standalone_mode = ReservedUrlParameters.is_standalone_mode()
         dummy_datasource_data: Dict[str, Any] = {
@@ -869,8 +1016,10 @@ class Rabbitai(BaseRabbitaiView):
         datasource_id: int,
         datasource_type: str,
         datasource_name: str,
+        query_context: Optional[str] = None,
     ) -> FlaskResponse:
         """Save or overwrite a slice"""
+
         slice_name = request.args.get("slice_name")
         action = request.args.get("action")
         form_data = get_form_data()[0]
@@ -890,7 +1039,10 @@ class Rabbitai(BaseRabbitaiView):
         slc.viz_type = form_data["viz_type"]
         slc.datasource_type = datasource_type
         slc.datasource_id = datasource_id
+        slc.last_saved_by = g.user
+        slc.last_saved_at = datetime.now()
         slc.slice_name = slice_name
+        slc.query_context = query_context
 
         if action == "saveas" and slice_add_perm:
             ChartDAO.save(slc)
@@ -1006,6 +1158,7 @@ class Rabbitai(BaseRabbitaiView):
         self, db_id: int, schema: str, substr: str, force_refresh: str = "false"
     ) -> FlaskResponse:
         """Endpoint to fetch the list of tables for given database"""
+
         # Guarantees database filtering by security access
         query = db.session.query(Database)
         query = DatabaseFilter("id", SQLAInterface(Database, db.session)).apply(
@@ -1161,7 +1314,7 @@ class Rabbitai(BaseRabbitaiView):
     @has_access_api
     @event_logger.log_this
     @expose("/save_dash/<int:dashboard_id>/", methods=["GET", "POST"])
-    def save_dash( self, dashboard_id: int) -> FlaskResponse:
+    def save_dash(self, dashboard_id: int) -> FlaskResponse:
         """Save a dashboard's metadata"""
         session = db.session()
         dash = session.query(Dashboard).get(dashboard_id)
@@ -1467,12 +1620,12 @@ class Rabbitai(BaseRabbitaiView):
     @has_access_api
     @event_logger.log_this
     @expose("/created_dashboards/<int:user_id>/", methods=["GET"])
-    def created_dashboards( self, user_id: int) -> FlaskResponse:
+    def created_dashboards(self, user_id: int) -> FlaskResponse:
         Dash = Dashboard
         qry = (
             db.session.query(Dash)
             .filter(
-                or_(
+                or_(  # pylint: disable=comparison-with-callable
                     Dash.created_by_fk == user_id, Dash.changed_by_fk == user_id
                 )
             )
@@ -1545,7 +1698,7 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/created_slices", methods=["GET"])
     @expose("/created_slices/<int:user_id>/", methods=["GET"])
-    def created_slices(self, user_id: Optional[int] = None) -> FlaskResponse:
+    def created_slices( self, user_id: Optional[int] = None) -> FlaskResponse:
         """List of slices created by this user"""
         if not user_id:
             user_id = g.user.get_id()
@@ -1784,10 +1937,12 @@ class Rabbitai(BaseRabbitaiView):
     ) -> FlaskResponse:
         """
         Server side rendering for a dashboard
+
         :param dashboard_id_or_slug: identifier for dashboard. used in the decorators
         :param add_extra_log_payload: added by `log_this_with_manual_updates`, set a default value to appease pylint
         :param dashboard: added by `check_dashboard_access`
         """
+
         if not dashboard:
             abort(404)
 
@@ -1848,7 +2003,7 @@ class Rabbitai(BaseRabbitaiView):
     @has_access
     @expose("/sync_druid/", methods=["POST"])
     @event_logger.log_this
-    def sync_druid_source(self) -> FlaskResponse:
+    def sync_druid_source(self) -> FlaskResponse:  # pylint: disable=no-self-use
         """Syncs the druid datasource in main db with the provided config.
 
         The endpoint takes 3 arguments:
@@ -1909,7 +2064,7 @@ class Rabbitai(BaseRabbitaiView):
     @has_access
     @expose("/get_or_create_table/", methods=["POST"])
     @event_logger.log_this
-    def sqllab_table_viz(self) -> FlaskResponse:
+    def sqllab_table_viz(self) -> FlaskResponse:  # pylint: disable=no-self-use
         """Gets or creates a table object with attributes passed to the API.
 
         It expects the json with params:
@@ -1950,16 +2105,29 @@ class Rabbitai(BaseRabbitaiView):
     @has_access
     @expose("/sqllab_viz/", methods=["POST"])
     @event_logger.log_this
-    def sqllab_viz(self) -> FlaskResponse:
+    def sqllab_viz(self) -> FlaskResponse:  # pylint: disable=no-self-use
         data = json.loads(request.form["data"])
         try:
             table_name = data["datasourceName"]
             database_id = data["dbId"]
         except KeyError:
-            return json_error_response("Missing required fields", status=400)
+            raise RabbitaiGenericErrorException(
+                __(
+                    "One or more required fields are missing in the request. Please try "
+                    "again, and if the problem persists conctact your administrator."
+                ),
+                status=400,
+            )
         database = db.session.query(Database).get(database_id)
         if not database:
-            return json_error_response("Database not found", status=400)
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__("The database was not found."),
+                    error_type=RabbitaiErrorType.DATABASE_NOT_FOUND_ERROR,
+                    level=ErrorLevel.ERROR,
+                ),
+                status=404,
+            )
         table = (
             db.session.query(SqlaTable)
             .filter_by(database_id=database_id, table_name=table_name)
@@ -2022,7 +2190,14 @@ class Rabbitai(BaseRabbitaiView):
             stats_logger.incr(
                 f"deprecated.{self.__class__.__name__}.select_star.database_not_found"
             )
-            return json_error_response("Not found", 404)
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__("The database was not found."),
+                    error_type=RabbitaiErrorType.DATABASE_NOT_FOUND_ERROR,
+                    level=ErrorLevel.ERROR,
+                ),
+                status=404,
+            )
         schema = utils.parse_js_uri_path_item(schema, eval_undefined=True)
         table_name = utils.parse_js_uri_path_item(table_name)  # type: ignore
         if not self.appbuilder.sm.can_access_table(database, Table(table_name, schema)):
@@ -2035,7 +2210,18 @@ class Rabbitai(BaseRabbitaiView):
                 table_name,
                 schema,
             )
-            return json_error_response("Not found", 404)
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__(
+                        "You are not authorized to fetch samples from this table. If "
+                        "you think this is an error, please reach out to your "
+                        "administrator."
+                    ),
+                    error_type=RabbitaiErrorType.QUERY_SECURITY_ACCESS_ERROR,
+                    level=ErrorLevel.ERROR,
+                ),
+                status=403,
+            )
         stats_logger.incr(f"deprecated.{self.__class__.__name__}.select_star.success")
         return json_success(
             database.select_star(
@@ -2047,9 +2233,7 @@ class Rabbitai(BaseRabbitaiView):
     @expose("/estimate_query_cost/<int:database_id>/", methods=["POST"])
     @expose("/estimate_query_cost/<int:database_id>/<schema>/", methods=["POST"])
     @event_logger.log_this
-    def estimate_query_cost(
-        self, database_id: int, schema: Optional[str] = None
-    ) -> FlaskResponse:
+    def estimate_query_cost(self, database_id: int, schema: Optional[str] = None) -> FlaskResponse:
         mydb = db.session.query(Database).get(database_id)
 
         sql = json.loads(request.form.get("sql", '""'))
@@ -2100,7 +2284,13 @@ class Rabbitai(BaseRabbitaiView):
         of rows returned.
         """
         if not results_backend:
-            return json_error_response("Results backend isn't configured")
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__("Results backend is not configured."),
+                    error_type=RabbitaiErrorType.RESULTS_BACKEND_NOT_CONFIGURED_ERROR,
+                    level=ErrorLevel.ERROR,
+                )
+            )
 
         read_from_results_backend_start = now_as_float()
         blob = results_backend.get(key)
@@ -2109,39 +2299,81 @@ class Rabbitai(BaseRabbitaiView):
             now_as_float() - read_from_results_backend_start,
         )
         if not blob:
-            return json_error_response(
-                "Data could not be retrieved. " "You may want to re-run the query.",
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__(
+                        "Data could not be retrieved from the results backend. You "
+                        "need to re-run the original query."
+                    ),
+                    error_type=RabbitaiErrorType.RESULTS_BACKEND_ERROR,
+                    level=ErrorLevel.ERROR,
+                ),
                 status=410,
             )
 
         query = db.session.query(Query).filter_by(results_key=key).one_or_none()
         if query is None:
-            return json_error_response(
-                "Data could not be retrieved. You may want to re-run the query.",
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__(
+                        "The query associated with these results could not be find. "
+                        "You need to re-run the original query."
+                    ),
+                    error_type=RabbitaiErrorType.RESULTS_BACKEND_ERROR,
+                    level=ErrorLevel.ERROR,
+                ),
                 status=404,
             )
 
         try:
             query.raise_for_access()
         except RabbitaiSecurityException as ex:
-            return json_errors_response([ex.error], status=403)
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__(
+                        "You are not authorized to see this query. If you think this "
+                        "is an error, please reach out to your administrator."
+                    ),
+                    error_type=RabbitaiErrorType.QUERY_SECURITY_ACCESS_ERROR,
+                    level=ErrorLevel.ERROR,
+                ),
+                status=403,
+            ) from ex
 
         payload = utils.zlib_decompress(blob, decode=not results_backend_use_msgpack)
         try:
             obj = _deserialize_results_payload(
                 payload, query, cast(bool, results_backend_use_msgpack)
             )
-        except SerializationError:
-            return json_error_response(
-                __("Data could not be deserialized. You may want to re-run the query."),
+        except SerializationError as ex:
+            raise RabbitaiErrorException(
+                RabbitaiError(
+                    message=__(
+                        "Data could not be deserialized from the results backend. The "
+                        "storage format might have changed, rendering the old data "
+                        "stake. You need to re-run the original query."
+                    ),
+                    error_type=RabbitaiErrorType.RESULTS_BACKEND_ERROR,
+                    level=ErrorLevel.ERROR,
+                ),
                 status=404,
-            )
+            ) from ex
 
         if "rows" in request.args:
             try:
                 rows = int(request.args["rows"])
-            except ValueError:
-                return json_error_response("Invalid `rows` argument", status=400)
+            except ValueError as ex:
+                raise RabbitaiErrorException(
+                    RabbitaiError(
+                        message=__(
+                            "The provided `rows` argument is not a valid integer."
+                        ),
+                        error_type=RabbitaiErrorType.INVALID_PAYLOAD_SCHEMA_ERROR,
+                        level=ErrorLevel.ERROR,
+                    ),
+                    status=400,
+                ) from ex
+
             obj = apply_display_max_row_limit(obj, rows)
 
         return json_success(
@@ -2176,6 +2408,10 @@ class Rabbitai(BaseRabbitaiView):
                 str(client_id),
             )
             return self.json_response("OK")
+
+        if not sql_lab.cancel_query(query, g.user.username if g.user else None):
+            raise RabbitaiCancelQueryException("Could not cancel query")
+
         query.status = QueryStatus.STOPPED
         db.session.commit()
 
@@ -2293,15 +2529,21 @@ class Rabbitai(BaseRabbitaiView):
                 )
         except Exception as ex:  # pylint: disable=broad-except
             logger.exception("Query %i: %s", query.id, str(ex))
-            msg = _(
-                "Failed to start remote query on a worker. "
-                "Tell your administrator to verify the availability of "
-                "the message queue."
+
+            message = __("Failed to start remote query on a worker.")
+            error = RabbitaiError(
+                message=message,
+                error_type=RabbitaiErrorType.ASYNC_WORKERS_ERROR,
+                level=ErrorLevel.ERROR,
             )
+            error_payload = dataclasses.asdict(error)
+
+            query.set_extra_json_key("errors", [error_payload])
             query.status = QueryStatus.FAILED
-            query.error_message = msg
+            query.error_message = message
             session.commit()
-            return json_error_response("{}".format(msg))
+
+            raise RabbitaiErrorException(error)
 
         # Update saved query with execution info from the query execution
         QueryDAO.update_saved_query_exec_info(query_id)
@@ -2373,7 +2615,14 @@ class Rabbitai(BaseRabbitaiView):
             raise RabbitaiGenericDBErrorException(utils.error_msg_from_exception(ex))
 
         if data.get("status") == QueryStatus.FAILED:
+            # new error payload with rich context
+            if data["errors"]:
+                raise RabbitaiErrorsException(
+                    [RabbitaiError(**params) for params in data["errors"]]
+                )
+            # old string-only error message
             raise RabbitaiGenericDBErrorException(data["error"])
+
         return json_success(payload)
 
     @has_access_api
@@ -2390,6 +2639,7 @@ class Rabbitai(BaseRabbitaiView):
         self, query_params: Dict[str, Any], log_params: Optional[Dict[str, Any]] = None
     ) -> FlaskResponse:
         """Runs arbitrary sql and returns data as json"""
+
         # Collect Values
         database_id: int = cast(int, query_params.get("database_id"))
         schema: str = cast(str, query_params.get("schema"))
@@ -2414,17 +2664,42 @@ class Rabbitai(BaseRabbitaiView):
             CtasMethod, query_params.get("ctas_method", CtasMethod.TABLE)
         )
         tmp_table_name: str = cast(str, query_params.get("tmp_table_name"))
-        client_id: str = cast(
-            str, query_params.get("client_id") or utils.shortid()[:10]
-        )
+        client_id: str = cast(str, query_params.get("client_id"))
+        client_id_or_short_id: str = cast(str, client_id or utils.shortid()[:10])
         sql_editor_id: str = cast(str, query_params.get("sql_editor_id"))
         tab_name: str = cast(str, query_params.get("tab"))
         status: str = QueryStatus.PENDING if async_flag else QueryStatus.RUNNING
+        user_id: int = g.user.get_id() if g.user else None
 
         session = db.session()
+
+        # check to see if this query is already running
+        query = (
+            session.query(Query)
+            .filter_by(
+                client_id=client_id, user_id=user_id, sql_editor_id=sql_editor_id
+            )
+            .one_or_none()
+        )
+        if query is not None and query.status in [
+            QueryStatus.RUNNING,
+            QueryStatus.PENDING,
+            QueryStatus.TIMED_OUT,
+        ]:
+            # return the existing query
+            payload = json.dumps(
+                {"query": query.to_dict()}, default=utils.json_int_dttm_ser
+            )
+            return json_success(payload)
+
         mydb = session.query(Database).get(database_id)
         if not mydb:
-            return json_error_response("Database with id %i is missing.", database_id)
+            raise RabbitaiGenericErrorException(
+                __(
+                    "The database referenced in this query was not found. Please "
+                    "contact an administrator for further assistance or try again."
+                )
+            )
 
         # Set tmp_schema_name for CTA
         # TODO(bkyryliuk): consider parsing, splitting tmp_schema_name from
@@ -2449,8 +2724,8 @@ class Rabbitai(BaseRabbitaiView):
             sql_editor_id=sql_editor_id,
             tmp_table_name=tmp_table_name,
             tmp_schema_name=tmp_schema_name,
-            user_id=g.user.get_id() if g.user else None,
-            client_id=client_id,
+            user_id=user_id,
+            client_id=client_id_or_short_id,
         )
         try:
             session.add(query)
@@ -2460,18 +2735,25 @@ class Rabbitai(BaseRabbitaiView):
         except SQLAlchemyError as ex:
             logger.error("Errors saving query details %s", str(ex), exc_info=True)
             session.rollback()
-            raise Exception(_("Query record was not created as expected."))
+            query_id = None
         if not query_id:
-            raise Exception(_("Query record was not created as expected."))
+            raise RabbitaiGenericErrorException(
+                __(
+                    "The query record was not created as expected. Please "
+                    "contact an administrator for further assistance or try again."
+                )
+            )
 
         logger.info("Triggering query_id: %i", query_id)
 
         try:
             query.raise_for_access()
         except RabbitaiSecurityException as ex:
+            query.set_extra_json_key("errors", [dataclasses.asdict(ex.error)])
             query.status = QueryStatus.FAILED
+            query.error_message = ex.error.message
             session.commit()
-            return json_errors_response([ex.error], status=403)
+            raise RabbitaiErrorException(ex.error, status=403) from ex
 
         try:
             template_processor = get_template_processor(
@@ -2484,8 +2766,11 @@ class Rabbitai(BaseRabbitaiView):
             query.status = QueryStatus.FAILED
             session.commit()
             raise RabbitaiTemplateParamsErrorException(
-                utils.error_msg_from_exception(ex)
-            )
+                message=__(
+                    'The query contains one or more malformed template parameters. Please check your query and confirm that all template parameters are surround by double braces, for example, "{{ ds }}". Then, try running your query again.'
+                ),
+                error=RabbitaiErrorType.INVALID_TEMPLATE_PARAMS_ERROR,
+            ) from ex
 
         if is_feature_enabled("ENABLE_TEMPLATE_PROCESSING"):
             # pylint: disable=protected-access
@@ -2503,6 +2788,7 @@ class Rabbitai(BaseRabbitaiView):
                     )
                     + " "
                     + PARAMETER_MISSING_ERR,
+                    error=RabbitaiErrorType.MISSING_TEMPLATE_PARAMS_ERROR,
                     extra={
                         "undefined_parameters": list(undefined_parameters),
                         "template_parameters": template_params,
@@ -2601,7 +2887,9 @@ class Rabbitai(BaseRabbitaiView):
             "exported_format": "csv",
         }
         event_rep = repr(event_info)
-        logger.info("CSV exported: %s", event_rep, extra={"rabbitai_event": event_info})
+        logger.debug(
+            "CSV exported: %s", event_rep, extra={"rabbitai_event": event_info}
+        )
         return response
 
     @api
@@ -2609,7 +2897,7 @@ class Rabbitai(BaseRabbitaiView):
     @has_access
     @event_logger.log_this
     @expose("/fetch_datasource_metadata")
-    def fetch_datasource_metadata(self) -> FlaskResponse:
+    def fetch_datasource_metadata(self) -> FlaskResponse:  # pylint: disable=no-self-use
         """
         Fetch the datasource metadata.
 
@@ -2665,7 +2953,7 @@ class Rabbitai(BaseRabbitaiView):
     @has_access
     @event_logger.log_this
     @expose("/search_queries")
-    def search_queries(self) -> FlaskResponse:
+    def search_queries(self) -> FlaskResponse:  # pylint: disable=no-self-use
         """
         Search for previously run sqllab queries. Used for Sqllab Query Search
         page /rabbitai/sqllab#search.
@@ -2675,6 +2963,7 @@ class Rabbitai(BaseRabbitaiView):
 
         :returns: Response with list of sql query dicts
         """
+
         if security_manager.can_access_all_queries():
             search_user_id = request.args.get("user_id")
         elif request.args.get("user_id") is not None:
@@ -2729,6 +3018,7 @@ class Rabbitai(BaseRabbitaiView):
 
     @app.errorhandler(500)
     def show_traceback(self) -> FlaskResponse:
+        """显示跟踪错误。"""
         return (
             render_template("rabbitai/traceback.html", error_msg=get_error_msg()),
             500,
@@ -2737,7 +3027,8 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/welcome/")
     def welcome(self) -> FlaskResponse:
-        """Personalized welcome page"""
+        """个性化欢迎页面"""
+
         if not g.user or not g.user.get_id():
             if conf.get("PUBLIC_ROLE_LIKE_GAMMA", False) or conf["PUBLIC_ROLE_LIKE"]:
                 return self.render_template("rabbitai/public_welcome.html")
@@ -2768,12 +3059,13 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/profile/<username>/")
     def profile(self, username: str) -> FlaskResponse:
-        """User profile page"""
+        """查询显示用户配置页面。"""
+
         user = (
             db.session.query(ab_models.User).filter_by(username=username).one_or_none()
         )
         if not user:
-            abort(404, description=f"User: {username} does not exist.")
+            abort(404, description=f"用户: {username} 不存在。")
 
         payload = {
             "user": bootstrap_user_data(user, include_perms=True),
@@ -2791,6 +3083,13 @@ class Rabbitai(BaseRabbitaiView):
 
     @staticmethod
     def _get_sqllab_tabs(user_id: int) -> Dict[str, Any]:
+        """
+        获取指定用户的SQL工具选项卡。
+
+        :param user_id: 用户标识。
+        :return:
+        """
+
         # send list of tab state ids
         tabs_state = (
             db.session.query(TabState.id, TabState.label)
@@ -2838,7 +3137,8 @@ class Rabbitai(BaseRabbitaiView):
     @event_logger.log_this
     @expose("/sqllab/", methods=["GET", "POST"])
     def sqllab(self) -> FlaskResponse:
-        """SQL Editor"""
+        """返回SQL 编辑器。"""
+
         payload = {
             "defaultDbId": config["SQLLAB_DEFAULT_DBID"],
             "common": common_bootstrap_payload(),
@@ -2866,6 +3166,8 @@ class Rabbitai(BaseRabbitaiView):
     @expose("/sqllab/history/", methods=["GET"])
     @event_logger.log_this
     def sqllab_history(self) -> FlaskResponse:
+        """处理SQL工具历史记录。"""
+
         if not is_feature_enabled("ENABLE_REACT_CRUD_VIEWS"):
             return redirect("/rabbitai/sqllab#search", code=307)
 
@@ -2880,6 +3182,7 @@ class Rabbitai(BaseRabbitaiView):
         This method exposes an API endpoint to
         get the schema access control settings for csv upload in this database
         """
+
         if not request.args.get("db_id"):
             return json_error_response("No database is allowed for your csv upload")
 
@@ -2898,7 +3201,7 @@ class Rabbitai(BaseRabbitaiView):
                 database, schemas_allowed, False
             )
             return self.json_response(schemas_allowed_processed)
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             logger.exception(ex)
             return json_error_response(
                 "Failed to fetch schemas allowed for csv upload in this database! "

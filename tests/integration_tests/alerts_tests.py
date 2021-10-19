@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 """Unit tests for alerting in Superset"""
 import json
 import logging
@@ -22,25 +6,25 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy.orm import Session
 
-from superset import db
-from superset.exceptions import SupersetException
-from superset.models.alerts import Alert, AlertLog, SQLObservation
-from superset.models.slice import Slice
-from superset.tasks.alerts.observer import observe
-from superset.tasks.alerts.validator import (
+from rabbitai import db
+from rabbitai.exceptions import SupersetException
+from rabbitai.models.alerts import Alert, AlertLog, SQLObservation
+from rabbitai.models.slice import Slice
+from rabbitai.tasks.alerts.observer import observe
+from rabbitai.tasks.alerts.validator import (
     AlertValidatorType,
     check_validator,
     not_null_validator,
     operator_validator,
 )
-from superset.tasks.schedules import (
+from rabbitai.tasks.schedules import (
     AlertState,
     deliver_alert,
     evaluate_alert,
     validate_observations,
 )
-from superset.utils import core as utils
-from superset.views.alerts import (
+from rabbitai.utils import core as utils
+from rabbitai.views.alerts import (
     AlertLogModelView,
     AlertModelView,
     AlertObservationModelView,
@@ -85,7 +69,7 @@ def create_alert(
         active=True,
         crontab="* * * * *",
         slice_id=db_session.query(Slice).all()[0].id,
-        recipients="recipient1@superset.com",
+        recipients="recipient1@rabbitai.com",
         slack_channel="#test_channel",
         sql=sql,
         database_id=utils.get_example_database().id,
@@ -154,7 +138,7 @@ def test_alert_observer_error_msg(setup_database, description, query):
     assert alert.observations[-1].error_msg is not None
 
 
-@patch("superset.tasks.schedules.deliver_alert")
+@patch("rabbitai.tasks.schedules.deliver_alert")
 def test_evaluate_alert(mock_deliver_alert, setup_database):
     db_session = setup_database
 
@@ -330,10 +314,10 @@ def test_validate_observations(setup_database):
     assert validate_observations(alert4.id, alert4.label, db_session) is True
 
 
-@patch("superset.tasks.slack_util.WebClient.files_upload")
-@patch("superset.tasks.schedules.send_email_smtp")
-@patch("superset.tasks.schedules._get_url_path")
-@patch("superset.utils.screenshots.ChartScreenshot.compute_and_cache")
+@patch("rabbitai.tasks.slack_util.WebClient.files_upload")
+@patch("rabbitai.tasks.schedules.send_email_smtp")
+@patch("rabbitai.tasks.schedules._get_url_path")
+@patch("rabbitai.utils.screenshots.ChartScreenshot.compute_and_cache")
 def test_deliver_alert_screenshot(
     screenshot_mock, url_mock, email_mock, file_upload_mock, setup_database
 ):
@@ -347,7 +331,7 @@ def test_deliver_alert_screenshot(
     # TODO: fix AlertModelView.show url call from test
     url_mock.side_effect = [
         f"http://0.0.0.0:8080/alerts/show/{alert.id}",
-        f"http://0.0.0.0:8080/superset/slice/{alert.slice_id}/",
+        f"http://0.0.0.0:8080/rabbitai/slice/{alert.slice_id}/",
     ]
 
     deliver_alert(alert.id, dbsession)
@@ -360,7 +344,7 @@ def test_deliver_alert_screenshot(
         f"*Result*: {alert.observations[-1].value}\n"
         f"*Reason*: {alert.observations[-1].value} {alert.pretty_config}\n"
         f"<http://0.0.0.0:8080/alerts/show/{alert.id}"
-        f"|View Alert Details>\n<http://0.0.0.0:8080/superset/slice/{alert.slice_id}/"
+        f"|View Alert Details>\n<http://0.0.0.0:8080/rabbitai/slice/{alert.slice_id}/"
         "|*Explore in Superset*>",
         "title": f"[Alert] {alert.label}",
     }

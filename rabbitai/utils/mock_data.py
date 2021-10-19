@@ -8,13 +8,14 @@ import random
 import string
 import sys
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, cast, Dict, List, Optional, Type
+from typing import Any, Callable, cast, Dict, Iterator, List, Optional, Type
 from uuid import uuid4
 
 import sqlalchemy.sql.sqltypes
 import sqlalchemy_utils
 from flask_appbuilder import Model
 from sqlalchemy import Column, inspect, MetaData, Table
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from sqlalchemy.sql.visitors import VisitableType
@@ -54,6 +55,9 @@ days_range = (MAXIMUM_DATE - MINIMUM_DATE).days
 
 # pylint: disable=too-many-return-statements, too-many-branches
 def get_type_generator(sqltype: sqlalchemy.sql.sqltypes) -> Callable[[], Any]:
+    if isinstance(sqltype, sqlalchemy.dialects.mysql.types.TINYINT):
+        return lambda: random.choice([0, 1])
+
     if isinstance(
         sqltype, (sqlalchemy.sql.sqltypes.INTEGER, sqlalchemy.sql.sqltypes.Integer)
     ):
@@ -68,7 +72,7 @@ def get_type_generator(sqltype: sqlalchemy.sql.sqltypes) -> Callable[[], Any]:
         length = random.randrange(sqltype.length or 255)
         length = max(8, length)  # for unique values
         length = min(100, length)  # for FAB perms
-        return lambda: "".join(random.choices(string.printable, k=length))
+        return lambda: "".join(random.choices(string.ascii_letters, k=length))
 
     if isinstance(
         sqltype, (sqlalchemy.sql.sqltypes.TEXT, sqlalchemy.sql.sqltypes.Text)
@@ -76,7 +80,7 @@ def get_type_generator(sqltype: sqlalchemy.sql.sqltypes) -> Callable[[], Any]:
         length = random.randrange(65535)
         # "practicality beats purity"
         length = max(length, 2048)
-        return lambda: "".join(random.choices(string.printable, k=length))
+        return lambda: "".join(random.choices(string.ascii_letters, k=length))
 
     if isinstance(
         sqltype, (sqlalchemy.sql.sqltypes.BOOLEAN, sqlalchemy.sql.sqltypes.Boolean)
@@ -115,7 +119,7 @@ def get_type_generator(sqltype: sqlalchemy.sql.sqltypes) -> Callable[[], Any]:
 
     if isinstance(sqltype, sqlalchemy.sql.sqltypes.JSON):
         return lambda: {
-            "".join(random.choices(string.printable, k=8)): random.randrange(65535)
+            "".join(random.choices(string.ascii_letters, k=8)): random.randrange(65535)
             for _ in range(10)
         }
 
@@ -132,6 +136,9 @@ def get_type_generator(sqltype: sqlalchemy.sql.sqltypes) -> Callable[[], Any]:
     if isinstance(sqltype, sqlalchemy_utils.types.uuid.UUIDType):
         return uuid4
 
+    if isinstance(sqltype, postgresql.base.UUID):
+        return lambda: str(uuid4())
+
     if isinstance(sqltype, sqlalchemy.sql.sqltypes.BLOB):
         length = random.randrange(sqltype.length or 255)
         return lambda: os.urandom(length)
@@ -139,7 +146,7 @@ def get_type_generator(sqltype: sqlalchemy.sql.sqltypes) -> Callable[[], Any]:
     logger.warning(
         "Unknown type %s. Please add it to `get_type_generator`.", type(sqltype)
     )
-    return lambda: "UNKNOWN TYPE"
+    return lambda: b"UNKNOWN TYPE"
 
 
 def add_data(
@@ -181,11 +188,11 @@ def add_data(
     metadata.create_all(engine)
 
     if not append:
-        # pylint: disable=no-value-for-parameter (sqlalchemy/issues/4656)
+        # pylint: disable=no-value-for-parameter # sqlalchemy/issues/4656
         engine.execute(table.delete())
 
     data = generate_data(columns, num_rows)
-    # pylint: disable=no-value-for-parameter (sqlalchemy/issues/4656)
+    # pylint: disable=no-value-for-parameter # sqlalchemy/issues/4656
     engine.execute(table.insert(), data)
 
 
@@ -211,10 +218,11 @@ def generate_column_data(column: ColumnInfo, num_rows: int) -> List[Any]:
     return [gen() for _ in range(num_rows)]
 
 
-def add_sample_rows(session: Session, model: Type[Model], count: int) -> List[Model]:
+def add_sample_rows(
+    session: Session, model: Type[Model], count: int
+) -> Iterator[Model]:
     """
     Add entities of a given model.
-
     :param Model model: a Rabbitai/FAB model
     :param int count: how many entities to generate and insert
     """
@@ -224,7 +232,6 @@ def add_sample_rows(session: Session, model: Type[Model], count: int) -> List[Mo
     relationships = inspector.relationships.items()
     samples = session.query(model).limit(count).all() if relationships else []
 
-    entities: List[Model] = []
     max_primary_key: Optional[int] = None
     for i in range(count):
         sample = samples[i % len(samples)] if samples else None
@@ -255,10 +262,8 @@ def add_sample_rows(session: Session, model: Type[Model], count: int) -> List[Mo
             else:
                 kwargs[column.name] = generate_value(column)
 
-        entities.append(model(**kwargs))
-
-    session.add_all(entities)
-    return entities
+        entity = model(**kwargs)
+        yield entity
 
 
 def get_valid_foreign_key(column: Column) -> Any:

@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 # pylint: disable=invalid-name, no-self-use
 """Unit tests for Sql Lab"""
@@ -23,15 +7,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pyhive.exc import DatabaseError
 
-from superset import app
-from superset.sql_validators import SQLValidationAnnotation
-from superset.sql_validators.base import BaseSQLValidator
-from superset.sql_validators.postgres import PostgreSQLValidator
-from superset.sql_validators.presto_db import (
+from rabbitai import app
+from rabbitai.sql_validators import SQLValidationAnnotation
+from rabbitai.sql_validators.base import BaseSQLValidator
+from rabbitai.sql_validators.postgres import PostgreSQLValidator
+from rabbitai.sql_validators.presto_db import (
     PrestoDBSQLValidator,
     PrestoSQLValidationError,
 )
-from superset.utils.core import get_example_database
+from rabbitai.utils.core import get_example_database
 
 from .base_tests import SupersetTestCase
 
@@ -64,9 +48,9 @@ class TestSqlValidatorEndpoint(SupersetTestCase):
         self.assertIn("error", resp)
         self.assertIn("no SQL validator is configured", resp["error"])
 
-    @patch("superset.views.core.get_validator_by_name")
+    @patch("rabbitai.views.core.get_validator_by_name")
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         PRESTO_TEST_FEATURE_FLAGS,
         clear=True,
     )
@@ -97,9 +81,9 @@ class TestSqlValidatorEndpoint(SupersetTestCase):
         self.assertEqual(1, len(resp))
         self.assertIn("expected,", resp[0]["message"])
 
-    @patch("superset.views.core.get_validator_by_name")
+    @patch("rabbitai.views.core.get_validator_by_name")
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         PRESTO_TEST_FEATURE_FLAGS,
         clear=True,
     )
@@ -153,7 +137,7 @@ class TestPrestoValidator(SupersetTestCase):
         "message": "your query isn't how I like it",
     }
 
-    @patch("superset.sql_validators.presto_db.g")
+    @patch("rabbitai.sql_validators.presto_db.g")
     def test_validator_success(self, flask_g):
         flask_g.user.username = "nobody"
         sql = "SELECT 1 FROM default.notarealtable"
@@ -163,7 +147,7 @@ class TestPrestoValidator(SupersetTestCase):
 
         self.assertEqual([], errors)
 
-    @patch("superset.sql_validators.presto_db.g")
+    @patch("rabbitai.sql_validators.presto_db.g")
     def test_validator_db_error(self, flask_g):
         flask_g.user.username = "nobody"
         sql = "SELECT 1 FROM default.notarealtable"
@@ -175,7 +159,7 @@ class TestPrestoValidator(SupersetTestCase):
         with self.assertRaises(PrestoSQLValidationError):
             self.validator.validate(sql, schema, self.database)
 
-    @patch("superset.sql_validators.presto_db.g")
+    @patch("rabbitai.sql_validators.presto_db.g")
     def test_validator_unexpected_error(self, flask_g):
         flask_g.user.username = "nobody"
         sql = "SELECT 1 FROM default.notarealtable"
@@ -187,7 +171,7 @@ class TestPrestoValidator(SupersetTestCase):
         with self.assertRaises(Exception):
             self.validator.validate(sql, schema, self.database)
 
-    @patch("superset.sql_validators.presto_db.g")
+    @patch("rabbitai.sql_validators.presto_db.g")
     def test_validator_query_error(self, flask_g):
         flask_g.user.username = "nobody"
         sql = "SELECT 1 FROM default.notarealtable"

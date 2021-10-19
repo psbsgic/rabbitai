@@ -1,4 +1,6 @@
-"""作业的计划执行相关模型"""
+# -*- coding: utf-8 -*-
+
+"""作业的计划执行模型"""
 
 import json
 import textwrap
@@ -25,7 +27,6 @@ from rabbitai.models.helpers import AuditMixinNullable
 
 metadata = Model.metadata
 
-
 alert_owner = Table(
     "alert_owner",
     metadata,
@@ -33,26 +34,22 @@ alert_owner = Table(
     Column("user_id", Integer, ForeignKey("ab_user.id")),
     Column("alert_id", Integer, ForeignKey("alerts.id")),
 )
-"""更改提醒拥有者数据表"""
+"""更改提醒拥有者数据表，多对多中间表。"""
 
 
 class Alert(Model, AuditMixinNullable):
-    """更改提醒对象关系模型。"""
+    """更改提醒对象关系模型，通过电子邮件发送切片/仪表板的调度。"""
 
     __tablename__ = "alerts"
-
-    # region 列定义
 
     id = Column(Integer, primary_key=True)
     label = Column(String(150), nullable=False)
     active = Column(Boolean, default=True, index=True)
     crontab = Column(String(50), nullable=False)
-
     alert_type = Column(String(50))
     owners = relationship(security_manager.user_model, secondary=alert_owner)
     recipients = Column(Text)
     slack_channel = Column(Text)
-
     log_retention = Column(Integer, default=90)
     grace_period = Column(Integer, default=60 * 60 * 24)
 
@@ -93,14 +90,12 @@ class Alert(Model, AuditMixinNullable):
             backref=backref("sql_observers", cascade="all, delete-orphan"),
         )
 
-    # endregion
-
     def get_last_observation(self) -> Optional[Any]:
         observations = list(
             db.session.query(SQLObservation)
-            .filter_by(alert_id=self.id)
-            .order_by(SQLObservation.dttm.desc())
-            .limit(1)
+                .filter_by(alert_id=self.id)
+                .order_by(SQLObservation.dttm.desc())
+                .limit(1)
         )
 
         if observations:
@@ -126,7 +121,7 @@ class Alert(Model, AuditMixinNullable):
 
 
 class AlertLog(Model):
-    """更改提醒日志对象关系模型。"""
+    """更改提醒日志对象关系模型，跟踪与警报相关的操作"""
 
     __tablename__ = "alert_logs"
 
@@ -144,7 +139,7 @@ class AlertLog(Model):
 
 
 class SQLObservation(Model):
-    """更改提醒观察对象关系模型。"""
+    """跟踪收集的警报观察结果。"""
 
     __tablename__ = "sql_observations"
 

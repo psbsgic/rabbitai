@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask_babel import lazy_gettext as _
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import NoSuchModuleError
@@ -5,17 +7,24 @@ from sqlalchemy.exc import NoSuchModuleError
 from rabbitai.errors import ErrorLevel, RabbitaiError, RabbitaiErrorType
 from rabbitai.exceptions import RabbitaiSecurityException
 
-# list of unsafe SQLAlchemy dialects
+# 不安全的 SQLAlchemy 方言列表
 BLOCKLIST = {
-    # sqlite creates a local DB, which allows mapping server's filesystem
+    # sqlite 创建一个本地数据库，它允许映射服务器文件系统
     "sqlite",
-    # shillelagh allows opening local files (eg, 'SELECT * FROM "csv:///etc/passwd"')
+    # shillelagh 允许打开本地文件(如, 'SELECT * FROM "csv:///etc/passwd"')
     "shillelagh",
     "shillelagh+apsw",
 }
 
 
 def check_sqlalchemy_uri(uri: URL) -> None:
+    """
+    检查指定 SQLAlchemy 数据库连接地址的合法性。
+
+    :param uri: SQLAlchemy 数据库连接地址。
+    :return:
+    """
+
     if uri.drivername in BLOCKLIST:
         try:
             dialect = uri.get_dialect().__name__

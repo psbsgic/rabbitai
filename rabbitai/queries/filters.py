@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Any
 
 from flask import g
@@ -8,7 +10,7 @@ from rabbitai.models.sql_lab import Query
 from rabbitai.views.base import BaseFilter
 
 
-class QueryFilter(BaseFilter):  # pylint: disable=too-few-public-methods
+class QueryFilter(BaseFilter):
     def apply(self, query: BaseQuery, value: Any) -> BaseQuery:
         """
         Filter queries to only those owned by current user. If

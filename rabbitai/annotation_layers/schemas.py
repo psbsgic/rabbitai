@@ -15,13 +15,11 @@ openapi_spec_methods_override = {
     "put": {"put": {"description": "Update an Annotation layer"}},
     "delete": {"delete": {"description": "Delete Annotation layer"}},
 }
-"""OpenAPI规范方法重写，Json格式字符串"""
 
 get_delete_ids_schema = {"type": "array", "items": {"type": "integer"}}
-"""获取删除标识的结构。"""
 
-annotation_layer_name = "注释层名称"
-annotation_layer_descr = "为该注释层给定描述信息"
+annotation_layer_name = "The annotation layer name"
+annotation_layer_descr = "Give a description for this annotation layer"
 
 
 class AnnotationLayerPostSchema(Schema):

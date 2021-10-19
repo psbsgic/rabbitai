@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 #
 # This file is included in the final Docker image and SHOULD be overridden when
 # deploying the image to prod. Settings configured here are intended for use in local
 # development environments. Also note that rabbitai_config_docker.py is imported
 # as a final step as a means to override "defaults" configured here
 #
+
 import logging
 import os
 from datetime import timedelta
@@ -37,6 +40,7 @@ DATABASE_PORT = get_env_variable("DATABASE_PORT")
 DATABASE_DB = get_env_variable("DATABASE_DB")
 
 # The SQLAlchemy connection string.
+"""
 SQLALCHEMY_DATABASE_URI = "%s://%s:%s@%s:%s/%s" % (
     DATABASE_DIALECT,
     DATABASE_USER,
@@ -45,6 +49,8 @@ SQLALCHEMY_DATABASE_URI = "%s://%s:%s@%s:%s/%s" % (
     DATABASE_PORT,
     DATABASE_DB,
 )
+"""
+SQLALCHEMY_DATABASE_URI = f"{DATABASE_DIALECT}://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_DB}"
 
 REDIS_HOST = get_env_variable("REDIS_HOST")
 REDIS_PORT = get_env_variable("REDIS_PORT")

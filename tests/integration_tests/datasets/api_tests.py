@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # pylint: disable=too-many-public-methods, invalid-name
 """Unit tests for Superset"""
 import json
@@ -28,16 +12,16 @@ import pytest
 import yaml
 from sqlalchemy.sql import func
 
-from superset.connectors.sqla.models import SqlaTable, SqlMetric, TableColumn
-from superset.dao.exceptions import (
+from rabbitai.connectors.sqla.models import SqlaTable, SqlMetric, TableColumn
+from rabbitai.dao.exceptions import (
     DAOCreateFailedError,
     DAODeleteFailedError,
     DAOUpdateFailedError,
 )
-from superset.extensions import db, security_manager
-from superset.models.core import Database
-from superset.utils.core import backend, get_example_database, get_main_database
-from superset.utils.dict_import_export import export_to_dict
+from rabbitai.extensions import db, security_manager
+from rabbitai.models.core import Database
+from rabbitai.utils.core import backend, get_example_database, get_main_database
+from rabbitai.utils.dict_import_export import export_to_dict
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.conftest import CTAS_SCHEMA_NAME
 from tests.integration_tests.fixtures.birth_names_dashboard import (
@@ -540,7 +524,7 @@ class TestDatasetApi(SupersetTestCase):
         rv = self.post_assert_metric(uri, table_data, "post")
         assert rv.status_code == 422
 
-    @patch("superset.datasets.dao.DatasetDAO.create")
+    @patch("rabbitai.datasets.dao.DatasetDAO.create")
     def test_create_dataset_sqlalchemy_error(self, mock_dao_create):
         """
         Dataset API: Test create dataset sqlalchemy error
@@ -932,7 +916,7 @@ class TestDatasetApi(SupersetTestCase):
         db.session.delete(ab_user)
         db.session.commit()
 
-    @patch("superset.datasets.dao.DatasetDAO.update")
+    @patch("rabbitai.datasets.dao.DatasetDAO.update")
     def test_update_dataset_sqlalchemy_error(self, mock_dao_update):
         """
         Dataset API: Test update dataset sqlalchemy error
@@ -992,7 +976,7 @@ class TestDatasetApi(SupersetTestCase):
         db.session.delete(dataset)
         db.session.commit()
 
-    @patch("superset.datasets.dao.DatasetDAO.delete")
+    @patch("rabbitai.datasets.dao.DatasetDAO.delete")
     def test_delete_dataset_sqlalchemy_error(self, mock_dao_delete):
         """
         Dataset API: Test delete dataset sqlalchemy error
@@ -1057,7 +1041,7 @@ class TestDatasetApi(SupersetTestCase):
         assert rv.status_code == 403
 
     @pytest.mark.usefixtures("create_datasets")
-    @patch("superset.datasets.dao.DatasetDAO.delete")
+    @patch("rabbitai.datasets.dao.DatasetDAO.delete")
     def test_delete_dataset_column_fail(self, mock_dao_delete):
         """
         Dataset API: Test delete dataset column
@@ -1125,7 +1109,7 @@ class TestDatasetApi(SupersetTestCase):
         assert rv.status_code == 403
 
     @pytest.mark.usefixtures("create_datasets")
-    @patch("superset.datasets.dao.DatasetDAO.delete")
+    @patch("rabbitai.datasets.dao.DatasetDAO.delete")
     def test_delete_dataset_metric_fail(self, mock_dao_delete):
         """
         Dataset API: Test delete dataset metric
@@ -1282,7 +1266,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         birth_names_dataset = self.get_birth_names_dataset()
         # TODO: fix test for presto
-        # debug with dump: https://github.com/apache/superset/runs/1092546855
+        # debug with dump: https://github.com/apache/rabbitai/runs/1092546855
         if birth_names_dataset.database.backend in {"presto", "hive"}:
             return
 
@@ -1334,7 +1318,7 @@ class TestDatasetApi(SupersetTestCase):
         assert rv.status_code == 404
 
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"VERSIONED_EXPORT": True},
         clear=True,
     )
@@ -1345,7 +1329,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         birth_names_dataset = self.get_birth_names_dataset()
         # TODO: fix test for presto
-        # debug with dump: https://github.com/apache/superset/runs/1092546855
+        # debug with dump: https://github.com/apache/rabbitai/runs/1092546855
         if birth_names_dataset.database.backend in {"presto", "hive"}:
             return
 
@@ -1361,7 +1345,7 @@ class TestDatasetApi(SupersetTestCase):
         assert is_zipfile(buf)
 
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"VERSIONED_EXPORT": True},
         clear=True,
     )
@@ -1378,7 +1362,7 @@ class TestDatasetApi(SupersetTestCase):
         assert rv.status_code == 404
 
     @patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"VERSIONED_EXPORT": True},
         clear=True,
     )

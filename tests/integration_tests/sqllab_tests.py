@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Sql Lab"""
 import json
@@ -24,28 +8,28 @@ from celery.exceptions import SoftTimeLimitExceeded
 from parameterized import parameterized
 from random import random
 from unittest import mock
-from superset.extensions import db
+from rabbitai.extensions import db
 import prison
 
-from superset import db, security_manager
-from superset.connectors.sqla.models import SqlaTable
-from superset.db_engine_specs import BaseEngineSpec
-from superset.db_engine_specs.hive import HiveEngineSpec
-from superset.db_engine_specs.presto import PrestoEngineSpec
-from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.exceptions import SupersetErrorException
-from superset.models.core import Database
-from superset.models.sql_lab import LimitingFactor, Query, SavedQuery
-from superset.result_set import SupersetResultSet
-from superset.sql_lab import (
+from rabbitai import db, security_manager
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.db_engine_specs import BaseEngineSpec
+from rabbitai.db_engine_specs.hive import HiveEngineSpec
+from rabbitai.db_engine_specs.presto import PrestoEngineSpec
+from rabbitai.errors import ErrorLevel, SupersetError, SupersetErrorType
+from rabbitai.exceptions import SupersetErrorException
+from rabbitai.models.core import Database
+from rabbitai.models.sql_lab import LimitingFactor, Query, SavedQuery
+from rabbitai.result_set import SupersetResultSet
+from rabbitai.sql_lab import (
     cancel_query,
     execute_sql_statements,
     execute_sql_statement,
     get_sql_results,
     SqlLabException,
 )
-from superset.sql_parse import CtasMethod
-from superset.utils.core import (
+from rabbitai.sql_parse import CtasMethod
+from rabbitai.utils.core import (
     backend,
     datetime_to_epoch,
     get_example_database,
@@ -188,7 +172,7 @@ class TestSqlLab(SupersetTestCase):
             return
 
         with mock.patch(
-            "superset.views.core.get_cta_schema_name",
+            "rabbitai.views.core.get_cta_schema_name",
             lambda d, u, s, sql: f"{u.username}_database",
         ):
             old_allow_ctas = examples_db.allow_ctas
@@ -311,22 +295,22 @@ class TestSqlLab(SupersetTestCase):
         self.run_some_queries()
 
         # Not logged in, should error out
-        resp = self.client.get("/superset/queries/0")
+        resp = self.client.get("/rabbitai/queries/0")
         # Redirects to the login page
         self.assertEqual(401, resp.status_code)
 
         # Admin sees queries
         self.login("admin")
-        data = self.get_json_resp("/superset/queries/0")
+        data = self.get_json_resp("/rabbitai/queries/0")
         self.assertEqual(2, len(data))
-        data = self.get_json_resp("/superset/queries/0.0")
+        data = self.get_json_resp("/rabbitai/queries/0.0")
         self.assertEqual(2, len(data))
 
         # Run 2 more queries
         self.run_sql("SELECT * FROM birth_names LIMIT 1", client_id="client_id_4")
         self.run_sql("SELECT * FROM birth_names LIMIT 2", client_id="client_id_5")
         self.login("admin")
-        data = self.get_json_resp("/superset/queries/0")
+        data = self.get_json_resp("/rabbitai/queries/0")
         self.assertEqual(4, len(data))
 
         now = datetime.now() + timedelta(days=1)
@@ -339,12 +323,12 @@ class TestSqlLab(SupersetTestCase):
         db.session.commit()
 
         data = self.get_json_resp(
-            "/superset/queries/{}".format(float(datetime_to_epoch(now)) - 1000)
+            "/rabbitai/queries/{}".format(float(datetime_to_epoch(now)) - 1000)
         )
         self.assertEqual(1, len(data))
 
         self.logout()
-        resp = self.client.get("/superset/queries/0")
+        resp = self.client.get("/rabbitai/queries/0")
         # Redirects to the login page
         self.assertEqual(401, resp.status_code)
 
@@ -355,13 +339,13 @@ class TestSqlLab(SupersetTestCase):
 
         # Test search queries on database Id
         data = self.get_json_resp(
-            f"/superset/search_queries?database_id={examples_dbid}"
+            f"/rabbitai/search_queries?database_id={examples_dbid}"
         )
         self.assertEqual(3, len(data))
         db_ids = [k["dbId"] for k in data]
         self.assertEqual([examples_dbid for i in range(3)], db_ids)
 
-        resp = self.get_resp("/superset/search_queries?database_id=-1")
+        resp = self.get_resp("/rabbitai/search_queries?database_id=-1")
         data = json.loads(resp)
         self.assertEqual(0, len(data))
 
@@ -371,13 +355,13 @@ class TestSqlLab(SupersetTestCase):
 
         # Test search queries on user Id
         user_id = security_manager.find_user("admin").id
-        data = self.get_json_resp("/superset/search_queries?user_id={}".format(user_id))
+        data = self.get_json_resp("/rabbitai/search_queries?user_id={}".format(user_id))
         self.assertEqual(2, len(data))
         user_ids = {k["userId"] for k in data}
         self.assertEqual(set([user_id]), user_ids)
 
         user_id = security_manager.find_user("gamma_sqllab").id
-        resp = self.get_resp("/superset/search_queries?user_id={}".format(user_id))
+        resp = self.get_resp("/rabbitai/search_queries?user_id={}".format(user_id))
         data = json.loads(resp)
         self.assertEqual(1, len(data))
         self.assertEqual(data[0]["userId"], user_id)
@@ -387,13 +371,13 @@ class TestSqlLab(SupersetTestCase):
         self.run_some_queries()
         self.login("admin")
         # Test search queries on status
-        resp = self.get_resp("/superset/search_queries?status=success")
+        resp = self.get_resp("/rabbitai/search_queries?status=success")
         data = json.loads(resp)
         self.assertEqual(2, len(data))
         states = [k["state"] for k in data]
         self.assertEqual(["success", "success"], states)
 
-        resp = self.get_resp("/superset/search_queries?status=failed")
+        resp = self.get_resp("/rabbitai/search_queries?status=failed")
         data = json.loads(resp)
         self.assertEqual(1, len(data))
         self.assertEqual(data[0]["state"], "failed")
@@ -401,7 +385,7 @@ class TestSqlLab(SupersetTestCase):
     def test_search_query_on_text(self):
         self.run_some_queries()
         self.login("admin")
-        url = "/superset/search_queries?search_text=birth"
+        url = "/rabbitai/search_queries?search_text=birth"
         data = self.get_json_resp(url)
         self.assertEqual(2, len(data))
         self.assertIn("birth", data[0]["sql"])
@@ -419,7 +403,7 @@ class TestSqlLab(SupersetTestCase):
         from_time = "from={}".format(int(first_query_time))
         to_time = "to={}".format(int(second_query_time))
         params = [from_time, to_time]
-        resp = self.get_resp("/superset/search_queries?" + "&".join(params))
+        resp = self.get_resp("/rabbitai/search_queries?" + "&".join(params))
         data = json.loads(resp)
         self.assertEqual(2, len(data))
 
@@ -432,7 +416,7 @@ class TestSqlLab(SupersetTestCase):
         self.login("gamma_sqllab")
 
         user_id = security_manager.find_user("gamma_sqllab").id
-        data = self.get_json_resp("/superset/search_queries")
+        data = self.get_json_resp("/rabbitai/search_queries")
 
         self.assertEqual(1, len(data))
         user_ids = {k["userId"] for k in data}
@@ -476,7 +460,7 @@ class TestSqlLab(SupersetTestCase):
         payload = {
             "chartType": "dist_bar",
             "datasourceName": f"test_viz_flow_table_{random()}",
-            "schema": "superset",
+            "schema": "rabbitai",
             "columns": [
                 {"is_date": False, "type": "STRING", "name": f"viz_type_{random()}"},
                 {"is_date": False, "type": "OBJECT", "name": f"ccount_{random()}"},
@@ -488,7 +472,7 @@ class TestSqlLab(SupersetTestCase):
             "dbId": examples_dbid,
         }
         data = {"data": json.dumps(payload)}
-        resp = self.get_json_resp("/superset/sqllab_viz/", data=data)
+        resp = self.get_json_resp("/rabbitai/sqllab_viz/", data=data)
         self.assertIn("table_id", resp)
 
         # ensure owner is set correctly
@@ -506,7 +490,7 @@ class TestSqlLab(SupersetTestCase):
         self.login("admin")
         payload = {
             "chartType": "dist_bar",
-            "schema": "superset",
+            "schema": "rabbitai",
             "columns": [
                 {"is_date": False, "type": "STRING", "name": f"viz_type_{random()}"},
                 {"is_date": False, "type": "OBJECT", "name": f"ccount_{random()}"},
@@ -517,7 +501,7 @@ class TestSqlLab(SupersetTestCase):
                 LIMIT 10""",
         }
         data = {"data": json.dumps(payload)}
-        url = "/superset/sqllab_viz/"
+        url = "/rabbitai/sqllab_viz/"
         response = self.client.post(url, data=data, follow_redirects=True)
         assert response.status_code == 400
 
@@ -539,7 +523,7 @@ class TestSqlLab(SupersetTestCase):
         }
 
         data = {"data": json.dumps(payload)}
-        resp = self.get_json_resp("/superset/get_or_create_table/", data=data)
+        resp = self.get_json_resp("/rabbitai/get_or_create_table/", data=data)
         self.assertIn("table_id", resp)
 
         # ensure owner is set correctly
@@ -689,7 +673,7 @@ class TestSqlLab(SupersetTestCase):
 
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     @mock.patch.dict(
-        "superset.extensions.feature_flag_manager._feature_flags",
+        "rabbitai.extensions.feature_flag_manager._feature_flags",
         {"ENABLE_TEMPLATE_PROCESSING": True},
         clear=True,
     )
@@ -720,8 +704,8 @@ class TestSqlLab(SupersetTestCase):
             "undefined_parameters": ["stat"],
         }
 
-    @mock.patch("superset.sql_lab.get_query")
-    @mock.patch("superset.sql_lab.execute_sql_statement")
+    @mock.patch("rabbitai.sql_lab.get_query")
+    @mock.patch("rabbitai.sql_lab.execute_sql_statement")
     def test_execute_sql_statements(self, mock_execute_sql_statement, mock_get_query):
         sql = """
             -- comment
@@ -773,9 +757,9 @@ class TestSqlLab(SupersetTestCase):
             ]
         )
 
-    @mock.patch("superset.sql_lab.results_backend", None)
-    @mock.patch("superset.sql_lab.get_query")
-    @mock.patch("superset.sql_lab.execute_sql_statement")
+    @mock.patch("rabbitai.sql_lab.results_backend", None)
+    @mock.patch("rabbitai.sql_lab.get_query")
+    @mock.patch("rabbitai.sql_lab.execute_sql_statement")
     def test_execute_sql_statements_no_results_backend(
         self, mock_execute_sql_statement, mock_get_query
     ):
@@ -825,8 +809,8 @@ class TestSqlLab(SupersetTestCase):
             },
         )
 
-    @mock.patch("superset.sql_lab.get_query")
-    @mock.patch("superset.sql_lab.execute_sql_statement")
+    @mock.patch("rabbitai.sql_lab.get_query")
+    @mock.patch("rabbitai.sql_lab.execute_sql_statement")
     def test_execute_sql_statements_ctas(
         self, mock_execute_sql_statement, mock_get_query
     ):

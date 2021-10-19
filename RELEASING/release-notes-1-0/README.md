@@ -16,9 +16,9 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-# Release Notes for Rabbitai 1.0.0
+# Release Notes for Superset 1.0.0
 
-Rabbitai 1.0 is a ***huge milestone*** for Apache Rabbitai. This release holds a higher quality standard than any previous version and raises the bar for releases to come. Rabbitai 1.0 improves on usability and delivers a new set of long awaited features focused on five major themes:
+Superset 1.0 is a ***huge milestone*** for Apache Superset. This release holds a higher quality standard than any previous version and raises the bar for releases to come. Superset 1.0 improves on usability and delivers a new set of long awaited features focused on five major themes:
 - [**User Experience**](#user-experience)
 - [**Developer Experience**](#developer-experience)
 - [**Performance**](#performance)
@@ -27,9 +27,9 @@ Rabbitai 1.0 is a ***huge milestone*** for Apache Rabbitai. This release holds a
 - [**Stability and Bugfixes**](#stability-and-bugfixes)
 
 # User Experience
-We have taken the Rabbitai user experience to the next level with a much simpler, more intuitive UI.
+We have taken the Superset user experience to the next level with a much simpler, more intuitive UI.
 
-Lists of Charts and Dashboards can be shown in a new format using a **thumbnail grid**. This makes it easier to discover and find Charts and Dashboards, especially when there are a lot of them in your Rabbitai instance.
+Lists of Charts and Dashboards can be shown in a new format using a **thumbnail grid**. This makes it easier to discover and find Charts and Dashboards, especially when there are a lot of them in your Superset instance.
 
 <kbd><img alt="card view" src="media/dashboard_card_view.jpg" width="600"/></kbd>
 
@@ -39,12 +39,12 @@ Visualization controls have been updated to create a more consistent and moderni
 
 Users also now have the ability to create and name a new dataset or update an existing dataset when moving from **SQL Lab** to **Explore**. When going back to SQL Lab, the underlying query for the dataset will be shown, allowing users to easily make changes and update their dataset when moving between SQL Lab and Explore.
 
-The [Rabbitai 1.0 documentation](https://rabbitai.apache.org/docs/intro) has been updated to reflect the current design and functionality.
+The [Superset 1.0 documentation](https://rabbitai.apache.org/docs/intro) has been updated to reflect the current design and functionality.
 
 See related PR highlights [here](#user-experience-1).
 
 # Developer Experience
-Rabbitai 1.0 makes it easier for developers to build, deploy, and maintain Rabbitai functionality. This release is a major milestone in an ongoing effort to **modernize**, **consolidate**, and **simplify** the interface elements of Rabbitai. Highly-used components have been visually updated, refactored to modern component libraries, and integrated with React Storybook for immediate visibility with consolidated test/styles. This improves the developer experience and creates a more consistent and modern aesthetic for the user.
+Superset 1.0 makes it easier for developers to build, deploy, and maintain Superset functionality. This release is a major milestone in an ongoing effort to **modernize**, **consolidate**, and **simplify** the interface elements of Superset. Highly-used components have been visually updated, refactored to modern component libraries, and integrated with React Storybook for immediate visibility with consolidated test/styles. This improves the developer experience and creates a more consistent and modern aesthetic for the user.
 
 The **REST API** continues to see improvement as well, with new endpoints and improvements to existing endpoints. More details [here](https://rabbitai.apache.org/docs/rest-api).
 
@@ -57,12 +57,12 @@ The Swagger interface can be used to explore and try out these changes.
 See related PR highlights [here](#developer-experience-1).
 
 # Performance
-This the most performant Rabbitai release to date, with enhanced scalability and efficiency. In addition to many small tweaks, **Charts** and **SQL Lab** both now support **asynchronous data loading**. Users will **feel** this improvement when loading query results, especially when there are many charts in a Dashboard or when queries are long running.
+This the most performant Superset release to date, with enhanced scalability and efficiency. In addition to many small tweaks, **Charts** and **SQL Lab** both now support **asynchronous data loading**. Users will **feel** this improvement when loading query results, especially when there are many charts in a Dashboard or when queries are long running.
 
 See related PR highlights [here](#performance-1).
 
 # New Features
-Rabbitai 1.0 includes a slew of new features and other enhancements. **New visualization plugin architecture** will make it easier to build, test, style and configure custom visualizations for Rabbitai. **Dynamic viz plugin** imports will allow Rabbitai to load data viz plugins, allowing developers to more easily use or share their custom plugins and **load custom plugins on-demand** from anywhere on the web. Rabbitai has also adopted [**Apache ECharts**](https://echarts.apache.org/en/index.html) as the core library for new visualizations.
+Superset 1.0 includes a slew of new features and other enhancements. **New visualization plugin architecture** will make it easier to build, test, style and configure custom visualizations for Superset. **Dynamic viz plugin** imports will allow Superset to load data viz plugins, allowing developers to more easily use or share their custom plugins and **load custom plugins on-demand** from anywhere on the web. Superset has also adopted [**Apache ECharts**](https://echarts.apache.org/en/index.html) as the core library for new visualizations.
 
 <kbd><img alt="timeseries prophet" src="media/echarts_timeseries_prophet.png" width="600"/></kbd>
 
@@ -70,7 +70,7 @@ Along with the **Echarts integration**, we are also introducing a better set of 
 
 <kbd><img alt="annotations" src="media/annotations.png" width="600"/></kbd>
 
-A redesigned home screen provides a **personalized landing page** that the user sees when they log into Rabbitai, improving discoverability. It shows items relevant to the user (Charts, Dashboards, Saved Queries, etc) and serves as a hub to discover content and access recent items quickly.
+A redesigned home screen provides a **personalized landing page** that the user sees when they log into Superset, improving discoverability. It shows items relevant to the user (Charts, Dashboards, Saved Queries, etc) and serves as a hub to discover content and access recent items quickly.
 
 <kbd><img alt="home screen" src="media/home_screen.png" width="600"/></kbd>
 
@@ -164,7 +164,7 @@ Below is a highlight of the PRs included in this update. The full list is much l
 - docs: Fix typo in installing from scratch (#[11026](https://github.com/apache/incubator-rabbitai/pull/11026))
 - docs: add a roadmap page pointing to SIP-53 (#[11169](https://github.com/apache/incubator-rabbitai/pull/11169))
 - docs: add note about migration in #11098 to Changelog (#[11256](https://github.com/apache/incubator-rabbitai/pull/11256))
-- docs: Add utair to list of companies using Apache Rabbitai (#[11261](https://github.com/apache/incubator-rabbitai/pull/11261))
+- docs: Add utair to list of companies using Apache Superset (#[11261](https://github.com/apache/incubator-rabbitai/pull/11261))
 - docs: don't link to database engine pages (#[11242](https://github.com/apache/incubator-rabbitai/pull/11242))
 - docs: Added Dremio to rabbitai home page (#[11231](https://github.com/apache/incubator-rabbitai/pull/11231))
 - docs: typo (#[11152](https://github.com/apache/incubator-rabbitai/pull/11152))
@@ -200,7 +200,7 @@ Below is a highlight of the PRs included in this update. The full list is much l
 ### Improved Data Visualizations
 - feat: add event and interval annotation support to chart data ep (#[11665](https://github.com/apache/incubator-rabbitai/pull/11665))
 - feat: add ECharts BoxPlot chart (#[11199](https://github.com/apache/incubator-rabbitai/pull/11199))
-- feat(sankey-viz): allow sort by metric and bump superset-ui packages (#[11626](https://github.com/apache/incubator-rabbitai/pull/11626))
+- feat(sankey-viz): allow sort by metric and bump rabbitai-ui packages (#[11626](https://github.com/apache/incubator-rabbitai/pull/11626))
 
 ### Discovery and Navigation
 - chore: Add home link to navbar (#[11851](https://github.com/apache/incubator-rabbitai/pull/11851))

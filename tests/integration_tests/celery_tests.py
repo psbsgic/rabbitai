@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # isort:skip_file
 """Unit tests for Superset Celery worker"""
 import datetime
@@ -35,15 +19,15 @@ from flask import current_app
 from tests.integration_tests.base_tests import login
 from tests.integration_tests.conftest import CTAS_SCHEMA_NAME
 from tests.integration_tests.test_app import app
-from superset import db, sql_lab
-from superset.result_set import SupersetResultSet
-from superset.db_engine_specs.base import BaseEngineSpec
-from superset.errors import ErrorLevel, SupersetErrorType
-from superset.extensions import celery_app
-from superset.models.helpers import QueryStatus
-from superset.models.sql_lab import Query
-from superset.sql_parse import ParsedQuery, CtasMethod
-from superset.utils.core import get_example_database, backend
+from rabbitai import db, sql_lab
+from rabbitai.result_set import SupersetResultSet
+from rabbitai.db_engine_specs.base import BaseEngineSpec
+from rabbitai.errors import ErrorLevel, SupersetErrorType
+from rabbitai.extensions import celery_app
+from rabbitai.models.helpers import QueryStatus
+from rabbitai.models.sql_lab import Query
+from rabbitai.sql_parse import ParsedQuery, CtasMethod
+from rabbitai.utils.core import get_example_database, backend
 
 CELERY_SLEEP_TIME = 6
 QUERY = "SELECT name FROM birth_names LIMIT 1"
@@ -94,7 +78,7 @@ def run_sql(
     login(test_client, username="admin")
     db_id = get_example_database().id
     resp = test_client.post(
-        "/superset/sql_json/",
+        "/rabbitai/sql_json/",
         json=dict(
             database_id=db_id,
             sql=sql,
@@ -216,7 +200,7 @@ def test_run_sync_query_cta_no_data(setup_sqllab):
 @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
 @pytest.mark.parametrize("ctas_method", [CtasMethod.TABLE, CtasMethod.VIEW])
 @mock.patch(
-    "superset.views.core.get_cta_schema_name", lambda d, u, s, sql: CTAS_SCHEMA_NAME
+    "rabbitai.views.core.get_cta_schema_name", lambda d, u, s, sql: CTAS_SCHEMA_NAME
 )
 def test_run_sync_query_cta_config(setup_sqllab, ctas_method):
     if backend() == "sqlite":
@@ -243,7 +227,7 @@ def test_run_sync_query_cta_config(setup_sqllab, ctas_method):
 @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
 @pytest.mark.parametrize("ctas_method", [CtasMethod.TABLE, CtasMethod.VIEW])
 @mock.patch(
-    "superset.views.core.get_cta_schema_name", lambda d, u, s, sql: CTAS_SCHEMA_NAME
+    "rabbitai.views.core.get_cta_schema_name", lambda d, u, s, sql: CTAS_SCHEMA_NAME
 )
 def test_run_async_query_cta_config(setup_sqllab, ctas_method):
     if backend() == "sqlite":

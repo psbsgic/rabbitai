@@ -1,4 +1,3 @@
-
 let socketCount = 0;
 let messageCount = 0;
 let lastMessage;

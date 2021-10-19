@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 import {
   t,
   SupersetTheme,
@@ -146,6 +128,7 @@ enum ActionType {
   extraEditorChange,
   addTableCatalogSheet,
   removeTableCatalogSheet,
+  queryChange,
 }
 
 interface DBReducerPayloadType {
@@ -163,6 +146,7 @@ type DBReducerActionType =
         | ActionType.extraEditorChange
         | ActionType.extraInputChange
         | ActionType.textChange
+        | ActionType.queryChange
         | ActionType.inputChange
         | ActionType.editorChange
         | ActionType.parametersChange;
@@ -205,7 +189,8 @@ function dbReducer(
   const trimmedState = {
     ...(state || {}),
   };
-  let query = '';
+  let query = {};
+  let query_input = '';
   let deserializeExtraJSON = {};
   let extra_json: DatabaseObject['extra_json'];
 
@@ -318,6 +303,15 @@ function dbReducer(
         ...trimmedState,
         [action.payload.name]: action.payload.json,
       };
+    case ActionType.queryChange:
+      return {
+        ...trimmedState,
+        parameters: {
+          ...trimmedState.parameters,
+          query: Object.fromEntries(new URLSearchParams(action.payload.value)),
+        },
+        query_input: action.payload.value,
+      };
     case ActionType.textChange:
       return {
         ...trimmedState,
@@ -339,6 +333,12 @@ function dbReducer(
         };
       }
 
+      // convert query to a string and store in query_input
+      query = action.payload?.parameters?.query || {};
+      query_input = Object.entries(query)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('&');
+
       if (
         action.payload.backend === 'bigquery' &&
         action.payload.configuration_method ===
@@ -350,11 +350,12 @@ function dbReducer(
           configuration_method: action.payload.configuration_method,
           extra_json: deserializeExtraJSON,
           parameters: {
-            query,
             credentials_info: JSON.stringify(
               action.payload?.parameters?.credentials_info || '',
             ),
+            query,
           },
+          query_input,
         };
       }
 
@@ -376,26 +377,8 @@ function dbReducer(
             name: e,
             value: engineParamsCatalog[e],
           })),
+          query_input,
         } as DatabaseObject;
-      }
-
-      if (action.payload?.parameters?.query) {
-        // convert query into URI params string
-        query = new URLSearchParams(
-          action.payload.parameters.query as string,
-        ).toString();
-
-        return {
-          ...action.payload,
-          encrypted_extra: action.payload.encrypted_extra || '',
-          engine: action.payload.backend || trimmedState.engine,
-          configuration_method: action.payload.configuration_method,
-          extra_json: deserializeExtraJSON,
-          parameters: {
-            ...action.payload.parameters,
-            query,
-          },
-        };
       }
 
       return {
@@ -404,9 +387,8 @@ function dbReducer(
         engine: action.payload.backend || trimmedState.engine,
         configuration_method: action.payload.configuration_method,
         extra_json: deserializeExtraJSON,
-        parameters: {
-          ...action.payload.parameters,
-        },
+        parameters: action.payload.parameters,
+        query_input,
       };
 
     case ActionType.dbSelected:
@@ -484,9 +466,9 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
     addDangerToast,
   );
   const isDynamic = (engine: string | undefined) =>
-    availableDbs?.databases.filter(
+    availableDbs?.databases?.find(
       (DB: DatabaseObject) => DB.backend === engine || DB.engine === engine,
-    )[0].parameters !== undefined;
+    )?.parameters !== undefined;
   const showDBError = validationErrors || dbErrors;
   const isEmpty = (data?: Object | null) =>
     data && Object.keys(data).length === 0;
@@ -538,21 +520,6 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
       await getValidation(dbToUpdate, true);
       if (validationErrors && !isEmpty(validationErrors)) {
         return;
-      }
-
-      if (dbToUpdate?.parameters?.query) {
-        // convert query params into dictionary
-        dbToUpdate.parameters.query = JSON.parse(
-          `{"${decodeURI((dbToUpdate?.parameters?.query as string) || '')
-            .replace(/"/g, '\\"')
-            .replace(/&/g, '","')
-            .replace(/=/g, '":"')}"}`,
-        );
-      } else if (
-        dbToUpdate?.parameters?.query === '' &&
-        'query' in dbModel.parameters.properties
-      ) {
-        dbToUpdate.parameters.query = {};
       }
 
       const engine = dbToUpdate.backend || dbToUpdate.engine;
@@ -847,25 +814,36 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
     setTabKey(key);
   };
 
-  const renderStepTwoAlert = () =>
-    db?.engine && (
-      <StyledAlertMargin>
-        <Alert
-          closable={false}
-          css={(theme: SupersetTheme) => antDAlertStyles(theme)}
-          type="info"
-          showIcon
-          message={
-            engineSpecificAlertMapping[db.engine]?.message ||
-            connectionAlert?.DEFAULT?.message
-          }
-          description={
-            engineSpecificAlertMapping[db.engine]?.description ||
-            connectionAlert?.DEFAULT?.description
-          }
-        />
-      </StyledAlertMargin>
+  const renderStepTwoAlert = () => {
+    const { hostname } = window.location;
+    let ipAlert = connectionAlert?.REGIONAL_IPS?.default || '';
+    const regionalIPs = connectionAlert?.REGIONAL_IPS || {};
+    Object.entries(regionalIPs).forEach(([regex, ipRange]) => {
+      if (regex.match(hostname)) {
+        ipAlert = ipRange;
+      }
+    });
+    return (
+      db?.engine && (
+        <StyledAlertMargin>
+          <Alert
+            closable={false}
+            css={(theme: SupersetTheme) => antDAlertStyles(theme)}
+            type="info"
+            showIcon
+            message={
+              engineSpecificAlertMapping[db.engine]?.message ||
+              connectionAlert?.DEFAULT?.message
+            }
+            description={
+              engineSpecificAlertMapping[db.engine]?.description ||
+              connectionAlert?.DEFAULT?.description + ipAlert
+            }
+          />
+        </StyledAlertMargin>
+      )
     );
+  };
 
   const errorAlert = () => {
     if (
@@ -958,6 +936,12 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
         }
         onChange={({ target }: { target: HTMLInputElement }) =>
           onChange(ActionType.textChange, {
+            name: target.name,
+            value: target.value,
+          })
+        }
+        onQueryChange={({ target }: { target: HTMLInputElement }) =>
+          onChange(ActionType.queryChange, {
             name: target.name,
             value: target.value,
           })
@@ -1079,6 +1063,12 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
               }
               onChange={({ target }: { target: HTMLInputElement }) =>
                 onChange(ActionType.textChange, {
+                  name: target.name,
+                  value: target.value,
+                })
+              }
+              onQueryChange={({ target }: { target: HTMLInputElement }) =>
+                onChange(ActionType.queryChange, {
                   name: target.name,
                   value: target.value,
                 })
@@ -1229,6 +1219,12 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                   onAddTableCatalog={() => {
                     setDB({ type: ActionType.addTableCatalogSheet });
                   }}
+                  onQueryChange={({ target }: { target: HTMLInputElement }) =>
+                    onChange(ActionType.queryChange, {
+                      name: target.name,
+                      value: target.value,
+                    })
+                  }
                   onRemoveTableCatalog={(idx: number) => {
                     setDB({
                       type: ActionType.removeTableCatalogSheet,

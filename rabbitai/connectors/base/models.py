@@ -1,24 +1,26 @@
 import json
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Hashable, List, Optional, Type, Union
+from typing import Any, Dict, Hashable, List, Optional, Set, Type, Union
 
 from flask_appbuilder.security.sqla.models import User
 from sqlalchemy import and_, Boolean, Column, Integer, String, Text
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import foreign, Query, relationship, RelationshipProperty
+from sqlalchemy.orm import foreign, Query, relationship, RelationshipProperty, Session
 
-from rabbitai import security_manager
+from rabbitai import is_feature_enabled, security_manager
 from rabbitai.constants import NULL_STRING
 from rabbitai.models.helpers import AuditMixinNullable, ImportExportMixin, QueryResult
 from rabbitai.models.slice import Slice
 from rabbitai.typing import FilterValue, FilterValues, QueryObjectDict
 from rabbitai.utils import core as utils
+from rabbitai.utils.core import GenericDataType
 
 METRIC_FORM_DATA_PARAMS = [
     "metric",
-    "metrics",
     "metric_2",
+    "metrics",
+    "metrics_b",
     "percent_metrics",
     "secondary_metric",
     "size",
@@ -26,7 +28,6 @@ METRIC_FORM_DATA_PARAMS = [
     "x",
     "y",
 ]
-"""指标表单数据参数名称的列表"""
 
 COLUMN_FORM_DATA_PARAMS = [
     "all_columns",
@@ -37,64 +38,24 @@ COLUMN_FORM_DATA_PARAMS = [
     "order_by_cols",
     "series",
 ]
-"""列表单数据参数名称的列表"""
 
 
 class DatasourceKind(str, Enum):
-    """数据源种类枚举。"""
-
     VIRTUAL = "virtual"
     PHYSICAL = "physical"
 
 
-class BaseDatasource(AuditMixinNullable, ImportExportMixin):
-    """基础数据源模型，一个可查询对象（数据表和数据源）的通用接口。"""
-
-    # region Class field
+class BaseDatasource(
+    AuditMixinNullable, ImportExportMixin
+):  # pylint: disable=too-many-public-methods
+    """A common interface to objects that are queryable
+    (tables and datasources)"""
 
     # ---------------------------------------------------------------
     # class attributes to define when deriving BaseDatasource
     # ---------------------------------------------------------------
     __tablename__: Optional[str] = None  # {connector_name}_datasource
     baselink: Optional[str] = None  # url portion pointing to ModelView endpoint
-    """基础连接，指向视图模型的端点"""
-    owner_class: Optional[User] = None
-    """拥有者类（用户对象类型）"""
-    # Used to do code highlighting when displaying the query in the UI
-    query_language: Optional[str] = None
-    """查询语言，用于高亮度显示"""
-    # Only some datasources support Row Level Security
-    is_rls_supported: bool = False
-    """是否支持行级安全"""
-    sql: Optional[str] = None
-    """SQL字符串"""
-    owners: List[User]
-    """拥有者（用户对象）的列表"""
-    update_from_object_fields: List[str]
-    """依据对象可更新的字段列表"""
-    columns: List["BaseColumn"] = []
-    """列对象的列表"""
-    metrics: List["BaseMetric"] = []
-    """指标对象的列表。"""
-
-    # endregion
-
-    # region Columns
-
-    id = Column(Integer, primary_key=True)
-    description = Column(Text)
-    default_endpoint = Column(Text)
-    is_featured = Column(Boolean, default=False)
-    filter_select_enabled = Column(Boolean, default=False)
-    offset = Column(Integer, default=0)
-    cache_timeout = Column(Integer)
-    params = Column(String(1000))
-    perm = Column(String(1000))
-    schema_perm = Column(String(1000))
-
-    # endregion
-
-    # region property
 
     @property
     def column_class(self) -> Type["BaseColumn"]:
@@ -106,10 +67,36 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
         # link to derivative of BaseMetric
         raise NotImplementedError()
 
+    owner_class: Optional[User] = None
+
+    # Used to do code highlighting when displaying the query in the UI
+    query_language: Optional[str] = None
+
+    # Only some datasources support Row Level Security
+    is_rls_supported: bool = False
+
     @property
     def name(self) -> str:
         # can be a Column or a property pointing to one
         raise NotImplementedError()
+
+    # ---------------------------------------------------------------
+
+    # Columns
+    id = Column(Integer, primary_key=True)
+    description = Column(Text)
+    default_endpoint = Column(Text)
+    is_featured = Column(Boolean, default=False)  # TODO deprecating
+    filter_select_enabled = Column(Boolean, default=is_feature_enabled("UX_BETA"))
+    offset = Column(Integer, default=0)
+    cache_timeout = Column(Integer)
+    params = Column(String(1000))
+    perm = Column(String(1000))
+    schema_perm = Column(String(1000))
+
+    sql: Optional[str] = None
+    owners: List[User]
+    update_from_object_fields: List[str]
 
     @property
     def kind(self) -> DatasourceKind:
@@ -128,6 +115,9 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
                 foreign(Slice.datasource_type) == self.type,
             ),
         )
+
+    columns: List["BaseColumn"] = []
+    metrics: List["BaseMetric"] = []
 
     @property
     def type(self) -> str:
@@ -185,6 +175,13 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
     @property
     def column_formats(self) -> Dict[str, Optional[str]]:
         return {m.metric_name: m.d3format for m in self.metrics if m.d3format}
+
+    def add_missing_metrics(self, metrics: List["BaseMetric"]) -> None:
+        existing_metrics = {m.metric_name for m in self.metrics}
+        for metric in metrics:
+            if metric.metric_name not in existing_metrics:
+                metric.table_id = self.id
+                self.metrics.append(metric)
 
     @property
     def short_data(self) -> Dict[str, Any]:
@@ -257,15 +254,6 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
             "select_star": self.select_star,
         }
 
-    # endregion
-
-    def add_missing_metrics(self, metrics: List["BaseMetric"]) -> None:
-        existing_metrics = {m.metric_name for m in self.metrics}
-        for metric in metrics:
-            if metric.metric_name not in existing_metrics:
-                metric.table_id = self.id
-                self.metrics.append(metric)
-
     def data_for_slices(self, slices: List[Slice]) -> Dict[str, Any]:
         """
         The representation of the datasource containing only the required data
@@ -278,25 +266,34 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
         column_names = set()
         for slc in slices:
             form_data = slc.form_data
-
             # pull out all required metrics from the form_data
-            for param in METRIC_FORM_DATA_PARAMS:
-                for metric in utils.get_iterable(form_data.get(param) or []):
+            for metric_param in METRIC_FORM_DATA_PARAMS:
+                for metric in utils.get_iterable(form_data.get(metric_param) or []):
                     metric_names.add(utils.get_metric_name(metric))
-
                     if utils.is_adhoc_metric(metric):
                         column_names.add(
                             (metric.get("column") or {}).get("column_name")
                         )
 
-            # pull out all required columns from the form_data
-            for filter_ in form_data.get("adhoc_filters") or []:
-                if filter_["clause"] == "WHERE" and filter_.get("subject"):
-                    column_names.add(filter_.get("subject"))
+            # Columns used in query filters
+            column_names.update(
+                filter_["subject"]
+                for filter_ in form_data.get("adhoc_filters") or []
+                if filter_.get("clause") == "WHERE" and filter_.get("subject")
+            )
 
-            for param in COLUMN_FORM_DATA_PARAMS:
-                for column in utils.get_iterable(form_data.get(param) or []):
-                    column_names.add(column)
+            # columns used by Filter Box
+            column_names.update(
+                filter_config["column"]
+                for filter_config in form_data.get("filter_configs") or []
+                if "column" in filter_config
+            )
+
+            column_names.update(
+                column
+                for column_param in COLUMN_FORM_DATA_PARAMS
+                for column in utils.get_iterable(form_data.get(column_param) or [])
+            )
 
         filtered_metrics = [
             metric
@@ -304,12 +301,16 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
             if metric["metric_name"] in metric_names
         ]
 
-        filtered_columns = [
-            column
-            for column in data["columns"]
-            if column["column_name"] in column_names
-        ]
+        filtered_columns: List[Column] = []
+        column_types: Set[GenericDataType] = set()
+        for column in data["columns"]:
+            generic_type = column.get("type_generic")
+            if generic_type is not None:
+                column_types.add(generic_type)
+            if column["column_name"] in column_names:
+                filtered_columns.append(column)
 
+        data["column_types"] = list(column_types)
         del data["description"]
         data.update({"metrics": filtered_metrics})
         data.update({"columns": filtered_columns})
@@ -357,6 +358,8 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
                     return None
                 if value == "<empty string>":
                     return ""
+            if target_column_type == utils.GenericDataType.BOOLEAN:
+                return utils.cast_to_boolean(value)
             return value
 
         if isinstance(values, (list, tuple)):
@@ -457,7 +460,6 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
         connectors, the implementation uses ``update_from_object_fields``
         which can be defined for each connector and
         defines which fields should be synced"""
-
         for attr in self.update_from_object_fields:
             setattr(self, attr, obj.get(attr))
 
@@ -482,7 +484,9 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
             else []
         )
 
-    def get_extra_cache_keys(self, query_obj: QueryObjectDict) -> List[Hashable]:
+    def get_extra_cache_keys(  # pylint: disable=no-self-use
+        self, query_obj: QueryObjectDict  # pylint: disable=unused-argument
+    ) -> List[Hashable]:
         """If a datasource needs to provide additional keys for calculation of
         cache keys, those can be provided via this method
 
@@ -508,16 +512,34 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):
 
         security_manager.raise_for_access(datasource=self)
 
+    @classmethod
+    def get_datasource_by_name(
+        cls, session: Session, datasource_name: str, schema: str, database_name: str
+    ) -> Optional["BaseDatasource"]:
+        raise NotImplementedError()
+
 
 class BaseColumn(AuditMixinNullable, ImportExportMixin):
-    """列对象模型。"""
+    """Interface for column"""
 
     __tablename__: Optional[str] = None  # {connector_name}_column
 
+    id = Column(Integer, primary_key=True)
+    column_name = Column(String(255), nullable=False)
+    verbose_name = Column(String(1024))
+    is_active = Column(Boolean, default=True)
+    type = Column(String(32))
+    groupby = Column(Boolean, default=True)
+    filterable = Column(Boolean, default=True)
+    description = Column(Text)
     is_dttm = None
 
     # [optional] Set this to support import/export functionality
     export_fields: List[Any] = []
+
+    def __repr__(self) -> str:
+        return str(self.column_name)
+
     bool_types = ("BOOL",)
     num_types = (
         "DOUBLE",
@@ -533,20 +555,6 @@ class BaseColumn(AuditMixinNullable, ImportExportMixin):
     )
     date_types = ("DATE", "TIME")
     str_types = ("VARCHAR", "STRING", "CHAR")
-
-    id = Column(Integer, primary_key=True)
-    column_name = Column(String(255), nullable=False)
-    verbose_name = Column(String(1024))
-    is_active = Column(Boolean, default=True)
-    type = Column(String(32))
-    groupby = Column(Boolean, default=True)
-    """是否可用于分类，默认True"""
-    filterable = Column(Boolean, default=True)
-    """是否可用于过滤，默认True"""
-    description = Column(Text)
-
-    def __repr__(self) -> str:
-        return str(self.column_name)
 
     @property
     def is_numeric(self) -> bool:
@@ -601,7 +609,8 @@ class BaseColumn(AuditMixinNullable, ImportExportMixin):
 
 
 class BaseMetric(AuditMixinNullable, ImportExportMixin):
-    """基础指标对象关系模型。"""
+
+    """Interface for Metrics"""
 
     __tablename__: Optional[str] = None  # {connector_name}_metric
 

@@ -1,4 +1,6 @@
-from flask import Markup
+# -*- coding: utf-8 -*-
+
+from markupsafe import Markup
 from flask_babel import lazy_gettext as _
 
 from rabbitai.dashboards.filters import DashboardAccessFilter
@@ -6,7 +8,7 @@ from rabbitai.views.chart.filters import SliceFilter
 
 
 class SliceMixin:
-    """切片混入，定义切片相关的基本属性。"""
+    """切片视图混入类，定义切片视图相关的属性。"""
 
     list_title = _("Charts")
     show_title = _("Show Chart")
@@ -41,8 +43,8 @@ class SliceMixin:
     base_order = ("changed_on", "desc")
     description_columns = {
         "description": Markup(
-            "The content here can be displayed as widget headers in the "
-            "dashboard view. Supports "
+            "该内容显示为仪表盘视图中部件标头。"
+            "支持"
             '<a href="https://daringfireball.net/projects/markdown/"">'
             "markdown</a>"
         ),

@@ -68,7 +68,7 @@ jobs:
       id: push-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: superset-ci
+        ECR_REPOSITORY: rabbitai-ci
         SHA: ${{ steps.get-sha.outputs.sha }}
         IMAGE_TAG: pr-${{ steps.get-pr.outputs.num }}
       run: |

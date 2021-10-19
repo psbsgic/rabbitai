@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
+"""The main config file for Rabbitai
 
-"""
-主配置模块
-
-在该模块中的配置可以通过 PYTHONPATH目录下 提供的 rabbitai_config.py 文件重写。
-在该文件末尾 ``from rabbitai_config import *``。
+All configuration in this file can be overridden by providing a rabbitai_config
+in your PYTHONPATH as there is a ``from rabbitai_config import *``
+at the end of this file.
 """
 
 import imp
@@ -15,7 +13,7 @@ import os
 import re
 import sys
 from collections import OrderedDict
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Union
 
 from cachelib.base import BaseCache
@@ -23,7 +21,8 @@ from celery.schedules import crontab
 from dateutil import tz
 from flask import Blueprint
 from flask_appbuilder.security.manager import AUTH_DB
-from pandas.io.parsers import STR_NA_VALUES
+# from pandas.io.parsers import STR_NA_VALUES
+from pandas._libs.parsers import STR_NA_VALUES
 
 from rabbitai.jinja_context import (  # pylint: disable=unused-import
     BaseTemplateProcessor,
@@ -35,15 +34,15 @@ from rabbitai.utils.encrypt import SQLAlchemyUtilsAdapter
 from rabbitai.utils.log import DBEventLogger
 from rabbitai.utils.logging_configurator import DefaultLoggingConfigurator
 
-# region logger
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from flask_appbuilder.security.sqla import models
+    from flask_appbuilder.security.sqla import models  # pylint: disable=unused-import
 
-    from rabbitai.connectors.sqla.models import (SqlaTable,)
-    from rabbitai.models.core import Database
+    from rabbitai.connectors.sqla.models import (  # pylint: disable=unused-import
+        SqlaTable,
+    )
+    from rabbitai.models.core import Database  # pylint: disable=unused-import
 
 # Realtime stats logger, a StatsD implementation exists
 STATS_LOGGER = DummyStatsLogger()
@@ -51,22 +50,15 @@ EVENT_LOGGER = DBEventLogger()
 
 RABBITAI_LOG_VIEW = True
 
-# endregion
-
-# region BASE_DIR
-
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 if "RABBITAI_HOME" in os.environ:
     DATA_DIR = os.environ["RABBITAI_HOME"]
 else:
     DATA_DIR = os.path.join(os.path.expanduser("~"), ".rabbitai")
 
-# endregion
-
-# region Rabbitai specific config
-
-# region VERSION
-
+# ---------------------------------------------------------
+# Rabbitai specific config
+# ---------------------------------------------------------
 VERSION_INFO_FILE = os.path.join(BASE_DIR, "static", "version_info.json")
 PACKAGE_JSON_FILE = os.path.join(BASE_DIR, "static", "assets", "package.json")
 
@@ -111,8 +103,6 @@ VERSION_STRING = _try_json_readversion(VERSION_INFO_FILE) or _try_json_readversi
 VERSION_SHA_LENGTH = 8
 VERSION_SHA = _try_json_readsha(VERSION_INFO_FILE, VERSION_SHA_LENGTH)
 
-# endregion
-
 # default viz used in chart explorer
 DEFAULT_VIZ_TYPE = "table"
 
@@ -133,7 +123,7 @@ RABBITAI_WEBSERVER_PORT = 8088
 # [load balancer / proxy / envoy / kong / ...] timeout settings.
 # You should also make sure to configure your WSGI server
 # (gunicorn, nginx, apache, ...) timeout setting to be <= to this setting
-RABBITAI_WEBSERVER_TIMEOUT = 60
+RABBITAI_WEBSERVER_TIMEOUT = int(timedelta(minutes=1).total_seconds())
 
 # this 2 settings are used by dashboard period force refresh feature
 # When user choose auto force refresh frequency
@@ -146,16 +136,16 @@ RABBITAI_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
 RABBITAI_DASHBOARD_POSITION_DATA_LIMIT = 65535
 CUSTOM_SECURITY_MANAGER = None
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+# ---------------------------------------------------------
 
-# Your App secret key
+# 秘钥
 SECRET_KEY = "\2\1thisismyscretkey\1\2\\e\\y\\y\\h"
 
-# region SQLAlchemy
-
-# The SQLAlchemy connection string.
-# SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "rabbitai.db")
+# SQLAlchemy 连接字符串。
+SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "rabbitai.db")
+# SQLALCHEMY_DATABASE_URI = 'postgresql://rabbitai:rabbitai@localhost:5432/rabbitai_db'
 # SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:psb123456@localhost/superset'
+# SQLALCHEMY_DATABASE_URI = 'postgresql://username:password@localhost/rabbitai_db'
 
 # In order to hook up a custom password store for all SQLACHEMY connections
 # implement a function that takes a single argument of type 'sqla.engine.url',
@@ -169,16 +159,17 @@ SQLALCHEMY_CUSTOM_PASSWORD_STORE = None
 
 #
 # The EncryptedFieldTypeAdapter is used whenever we're building SqlAlchemy models
-# which include sensitive fields that should be app-encrypted BEFORE sending to the DB.
+# which include sensitive fields that should be app-encrypted BEFORE sending
+# to the DB.
 #
 # Note: the default impl leverages SqlAlchemyUtils' EncryptedType, which defaults
 #  to AES-128 under the covers using the app's SECRET_KEY as key material.
+#
+# pylint: disable=C0103
 SQLALCHEMY_ENCRYPTED_FIELD_TYPE_ADAPTER = SQLAlchemyUtilsAdapter
 
 # The limit of queries fetched for query search
 QUERY_SEARCH_LIMIT = 1000
-
-# endregion
 
 # Flask-WTF flag for CSRF
 WTF_CSRF_ENABLED = True
@@ -200,20 +191,25 @@ SHOW_STACKTRACE = True
 ENABLE_PROXY_FIX = False
 PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 1, "x_prefix": 1}
 
-# endregion
-
-# region GLOBALS FOR APP Builder
-
+# ------------------------------
+# GLOBALS FOR APP Builder
+# ------------------------------
 # Uncomment to setup Your App name
 APP_NAME = "Rabbitai"
 
-# Uncomment to setup an App icon
+# Specify the App icon
 APP_ICON = "/static/assets/images/rabbitai-logo-horiz.png"
 APP_ICON_WIDTH = 126
 
-# Uncomment to specify where clicking the logo would take the user
+# Specify where clicking the logo would take the user
 # e.g. setting it to '/' would take the user to '/rabbitai/welcome/'
 LOGO_TARGET_PATH = None
+
+# Specify tooltip that should appear when hovering over the App Icon/Logo
+LOGO_TOOLTIP = ""
+
+# Specify any text that should appear to the right of the logo
+LOGO_RIGHT_TEXT: Union[Callable[[], str], str] = ""
 
 # Enables SWAGGER UI for rabbitai openapi spec
 # ex: http://localhost:8080/swagger/v1
@@ -240,7 +236,8 @@ DRUID_IS_ACTIVE = False
 # connector.
 DRUID_METADATA_LINKS_ENABLED = True
 
-# region AUTHENTICATION CONFIG
+# ----------------------------------------------------
+# AUTHENTICATION CONFIG
 # ----------------------------------------------------
 # The authentication type
 # AUTH_OID : Is for OpenID
@@ -269,19 +266,17 @@ AUTH_TYPE = AUTH_DB
 #    { 'name': 'Yahoo', 'url': 'https://open.login.yahoo.com/' },
 #    { 'name': 'Flickr', 'url': 'https://www.flickr.com/<username>' },
 
-# endregion
-
-# region Roles config
-
+# ---------------------------------------------------
+# Roles config
+# ---------------------------------------------------
 # Grant public role the same set of permissions as for a selected builtin role.
 # This is useful if one wants to enable anonymous users to view
 # dashboards. Explicit grant on specific datasets is still required.
 PUBLIC_ROLE_LIKE: Optional[str] = None
 
-# endregion
-
-# region Babel config for translations
-
+# ---------------------------------------------------
+# Babel config for translations
+# ---------------------------------------------------
 # Setup default language
 BABEL_DEFAULT_LOCALE = "zh"
 # Your application default translation path
@@ -299,15 +294,15 @@ LANGUAGES = {
     "pt_BR": {"flag": "br", "name": "Brazilian Portuguese"},
     "ru": {"flag": "ru", "name": "Russian"},
     "ko": {"flag": "kr", "name": "Korean"},
+    "sl": {"flag": "si", "name": "Slovenian"},
 }
 # Turning off i18n by default as translation in most languages are
 # incomplete and not well maintained.
 # LANGUAGES = {}
 
-# endregion
-
-# region Feature flags
-
+# ---------------------------------------------------
+# Feature flags
+# ---------------------------------------------------
 # Feature flags that are set by default go here. Their values can be
 # overwritten by those specified under FEATURE_FLAGS in rabbitai_config.py
 # For example, DEFAULT_FEATURE_FLAGS = { 'FOO': True, 'BAR': False } here
@@ -357,6 +352,7 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     "DASHBOARD_NATIVE_FILTERS": False,
     "DASHBOARD_CROSS_FILTERS": False,
     "DASHBOARD_NATIVE_FILTERS_SET": False,
+    "DASHBOARD_FILTERS_EXPERIMENTAL": False,
     "GLOBAL_ASYNC_QUERIES": False,
     "VERSIONED_EXPORT": False,
     # Note that: RowLevelSecurityFilter is only given by default to the Admin role
@@ -380,6 +376,15 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # for report with type 'report' still send with email and slack message with
     # screenshot and link
     "ALERTS_ATTACH_REPORTS": True,
+    # FORCE_DATABASE_CONNECTIONS_SSL is depreciated.
+    "FORCE_DATABASE_CONNECTIONS_SSL": False,
+    # Enabling ENFORCE_DB_ENCRYPTION_UI forces all database connections to be
+    # encrypted before being saved into rabbitai metastore.
+    "ENFORCE_DB_ENCRYPTION_UI": False,
+    # Allow users to export full CSV of table viz type.
+    # This could cause the server to run out of memory or compute.
+    "ALLOW_FULL_CSV_EXPORT": False,
+    "UX_BETA": False,
 }
 
 # Feature flags may also be set via 'RABBITAI_FEATURE_' prefixed environment vars.
@@ -409,10 +414,6 @@ FEATURE_FLAGS: Dict[str, bool] = {}
 #         feature_flags_dict['some_feature'] = g.user and g.user.get_id() == 5
 #     return feature_flags_dict
 GET_FEATURE_FLAGS_FUNC: Optional[Callable[[Dict[str, bool]], Dict[str, bool]]] = None
-
-# endregion
-
-# region color schemes
 
 # EXTRA_CATEGORICAL_COLOR_SCHEMES is used for adding custom categorical color schemes
 # example code for "My custom warm to hot" color scheme
@@ -463,10 +464,8 @@ THEME_OVERRIDES: Dict[str, Any] = {}
 # This is merely a default
 EXTRA_SEQUENTIAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
 
-# endregion
-
-# region Thumbnail config (behind feature flag)
-
+# ---------------------------------------------------
+# Thumbnail config (behind feature flag)
 # Also used by Alerts & Reports
 # ---------------------------------------------------
 THUMBNAIL_SELENIUM_USER = "admin"
@@ -475,16 +474,22 @@ THUMBNAIL_CACHE_CONFIG: CacheConfig = {
     "CACHE_NO_NULL_WARNING": True,
 }
 
-# Used for thumbnails and other api: Time in seconds before selenium
-# times out after trying to locate an element on the page and wait
-# for that element to load for an alert screenshot.
-SCREENSHOT_LOCATE_WAIT = 10
-SCREENSHOT_LOAD_WAIT = 60
+# Time before selenium times out after trying to locate an element on the page and wait
+# for that element to load for a screenshot.
+SCREENSHOT_LOCATE_WAIT = int(timedelta(seconds=10).total_seconds())
+# Time before selenium times out after waiting for all DOM class elements named
+# "loading" are gone.
+SCREENSHOT_LOAD_WAIT = int(timedelta(minutes=1).total_seconds())
+# Selenium destroy retries
+SCREENSHOT_SELENIUM_RETRIES = 5
+# Give selenium an headstart, in seconds
+SCREENSHOT_SELENIUM_HEADSTART = 3
+# Wait for the chart animation, in seconds
+SCREENSHOT_SELENIUM_ANIMATION_WAIT = 5
 
-# endregion
-
-# region Image and file configuration
-
+# ---------------------------------------------------
+# Image and file configuration
+# ---------------------------------------------------
 # The file upload folder, when using models with files
 UPLOAD_FOLDER = BASE_DIR + "/app/static/uploads/"
 UPLOAD_CHUNK_SIZE = 4096
@@ -497,13 +502,9 @@ IMG_UPLOAD_URL = "/static/uploads/"
 # Setup image size default is (300, 200, True)
 # IMG_SIZE = (300, 200, True)
 
-# endregion
-
-# region cache
-
-# Default cache timeout (in seconds), applies to all cache backends unless
-# specifically overridden in each cache config.
-CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24  # 1 day
+# Default cache timeout, applies to all cache backends unless specifically overridden in
+# each cache config.
+CACHE_DEFAULT_TIMEOUT = int(timedelta(days=1).total_seconds())
 
 # Default cache for Rabbitai objects
 CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
@@ -535,10 +536,9 @@ ALLOWED_EXTENSIONS = {*EXCEL_EXTENSIONS, *CSV_EXTENSIONS}
 # note: index option should not be overridden
 CSV_EXPORT = {"encoding": "utf-8"}
 
-# endregion
-
-# region Time grain configurations
-
+# ---------------------------------------------------
+# Time grain configurations
+# ---------------------------------------------------
 # List of time grains to disable in the application (see list of builtin
 # time grains in rabbitai/db_engine_specs.builtin_time_grains).
 # For example: to disable 1 second time grain:
@@ -560,8 +560,6 @@ TIME_GRAIN_ADDONS: Dict[str, str] = {}
 #     }
 # }
 TIME_GRAIN_ADDON_EXPRESSIONS: Dict[str, Dict[str, str]] = {}
-
-# endregion
 
 # ---------------------------------------------------
 # List of viz_types not allowed in your environment
@@ -642,7 +640,7 @@ DISPLAY_MAX_ROW = 10000
 
 # Default row limit for SQL Lab queries. Is overridden by setting a new limit in
 # the SQL Lab UI
-DEFAULT_SQLLAB_LIMIT = 10000
+DEFAULT_SQLLAB_LIMIT = 1000
 
 # Maximum number of tables/views displayed in the dropdown window in SQL Lab.
 MAX_TABLE_NAMES = 3000
@@ -668,8 +666,8 @@ class CeleryConfig:
         "sql_lab.get_sql_results": {"rate_limit": "100/s"},
         "email_reports.send": {
             "rate_limit": "1/s",
-            "time_limit": 120,
-            "soft_time_limit": 150,
+            "time_limit": int(timedelta(seconds=120).total_seconds()),
+            "soft_time_limit": int(timedelta(seconds=150).total_seconds()),
             "ignore_result": True,
         },
     }
@@ -709,22 +707,21 @@ HTTP_HEADERS: Dict[str, Any] = {}
 DEFAULT_DB_ID = None
 
 # Timeout duration for SQL Lab synchronous queries
-SQLLAB_TIMEOUT = 30
+SQLLAB_TIMEOUT = int(timedelta(seconds=30).total_seconds())
 
 # Timeout duration for SQL Lab query validation
-SQLLAB_VALIDATION_TIMEOUT = 10
+SQLLAB_VALIDATION_TIMEOUT = int(timedelta(seconds=10).total_seconds())
 
 # SQLLAB_DEFAULT_DBID
 SQLLAB_DEFAULT_DBID = None
 
-# The MAX duration (in seconds) a query can run for before being killed
-# by celery.
-SQLLAB_ASYNC_TIME_LIMIT_SEC = 60 * 60 * 6
+# The MAX duration a query can run for before being killed by celery.
+SQLLAB_ASYNC_TIME_LIMIT_SEC = int(timedelta(hours=6).total_seconds())
 
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
 # timeout.
-SQLLAB_QUERY_COST_ESTIMATE_TIMEOUT = 10  # seconds
+SQLLAB_QUERY_COST_ESTIMATE_TIMEOUT = int(timedelta(seconds=10).total_seconds())
 # The feature is off by default, and currently only supported in Presto and Postgres.
 # It also need to be enabled on a per-database basis, by adding the key/value pair
 # `cost_estimate_enabled: true` to the database `extra` attribute.
@@ -866,7 +863,7 @@ FLASK_APP_MUTATOR = None
 ENABLE_ACCESS_REQUEST = False
 
 # smtp server configuration
-EMAIL_NOTIFICATIONS = False
+EMAIL_NOTIFICATIONS = False  # all the emails are sent using dryrun
 SMTP_HOST = "localhost"
 SMTP_STARTTLS = True
 SMTP_SSL = False
@@ -892,7 +889,7 @@ FAB_ADD_SECURITY_PERMISSION_VIEWS_VIEW = False
 TROUBLESHOOTING_LINK = ""
 
 # CSRF token timeout, set to None for a token that never expires
-WTF_CSRF_TIME_LIMIT = 60 * 60 * 24 * 7
+WTF_CSRF_TIME_LIMIT = int(timedelta(weeks=1).total_seconds())
 
 # This link should lead to a page with instructions on how to gain access to a
 # Datasource. It will be placed at the bottom of permissions errors.
@@ -908,11 +905,11 @@ BLUEPRINTS: List[Blueprint] = []
 TRACKING_URL_TRANSFORMER = lambda x: x
 
 # Interval between consecutive polls when using Hive Engine
-HIVE_POLL_INTERVAL = 5
+HIVE_POLL_INTERVAL = int(timedelta(seconds=5).total_seconds())
 
 # Interval between consecutive polls when using Presto Engine
-# See here: https://github.com/dropbox/PyHive/blob/8eb0aeab8ca300f3024655419b93dad926c1a351/pyhive/presto.py#L93
-PRESTO_POLL_INTERVAL = 1
+# See here: https://github.com/dropbox/PyHive/blob/8eb0aeab8ca300f3024655419b93dad926c1a351/pyhive/presto.py#L93  # pylint: disable=line-too-long
+PRESTO_POLL_INTERVAL = int(timedelta(seconds=1).total_seconds())
 
 # Allow for javascript controls components
 # this enables programmers to customize certain charts (like the
@@ -970,10 +967,10 @@ ALERT_REPORTS_CRON_WINDOW_SIZE = 59
 ALERT_REPORTS_WORKING_TIME_OUT_KILL = True
 # if ALERT_REPORTS_WORKING_TIME_OUT_KILL is True, set a celery hard timeout
 # Equal to working timeout + ALERT_REPORTS_WORKING_TIME_OUT_LAG
-ALERT_REPORTS_WORKING_TIME_OUT_LAG = 10
+ALERT_REPORTS_WORKING_TIME_OUT_LAG = int(timedelta(seconds=10).total_seconds())
 # if ALERT_REPORTS_WORKING_TIME_OUT_KILL is True, set a celery hard timeout
 # Equal to working timeout + ALERT_REPORTS_WORKING_SOFT_TIME_OUT_LAG
-ALERT_REPORTS_WORKING_SOFT_TIME_OUT_LAG = 1
+ALERT_REPORTS_WORKING_SOFT_TIME_OUT_LAG = int(timedelta(seconds=1).total_seconds())
 # If set to true no notification is sent, the worker will just log a message.
 # Useful for debugging
 ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
@@ -1006,7 +1003,7 @@ EMAIL_REPORTS_CRON_RESOLUTION = 15
 # by celery.
 #
 # Warning: This config key is deprecated and will be removed in version 2.0.0"
-EMAIL_ASYNC_TIME_LIMIT_SEC = 300
+EMAIL_ASYNC_TIME_LIMIT_SEC = int(timedelta(minutes=5).total_seconds())
 
 # Send bcc of all reports to this address. Set to None to disable.
 # This is useful for maintaining an audit trail of all email deliveries.
@@ -1050,9 +1047,8 @@ WEBDRIVER_OPTION_ARGS = ["--headless", "--marionette"]
 WEBDRIVER_BASEURL = "http://0.0.0.0:8080/"
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
-# Time in seconds, selenium will wait for the page to load
-# and render for the email report.
-EMAIL_PAGE_RENDER_WAIT = 30
+# Time selenium will wait for the page to load and render for the email report.
+EMAIL_PAGE_RENDER_WAIT = int(timedelta(seconds=30).total_seconds())
 
 # Send user to a link where they can report bugs
 BUG_REPORT_URL = None
@@ -1083,10 +1079,10 @@ SQL_VALIDATORS_BY_ENGINE = {
 # use the "engine_name" attribute of the corresponding DB engine spec
 # in `rabbitai/db_engine_specs/`.
 PREFERRED_DATABASES: List[str] = [
-    # "PostgreSQL",
-    # "Presto",
-    # "MySQL",
-    # "SQLite",
+    "PostgreSQL",
+    "Presto",
+    "MySQL",
+    "SQLite",
     # etc.
 ]
 
@@ -1109,39 +1105,45 @@ TALISMAN_CONFIG = {
 #     "tables": [["table_name", filters.FilterContains, "rls"]]
 # }
 RLS_FORM_QUERY_REL_FIELDS: Optional[Dict[str, List[List[Any]]]] = None
+"""可以自定义行级安全RLS下拉列表中的表和角色。
+设置后，此dict将分配给`RowLevelSecurityFiltersModelView`上的 `add_form_query_rel_fields` 和“编辑表单查询相关字段”。"""
 
-#
-# Flask session cookie options
+# region Flask session cookie options
 #
 # See https://flask.palletsprojects.com/en/1.1.x/security/#set-cookie-options
 # for details
-SESSION_COOKIE_HTTPONLY = True  # Prevent cookie from being read by frontend JS?
-SESSION_COOKIE_SECURE = False  # Prevent cookie from being transmitted over non-tls?
+#
+SESSION_COOKIE_HTTPONLY = True   # Prevent cookie from being read by frontend JS?
+SESSION_COOKIE_SECURE = False    # Prevent cookie from being transmitted over non-tls?
 SESSION_COOKIE_SAMESITE = "Lax"  # One of [None, 'None', 'Lax', 'Strict']
 
-# Flask configuration variables
-SEND_FILE_MAX_AGE_DEFAULT = 60 * 60 * 24 * 365  # Cache static resources
+# endregion
 
-# URI to database storing the example data, points to
-# SQLALCHEMY_DATABASE_URI by default if set to `None`
+# Cache static resources.
+SEND_FILE_MAX_AGE_DEFAULT = int(timedelta(days=365).total_seconds())
+"""静态资源缓存时间（秒）。"""
+
+# 存储示例数据的数据库地址 URI，如果设置为  `None`，则指向 SQLALCHEMY_DATABASE_URI
 SQLALCHEMY_EXAMPLES_URI = None
+"""存储示例数据的数据库地址 URI，如果设置为  `None`，则指向 SQLALCHEMY_DATABASE_URI"""
 
-# Some sqlalchemy connection strings can open Rabbitai to security risks.
-# Typically these should not be allowed.
+# Some sqlalchemy connection strings can open Rabbitai to security risks. Typically these should not be allowed.
 PREVENT_UNSAFE_DB_CONNECTIONS = True
+"""某些sqlalchemy连接字符串可能会使Rabbitai面临安全风险。通常，这些都是不允许的。"""
 
-# Path used to store SSL certificates that are generated when using custom certs.
-# Defaults to temporary directory.
+# Path used to store SSL certificates that are generated when using custom certs. Defaults to temporary directory.
 # Example: SSL_CERT_PATH = "/certs"
 SSL_CERT_PATH: Optional[str] = None
+"""用于存储使用自定义证书时生成的SSL证书的路径。默认为临时目录。例如：SSL_CERT_PATH = /certs"""
+
+# region SIP-15
 
 # SIP-15 should be enabled for all new Rabbitai deployments which ensures that the time
 # range endpoints adhere to [start, end). For existing deployments admins should provide
 # a dedicated period of time to allow chart producers to update their charts before
 # mass migrating all charts to use the [start, end) interval.
 #
-# Note if no end date for the grace period is specified then the grace period is
-# indefinite.
+# 注：如果未指定宽限期的结束日期，则宽限期是无限期的。
 SIP_15_ENABLED = True
 SIP_15_GRACE_PERIOD_END: Optional[date] = None  # exclusive
 SIP_15_DEFAULT_TIME_RANGE_ENDPOINTS = ["unknown", "inclusive"]
@@ -1150,6 +1152,7 @@ SIP_15_TOAST_MESSAGE = (
     'new time range endpoints <a target="_blank" href="{url}" '
     'class="alert-link">here</a>.'
 )
+# endregion
 
 # Turn this key to False to disable ownership check on the old dataset MVC and
 # datasource API /datasource/save.
@@ -1163,9 +1166,12 @@ OLD_API_CHECK_DATASET_OWNERSHIP = True
 # This can be used to set any properties of the object based on naming
 # conventions and such. You can find examples in the tests.
 SQLA_TABLE_MUTATOR = lambda table: table
+"""SQLA数据表转换器，每次我们获取某个表的元数据（rabbitai.connectors.sqla.models.SqlaTable）时，
+我们调用这个钩子来允许使用这个回调来改变对象。这可用于根据命名约定等设置对象的任何属性。您可以在测试中找到示例。"""
 
-# Global async query config options.
-# Requires GLOBAL_ASYNC_QUERIES feature flag to be enabled.
+# region 全局异步查询配置选项。
+
+# 要求启用 GLOBAL_ASYNC_QUERIES 特性标志。
 GLOBAL_ASYNC_QUERIES_REDIS_CONFIG = {
     "port": 6379,
     "host": "127.0.0.1",
@@ -1181,11 +1187,14 @@ GLOBAL_ASYNC_QUERIES_JWT_COOKIE_SECURE = False
 GLOBAL_ASYNC_QUERIES_JWT_COOKIE_DOMAIN = None
 GLOBAL_ASYNC_QUERIES_JWT_SECRET = "test-secret-change-me"
 GLOBAL_ASYNC_QUERIES_TRANSPORT = "polling"
-GLOBAL_ASYNC_QUERIES_POLLING_DELAY = 500
+GLOBAL_ASYNC_QUERIES_POLLING_DELAY = int(
+    timedelta(milliseconds=500).total_seconds() * 1000
+)
 GLOBAL_ASYNC_QUERIES_WEBSOCKET_URL = "ws://127.0.0.1:8080/"
 
-# A SQL dataset health check. Note if enabled it is strongly advised that the callable
-# be memoized to aid with performance, i.e.,
+# endregion
+
+# SQL数据集运行状况检查。注：如果已启用，强烈建议将可调用项进行缓存以帮助提高性能，即：
 #
 #    @cache_manager.cache.memoize(timeout=0)
 #    def DATASET_HEALTH_CHECK(datasource: SqlaTable) -> Optional[str]:
@@ -1214,23 +1223,21 @@ GLOBAL_ASYNC_QUERIES_WEBSOCKET_URL = "ws://127.0.0.1:8080/"
 #            cache_manager.cache.set(name, code, timeout=0)
 #
 DATASET_HEALTH_CHECK: Optional[Callable[["SqlaTable"], str]] = None
+"""SQL数据集运行状况检查。注：如果已启用，强烈建议将可调用项进行缓存以帮助提高性能."""
 
-# SQLalchemy link doc reference
+# 不在菜单中显示用户信息或配置文件
+MENU_HIDE_USER_INFO = False
+
+# SQLalchemy 文档参考链接
 SQLALCHEMY_DOCS_URL = "https://docs.sqlalchemy.org/en/13/core/engines.html"
 SQLALCHEMY_DISPLAY_TEXT = "SQLAlchemy docs"
 
-# endregion
-
-# region rabbitai_config
-
 # -------------------------------------------------------------------
-# *                WARNING:  STOP EDITING  HERE                    *
+# *                警告:  不要编辑这里的内容                            *
 # -------------------------------------------------------------------
-# Don't add config values below this line since local configs won't be
-# able to override them.
+# 不要在此行下方添加配置值，因为本地配置将无法覆盖它们。
 if CONFIG_PATH_ENV_VAR in os.environ:
-    # Explicitly import config module that is not necessarily in pythonpath; useful
-    # for case where app is being executed via pex.
+    # 显式导入不一定在pythonpath中的配置模块；适用于通过pex执行应用程序的情况。
     try:
         cfg_path = os.environ[CONFIG_PATH_ENV_VAR]
         module = sys.modules[__name__]
@@ -1239,10 +1246,10 @@ if CONFIG_PATH_ENV_VAR in os.environ:
             if key.isupper():
                 setattr(module, key, getattr(override_conf, key))
 
-        print(f"Loaded your LOCAL configuration at [{cfg_path}]")
+        print(f"以从 [{cfg_path}] 加载本地配置")
     except Exception:
         logger.exception(
-            "Failed to import config for %s=%s", CONFIG_PATH_ENV_VAR, cfg_path
+            "导入配置 %s=%s 失败", CONFIG_PATH_ENV_VAR, cfg_path
         )
         raise
 elif importlib.util.find_spec("rabbitai_config") and not is_test():
@@ -1250,9 +1257,7 @@ elif importlib.util.find_spec("rabbitai_config") and not is_test():
         import rabbitai_config
         from rabbitai_config import *
 
-        print(f"Loaded your LOCAL configuration at [{rabbitai_config.__file__}]")
+        print(f"已从 [{rabbitai_config.__file__}] 加载本地配置")
     except Exception:
-        logger.exception("Found but failed to import local rabbitai_config")
+        logger.exception("找到但加载本地 rabbitai_config 配置模块失败")
         raise
-
-# endregion

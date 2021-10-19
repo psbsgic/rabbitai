@@ -1,19 +1,3 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 # pylint: disable=no-self-use, invalid-name, line-too-long
 
 from operator import itemgetter
@@ -23,16 +7,16 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from superset import db, security_manager
-from superset.commands.exceptions import CommandInvalidError
-from superset.commands.importers.exceptions import IncorrectVersionError
-from superset.connectors.sqla.models import SqlaTable
-from superset.databases.commands.importers.v1 import ImportDatabasesCommand
-from superset.datasets.commands.exceptions import DatasetNotFoundError
-from superset.datasets.commands.export import ExportDatasetsCommand
-from superset.datasets.commands.importers import v0, v1
-from superset.models.core import Database
-from superset.utils.core import get_example_database
+from rabbitai import db, security_manager
+from rabbitai.commands.exceptions import CommandInvalidError
+from rabbitai.commands.importers.exceptions import IncorrectVersionError
+from rabbitai.connectors.sqla.models import SqlaTable
+from rabbitai.databases.commands.importers.v1 import ImportDatabasesCommand
+from rabbitai.datasets.commands.exceptions import DatasetNotFoundError
+from rabbitai.datasets.commands.export import ExportDatasetsCommand
+from rabbitai.datasets.commands.importers import v0, v1
+from rabbitai.models.core import Database
+from rabbitai.utils.core import get_example_database
 from tests.integration_tests.base_tests import SupersetTestCase
 from tests.integration_tests.fixtures.energy_dashboard import (
     load_energy_table_with_slice,
@@ -51,7 +35,7 @@ from tests.integration_tests.fixtures.world_bank_dashboard import (
 
 
 class TestExportDatasetsCommand(SupersetTestCase):
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     @pytest.mark.usefixtures("load_energy_table_with_slice")
     def test_export_dataset_command(self, mock_g):
         mock_g.user = security_manager.find_user("admin")
@@ -159,7 +143,7 @@ class TestExportDatasetsCommand(SupersetTestCase):
             "version": "1.0.0",
         }
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_export_dataset_command_no_access(self, mock_g):
         """Test that users can't export datasets they don't have access to"""
         mock_g.user = security_manager.find_user("gamma")
@@ -171,7 +155,7 @@ class TestExportDatasetsCommand(SupersetTestCase):
         with self.assertRaises(DatasetNotFoundError):
             next(contents)
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     def test_export_dataset_command_invalid_dataset(self, mock_g):
         """Test that an error is raised when exporting an invalid dataset"""
         mock_g.user = security_manager.find_user("admin")
@@ -180,7 +164,7 @@ class TestExportDatasetsCommand(SupersetTestCase):
         with self.assertRaises(DatasetNotFoundError):
             next(contents)
 
-    @patch("superset.security.manager.g")
+    @patch("rabbitai.security.manager.g")
     @pytest.mark.usefixtures("load_energy_table_with_slice")
     def test_export_dataset_command_key_order(self, mock_g):
         """Test that they keys in the YAML have the same order as export_fields"""
