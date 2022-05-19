@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 class QueryRestApi(BaseRabbitaiModelRestApi):
-    """查询REST API视图模型。"""
+    """查询 REST API视图模型，提供针对 `Query`对象关系模型的 API 操作功能。"""
 
     datamodel = SQLAInterface(Query)
-
+    """对象关系模型访问接口"""
     resource_name = "query"
 
     class_permission_name = "Query"
@@ -32,7 +32,7 @@ class QueryRestApi(BaseRabbitaiModelRestApi):
         RouteMethod.RELATED,
         RouteMethod.DISTINCT,
     }
-
+    """包含的路由方法名称集合"""
     list_columns = [
         "id",
         "changed_on",
@@ -53,6 +53,7 @@ class QueryRestApi(BaseRabbitaiModelRestApi):
         "tmp_table_name",
         "tracking_url",
     ]
+    """显示模型实例列表时要显示的列名称的列表"""
     show_columns = [
         "id",
         "changed_on",
@@ -80,11 +81,15 @@ class QueryRestApi(BaseRabbitaiModelRestApi):
         "tmp_table_name",
         "tracking_url",
     ]
+    """显示一个模型实例时要显示的列名称的列表"""
     base_filters = [["id", QueryFilter, lambda: []]]
+    """基础过滤器列表"""
     base_order = ("changed_on", "desc")
-
+    """基础排序"""
     openapi_spec_tag = "Queries"
+    """开放API规范标签"""
     openapi_spec_methods = openapi_spec_methods_override
+    """开放API规范方法"""
 
     order_columns = [
         "changed_on",
@@ -96,14 +101,17 @@ class QueryRestApi(BaseRabbitaiModelRestApi):
         "tab_name",
         "user.first_name",
     ]
-
+    """参与排序的列名称列表"""
     related_field_filters = {
         "created_by": RelatedFieldFilter("first_name", FilterRelatedOwners),
         "user": RelatedFieldFilter("first_name", FilterRelatedOwners),
     }
-
+    """关联字段过滤器字典"""
     search_columns = ["changed_on", "database", "sql", "status", "user", "start_time"]
-
+    """参与搜索的列名称列表"""
     filter_rel_fields = {"database": [["id", DatabaseFilter, lambda: []]]}
+    """过滤器关联字段"""
     allowed_rel_fields = {"database", "user"}
+    """允许的关联字段集合"""
     allowed_distinct_fields = {"status"}
+    """允许的不同值字段集合"""

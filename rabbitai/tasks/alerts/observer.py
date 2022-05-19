@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 from datetime import datetime
 from typing import Optional
@@ -11,11 +13,13 @@ from rabbitai.models.alerts import Alert, SQLObservation
 logger = logging.getLogger("tasks.email_reports")
 
 
-# Session needs to be passed along in the celery workers and db.session cannot be used.
-# For more info see: https://github.com/apache/rabbitai/issues/10530
 def observe(alert_id: int, session: Session) -> Optional[str]:
-    """Collect observations for the alert.
-    Returns an error message if the observer value was not valid
+    """
+    收集警报的观察结果。如果观察者值无效，则返回错误消息。
+
+    :param alert_id: 提醒标识。
+    :param session: 数据库会话对象。
+    :return:
     """
 
     alert = session.query(Alert).filter_by(id=alert_id).one()
@@ -45,10 +49,16 @@ def validate_observer_result(
     sql_result: pd.DataFrame, alert_id: int, alert_label: str
 ) -> Optional[str]:
     """
-    Verifies if a DataFrame SQL query result to see if
-    it contains a valid value for a SQLObservation.
-    Returns an error message if the result is invalid.
+    验证指定 DataFrame SQL 查询结果是否包含 SQLObservation 的有效值。
+
+    如果无效返回错误信息。
+
+    :param sql_result: DataFrame SQL 查询结果。
+    :param alert_id: 提醒标识。
+    :param alert_label: 提醒标签。
+    :return:
     """
+
     try:
         if sql_result.empty:
             # empty results are used for the not null validator

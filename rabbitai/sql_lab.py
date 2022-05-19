@@ -81,7 +81,16 @@ def handle_query_error(
     payload: Optional[Dict[str, Any]] = None,
     prefix_message: str = "",
 ) -> Dict[str, Any]:
-    """Local method handling error while processing the SQL"""
+    """
+    Local method handling error while processing the SQL。
+
+    :param ex:
+    :param query:
+    :param session:
+    :param payload:
+    :param prefix_message:
+    :return:
+    """
 
     payload = payload or {}
     msg = f"{prefix_message} {str(ex)}".strip()
@@ -106,6 +115,7 @@ def handle_query_error(
     payload.update({"status": query.status, "error": msg, "errors": errors_payload})
     if troubleshooting_link:
         payload["link"] = troubleshooting_link
+
     return payload
 
 
@@ -134,7 +144,7 @@ def get_query_giveup_handler(_: Any) -> None:
 )
 def get_query(query_id: int, session: Session) -> Query:
     """
-    执行指定查询，提供异常处理中断调用和重试。
+    从数据库中获取具有指定标识的查询模型对象，提供异常处理中断调用和重试。
 
     :param query_id: 查询对象标识。
     :param session: 数据库会话。
@@ -165,7 +175,7 @@ def get_sql_results(
     log_params: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """
-    执行指定SQL查询返回查询结果。
+    执行指定SQL查询返回查询结果，作为 celery_app.task。
 
     :param ctask: 任务对象。
     :param query_id: 查询标识。
@@ -193,14 +203,13 @@ def get_sql_results(
                 expand_data=expand_data,
                 log_params=log_params,
             )
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             logger.debug("Query %d: %s", query_id, ex)
             stats_logger.incr("error_sqllab_unhandled")
             query = get_query(query_id, session)
             return handle_query_error(ex, query, session)
 
 
-# pylint: disable=too-many-arguments, too-many-locals, too-many-statements
 def execute_sql_statement(
     sql_statement: str,
     query: Query,
@@ -214,13 +223,13 @@ def execute_sql_statement(
     执行指定单条SQL语句。
 
     :param sql_statement: SQL语句字符串。
-    :param query: 查询对象。
+    :param query: 查询模型对象。
     :param user_name: 用户名称。
     :param session: 数据库会话。
     :param cursor: 游标。
     :param log_params: 日志参数。
     :param apply_ctas: 是否应用 CTAS。
-    :return:
+    :return: RabbitaiResultSet。
     """
 
     database = query.database
@@ -332,7 +341,7 @@ def _serialize_payload(
     payload: Dict[Any, Any], use_msgpack: Optional[bool] = False
 ) -> Union[bytes, str]:
     """
-    序列化指定载荷数据。
+    序列化指定载荷数据，根据配置使用 msgpack 或 json。
 
     :param payload:
     :param use_msgpack:
@@ -371,9 +380,9 @@ def _serialize_and_expand_data(
         ):
             data = (
                 pa.default_serialization_context()
-                .serialize(result_set.pa_table)
-                .to_buffer()
-                .to_pybytes()
+                    .serialize(result_set.pa_table)
+                    .to_buffer()
+                    .to_pybytes()
             )
 
         # expand when loading data from results backend
@@ -407,15 +416,15 @@ def execute_sql_statements(
     """
     执行多条SQL查询返回查询结果。
 
-    :param query_id:
-    :param rendered_query:
-    :param return_results:
-    :param store_results:
-    :param user_name:
-    :param session:
-    :param start_time:
-    :param expand_data:
-    :param log_params:
+    :param query_id: 查询标识。
+    :param rendered_query: 渲染的查询字符串。
+    :param return_results: 是否返回结果。
+    :param store_results: 是否存储结果。
+    :param user_name: 用户名称。
+    :param session: 数据库会话。
+    :param start_time: 开始时间。
+    :param expand_data: 是否展开数据。
+    :param log_params: 日志参数。
     :return:
     """
 
@@ -454,7 +463,7 @@ def execute_sql_statements(
     query.start_running_time = now_as_float()
     session.commit()
 
-    # Should we create a table or view from the select?
+    # 是否应该从 select 创建一个 table 或 view
     if (
         query.select_as_cta
         and query.ctas_method == CtasMethod.TABLE
@@ -519,7 +528,7 @@ def execute_sql_statements(
             )
 
             # Run statement
-            msg = f"Running statement {i+1} out of {statement_count}"
+            msg = f"Running statement {i + 1} out of {statement_count}"
             logger.info("Query %s: %s", str(query_id), msg)
             query.set_extra_json_key("progress", msg)
             session.commit()
@@ -539,7 +548,7 @@ def execute_sql_statements(
             except Exception as ex:  # pylint: disable=broad-except
                 msg = str(ex)
                 prefix_message = (
-                    f"[Statement {i+1} out of {statement_count}]"
+                    f"[Statement {i + 1} out of {statement_count}]"
                     if statement_count > 1
                     else ""
                 )

@@ -40,7 +40,7 @@ class FixedOffsetTimezone(_FixedOffset):
     pass
 
 
-# Regular expressions to catch custom errors
+# region Regular expressions to catch custom errors
 CONNECTION_INVALID_USERNAME_REGEX = re.compile(
     'role "(?P<username>.*?)" does not exist'
 )
@@ -71,6 +71,7 @@ COLUMN_DOES_NOT_EXIST_REGEX = re.compile(
 )
 
 SYNTAX_ERROR_REGEX = re.compile('syntax error at or near "(?P<syntax_error>.*?)"')
+# endregion
 
 
 class PostgresBaseEngineSpec(BaseEngineSpec):

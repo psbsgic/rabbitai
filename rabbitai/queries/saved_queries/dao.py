@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class SavedQueryDAO(BaseDAO):
+    """保存的查询数据访问对象。"""
+
     model_cls = SavedQuery
     base_filter = SavedQueryFilter
 

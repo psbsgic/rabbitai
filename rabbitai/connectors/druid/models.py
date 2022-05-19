@@ -1,4 +1,5 @@
-# pylint: skip-file
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 import re
@@ -83,7 +84,7 @@ except ImportError:
 
 DRUID_TZ = conf.get("DRUID_TZ")
 POST_AGG_TYPE = "postagg"
-metadata = Model.metadata  # pylint: disable=no-member
+metadata = Model.metadata
 logger = logging.getLogger(__name__)
 
 try:
@@ -98,6 +99,7 @@ try:
             }
             self.name = name
 
+
     class CustomPostAggregator(Postaggregator):
         """A way to allow users to specify completely custom PostAggregators"""
 
@@ -109,30 +111,45 @@ try:
 except NameError:
     pass
 
+
 # Function wrapper because bound methods cannot
 # be passed to processes
 def _fetch_metadata_for(datasource: "DruidDatasource") -> Optional[Dict[str, Any]]:
+    """
+    提取指定数据源的元数据。
+
+    :param datasource: 数据源模型。
+    :return:
+    """
     return datasource.latest_metadata()
 
 
 class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
-
-    """ORM object referencing the Druid clusters"""
+    """集群引用对象关系数据模型"""
 
     __tablename__ = "clusters"
     type = "druid"
 
     id = Column(Integer, primary_key=True)
+    """唯一标识"""
     verbose_name = Column(String(250), unique=True)
-    # short unique name, used in permissions
+    """显示名称"""
     cluster_name = Column(String(250), unique=True, nullable=False)
+    """集群名称，唯一，用于权限"""
     broker_host = Column(String(255))
+    """代理主机"""
     broker_port = Column(Integer, default=8082)
+    """代理端口"""
     broker_endpoint = Column(String(255), default="druid/v2")
+    """代理终结点，默认：druid/v2"""
     metadata_last_refreshed = Column(DateTime)
+    """最近刷新的元数据"""
     cache_timeout = Column(Integer)
+    """缓存超时"""
     broker_user = Column(String(255))
+    """代理用户"""
     broker_pass = Column(encrypted_field_factory.create(String(255)))
+    """代理用户密码"""
 
     export_fields = [
         "cluster_name",
@@ -142,8 +159,11 @@ class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
         "cache_timeout",
         "broker_user",
     ]
+    """导出字段名称的列表"""
     update_from_object_fields = export_fields
+    """可以依据对象更新的字段列表。"""
     export_children = ["datasources"]
+    """导出子对象集合"""
 
     def __repr__(self) -> str:
         return self.verbose_name if self.verbose_name else self.cluster_name
@@ -157,6 +177,14 @@ class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
 
     @staticmethod
     def get_base_url(host: str, port: int) -> str:
+        """
+        获取基地址。
+
+        :param host:
+        :param port:
+        :return:
+        """
+
         if not re.match("http(s)?://", host):
             host = "http://" + host
 
@@ -164,18 +192,23 @@ class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
         return url
 
     def get_base_broker_url(self) -> str:
+        """获取代理的基地址。"""
         base_url = self.get_base_url(self.broker_host, self.broker_port)
         return f"{base_url}/{self.broker_endpoint}"
 
     def get_pydruid_client(self) -> "PyDruid":
+        """返回客户端：PyDruid。"""
         cli = PyDruid(
             self.get_base_url(self.broker_host, self.broker_port), self.broker_endpoint
         )
         if self.broker_user and self.broker_pass:
             cli.set_basic_auth_credentials(self.broker_user, self.broker_pass)
+
         return cli
 
     def get_datasources(self) -> List[str]:
+        """获取数据源名称的列表。"""
+
         endpoint = self.get_base_broker_url() + "/datasources"
         auth = requests.auth.HTTPBasicAuth(self.broker_user, self.broker_pass)
         return json.loads(requests.get(endpoint, auth=auth).text)
@@ -199,6 +232,7 @@ class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
         """Refresh metadata of all datasources in the cluster
         If ``datasource_name`` is specified, only that datasource is updated
         """
+
         ds_list = self.get_datasources()
         denylist = conf.get("DRUID_DATA_SOURCE_DENYLIST", [])
         ds_refresh: List[str] = []
@@ -217,11 +251,12 @@ class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
         Fetches metadata for the specified datasources and
         merges to the Rabbitai database
         """
+
         session = db.session
         ds_list = (
             session.query(DruidDatasource)
-            .filter(DruidDatasource.cluster_id == self.id)
-            .filter(DruidDatasource.datasource_name.in_(datasource_names))
+                .filter(DruidDatasource.cluster_id == self.id)
+                .filter(DruidDatasource.datasource_name.in_(datasource_names))
         )
         ds_map = {ds.name: ds for ds in ds_list}
         for ds_name in datasource_names:
@@ -254,8 +289,8 @@ class DruidCluster(Model, AuditMixinNullable, ImportExportMixin):
             if cols:
                 col_objs_list = (
                     session.query(DruidColumn)
-                    .filter(DruidColumn.datasource_id == datasource.id)
-                    .filter(DruidColumn.column_name.in_(cols.keys()))
+                        .filter(DruidColumn.datasource_id == datasource.id)
+                        .filter(DruidColumn.column_name.in_(cols.keys()))
                 )
                 col_objs = {col.column_name: col for col in col_objs_list}
                 for col in cols:
@@ -358,8 +393,8 @@ class DruidColumn(Model, BaseColumn):
         metrics = self.get_metrics()
         dbmetrics = (
             db.session.query(DruidMetric)
-            .filter(DruidMetric.datasource_id == self.datasource_id)
-            .filter(DruidMetric.metric_name.in_(metrics.keys()))
+                .filter(DruidMetric.datasource_id == self.datasource_id)
+                .filter(DruidMetric.metric_name.in_(metrics.keys()))
         )
         dbmetrics = {metric.metric_name: metric for metric in dbmetrics}
         for metric in metrics.values():
@@ -374,7 +409,6 @@ class DruidColumn(Model, BaseColumn):
 
 
 class DruidMetric(Model, BaseMetric):
-
     """ORM object referencing Druid metrics for a datasource"""
 
     __tablename__ = "metrics"
@@ -438,7 +472,6 @@ druiddatasource_user = Table(
 
 
 class DruidDatasource(Model, BaseDatasource):
-
     """ORM object referencing Druid datasources (tables)"""
 
     __tablename__ = "datasources"
@@ -665,8 +698,8 @@ class DruidDatasource(Model, BaseDatasource):
         dimensions = druid_config["dimensions"]
         col_objs = (
             session.query(DruidColumn)
-            .filter(DruidColumn.datasource_id == datasource.id)
-            .filter(DruidColumn.column_name.in_(dimensions))
+                .filter(DruidColumn.datasource_id == datasource.id)
+                .filter(DruidColumn.column_name.in_(dimensions))
         )
         col_objs = {col.column_name: col for col in col_objs}
         for dim in dimensions:
@@ -685,8 +718,8 @@ class DruidDatasource(Model, BaseDatasource):
         # Import Druid metrics
         metric_objs = (
             session.query(DruidMetric)
-            .filter(DruidMetric.datasource_id == datasource.id)
-            .filter(
+                .filter(DruidMetric.datasource_id == datasource.id)
+                .filter(
                 DruidMetric.metric_name.in_(
                     spec["name"] for spec in druid_config["metrics_spec"]
                 )
@@ -732,9 +765,9 @@ class DruidDatasource(Model, BaseDatasource):
     ) -> Optional["DruidDatasource"]:
         query = (
             session.query(cls)
-            .join(DruidCluster)
-            .filter(cls.datasource_name == datasource_name)
-            .filter(DruidCluster.cluster_name == database_name)
+                .join(DruidCluster)
+                .filter(cls.datasource_name == datasource_name)
+                .filter(DruidCluster.cluster_name == database_name)
         )
         return query.first()
 
@@ -1482,13 +1515,13 @@ class DruidDatasource(Model, BaseDatasource):
                 not col
                 or not op
                 or (
-                    eq is None
-                    and op
-                    not in (
-                        FilterOperator.IS_NULL.value,
-                        FilterOperator.IS_NOT_NULL.value,
-                    )
+                eq is None
+                and op
+                not in (
+                    FilterOperator.IS_NULL.value,
+                    FilterOperator.IS_NOT_NULL.value,
                 )
+            )
             ):
                 continue
 
@@ -1687,6 +1720,7 @@ class DruidDatasource(Model, BaseDatasource):
         :param _connection: Unused.
         :param obj: The metric or column that was updated.
         """
+
         db.session.execute(
             update(DruidDatasource).where(DruidDatasource.id == obj.datasource.id)
         )

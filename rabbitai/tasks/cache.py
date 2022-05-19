@@ -26,12 +26,15 @@ def get_form_data(
     chart_id: int, dashboard: Optional[Dashboard] = None
 ) -> Dict[str, Any]:
     """
-    Build `form_data` for chart GET request from dashboard's `default_filters`.
+    依据图表的GET请求和仪表盘的 `default_filters` 构建表单数据 `form_data`。
 
-    When a dashboard has `default_filters` they need to be added  as extra
-    filters in the GET request for charts.
+    当仪表盘有 `default_filters` 时，它们添加到图表的 GET 请求的额外过滤器。
 
+    :param chart_id: 图表标识。
+    :param dashboard: 仪表盘模型。
+    :return:
     """
+
     form_data: Dict[str, Any] = {"slice_id": chart_id}
 
     if dashboard is None or not dashboard.json_metadata:
@@ -59,7 +62,14 @@ def get_form_data(
 
 
 def get_url(chart: Slice, extra_filters: Optional[Dict[str, Any]] = None) -> str:
-    """Return external URL for warming up a given chart/table cache."""
+    """
+    返回用于准备的给定图表/表缓存的外部URL。
+
+    :param chart: 图表（Slice）。
+    :param extra_filters: 自定义过滤器字典，可选。
+    :return:
+    """
+
     with app.test_request_context():
         baseurl = (
             "{RABBITAI_WEBSERVER_PROTOCOL}://"

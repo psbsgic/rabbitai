@@ -51,15 +51,13 @@ config = app.config
 logger = logging.getLogger(__name__)
 
 
-def copy_dashboard(
-    _mapper: Mapper, connection: Connection, target: "Dashboard"
-) -> None:
+def copy_dashboard(_mapper: Mapper, connection: Connection, target: "Dashboard") -> None:
     """
     复制仪表盘。
 
-    :param _mapper:
-    :param connection:
-    :param target:
+    :param _mapper: 映射。
+    :param connection: 数据库连接对象。
+    :param target: 目标对象（仪表盘）。
     :return:
     """
 
@@ -86,9 +84,7 @@ def copy_dashboard(
     session.commit()
 
     # set dashboard as the welcome dashboard
-    extra_attributes = UserAttribute(
-        user_id=target.id, welcome_dashboard_id=dashboard.id
-    )
+    extra_attributes = UserAttribute(user_id=target.id, welcome_dashboard_id=dashboard.id)
     session.add(extra_attributes)
     session.commit()
 
@@ -160,10 +156,14 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def url(self) -> str:
+        """获取路由地址。"""
+
         return f"/rabbitai/dashboard/{self.slug or self.id}/"
 
     @property
     def datasources(self) -> Set[BaseDatasource]:
+        """获取该仪表盘对象的数据源对象集合。"""
+
         # Verbose but efficient database enumeration of dashboard datasources.
         datasources_by_cls_model: Dict[Type["BaseDatasource"], Set[int]] = defaultdict(
             set
@@ -182,10 +182,13 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def charts(self) -> List[BaseDatasource]:
+        """获取该仪表盘的图表对象的列表。"""
         return [slc.chart for slc in self.slices]
 
     @property
     def sqla_metadata(self) -> None:
+        """获取元数据对象。"""
+
         # pylint: disable=no-member
         meta = MetaData(bind=self.get_sqla_engine())
         meta.reflect()
@@ -322,6 +325,13 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
 
     @classmethod
     def export_dashboards(cls, dashboard_ids: List[int]) -> str:
+        """
+        导出仪表盘。
+
+        :param dashboard_ids:
+        :return:
+        """
+
         copied_dashboards = []
         datasource_ids = set()
         for dashboard_id in dashboard_ids:

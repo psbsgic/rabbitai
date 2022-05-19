@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class CssTemplateDAO(BaseDAO):
+    """CSS模板对象关系模型 CssTemplate 访问对象，提供批量删除操作。"""
+
     model_cls = CssTemplate
 
     @staticmethod

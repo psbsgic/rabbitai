@@ -8,10 +8,10 @@ from flask_babel import gettext as _
 
 class RabbitaiErrorType(str, Enum):
     """
-    Types of errors that can exist within Rabbitai.
+    RabbitAI 中使用的错误类型枚举。
 
-    Keep in sync with rabbitai-frontend/src/components/ErrorMessage/types.ts
-    and docs/src/pages/docs/Miscellaneous/issue_codes.mdx
+    保持同步于：rabbitai-frontend/src/components/ErrorMessage/types.ts
+    和 docs/src/pages/docs/Miscellaneous/issue_codes.mdx
     """
 
     # Frontend errors
@@ -122,7 +122,7 @@ ISSUE_CODES = {
     1035: _("Failed to start remote query on a worker."),
     1036: _("The database was deleted."),
 }
-
+"""问题代码及其错误信息的字典。"""
 
 ERROR_TYPES_TO_ISSUE_CODES_MAPPING = {
     RabbitaiErrorType.BACKEND_TIMEOUT_ERROR: [1000, 1001],
@@ -157,13 +157,14 @@ ERROR_TYPES_TO_ISSUE_CODES_MAPPING = {
     RabbitaiErrorType.ASYNC_WORKERS_ERROR: [1035],
     RabbitaiErrorType.DATABASE_NOT_FOUND_ERROR: [1011, 1036],
 }
+"""错误类型与问题代码的列表的字典。"""
 
 
 class ErrorLevel(str, Enum):
     """
-    Levels of errors that can exist within Rabbitai.
+    错误级别枚举。
 
-    Keep in sync with rabbitai-frontend/src/components/ErrorMessage/types.ts
+    同步于：rabbitai-frontend/src/components/ErrorMessage/types.ts
     """
 
     INFO = "info"
@@ -173,9 +174,7 @@ class ErrorLevel(str, Enum):
 
 @dataclass
 class RabbitaiError:
-    """
-    An error that is returned to a client.
-    """
+    """表示返回到客户端的错误，包括属性：message、error_type、level、extra。"""
 
     message: str
     error_type: RabbitaiErrorType
@@ -184,9 +183,9 @@ class RabbitaiError:
 
     def __post_init__(self) -> None:
         """
-        Mutates the extra params with user facing error codes that map to backend
-        errors.
+        使用映射到后端错误的面向用户的错误代码修改额外参数。
         """
+
         issue_codes = ERROR_TYPES_TO_ISSUE_CODES_MAPPING.get(self.error_type)
         if issue_codes:
             self.extra = self.extra or {}

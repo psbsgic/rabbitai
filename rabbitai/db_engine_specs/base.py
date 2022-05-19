@@ -94,7 +94,7 @@ builtin_time_grains: Dict[Optional[str], str] = {
     "P1W/1970-01-03T00:00:00Z": __("Week ending Saturday"),
     "P1W/1970-01-04T00:00:00Z": __("Week_ending Sunday"),
 }
-"""在建的时间刻度字典。"""
+"""在建的时间刻度字典，时间刻度名称和显示名称。"""
 
 
 class TimestampExpression(ColumnClause):
@@ -123,11 +123,19 @@ class TimestampExpression(ColumnClause):
 def compile_timegrain_expression(
     element: TimestampExpression, compiler: Compiled, **kwargs: Any
 ) -> str:
+    """
+    编译时间粒度表达式。
+
+    :param element: 时间戳表达式。
+    :param compiler: 编译器。
+    :param kwargs:
+    :return:
+    """
     return element.name.replace("{col}", compiler.process(element.col, **kwargs))
 
 
 class LimitMethod:
-    """Enum the ways that limits can be applied"""
+    """枚举可以应用限制的方式"""
 
     FETCH_MANY = "fetch_many"
     WRAP_SQL = "wrap_sql"
@@ -135,21 +143,30 @@ class LimitMethod:
 
 
 class BaseEngineSpec:
-    """数据库引擎特定配置的抽象类
+    """
+    数据库引擎特定配置的抽象类。
 
-    Attributes:
-        allows_alias_to_source_column: 当SELECT中的列具有与源列相同的别名时，引擎是否能够为ORDER BY中使用的聚合子句选择源列。
-        allows_hidden_orderby_agg:     引擎是否允许ORDER BY直接使用聚合子句，而不必在SELECT中添加相同的聚合。
+    - allows_alias_to_source_column: 当SELECT中的列具有与源列相同的别名时，引擎是否能够为ORDER BY中使用的聚合子句选择源列。
+    - allows_hidden_orderby_agg: 引擎是否允许ORDER BY直接使用聚合子句，而不必在SELECT中添加相同的聚合。
     """
 
+    # region 字段声明
+
     engine = "base"  # str as defined in sqlalchemy.engine.engine
-    """引擎，定义在 sqlalchemy.engine.engine 中引擎的字符串。"""
+    """
+    引擎，定义在 sqlalchemy.engine.engine 中的字符串。
+    SQLAlchemy 是通过 Engine 来驱动，Engine 维护了一个连接池（Pool）对象和方言（Dialect）
+    """
     engine_aliases: Set[str] = set()
     """数据库引擎别名集合。"""
     engine_name: Optional[str] = None  # used for user messages, overridden in child classes
-    """引擎名称。"""
+    """引擎名称。用于用户消息，在子类中重写"""
+
     _date_trunc_functions: Dict[str, str] = {}
+    """日期截断函数字典。"""
     _time_grain_expressions: Dict[Optional[str], str] = {}
+    """时间刻度表达式字典。"""
+
     column_type_mappings: Tuple[
         Tuple[
             Pattern[str],
@@ -254,48 +271,60 @@ class BaseEngineSpec:
             GenericDataType.BOOLEAN,
         ),
     )
-    """列数据类型映射"""
+    """列数据类型映射，匹配样式、数据库数据类型、通用（适合前端和后端的）数据类型组成元组的元组。"""
+
     time_groupby_inline = False
+    """是否内联时间分组"""
     limit_method = LimitMethod.FORCE_LIMIT
+    """限制方法"""
     time_secondary_columns = False
+    """是否第二时间列"""
     allows_joins = True
+    """是否允许连接"""
     allows_subqueries = True
+    """是否允许子查询"""
     allows_alias_in_select = True
+    """是否允许在SELECT语句中使用别名"""
     allows_alias_in_orderby = True
+    """是否允许在ORDER BY语句中使用别名"""
     allows_sql_comments = True
-
-    # Whether ORDER BY clause can use aliases created in SELECT
-    # that are the same as a source column
+    """是否允许SQL注释"""
     allows_alias_to_source_column = True
-
-    # Whether ORDER BY clause must appear in SELECT
-    # if TRUE, then it doesn't have to.
+    """ORDER BY子句是否可以使用在SELECT中创建的与源列相同的别名"""
     allows_hidden_ordeby_agg = True
-
+    """ORDERBY子句是否必须出现在SELECT中，如果为TRUE，则不必出现。"""
     force_column_alias_quotes = False
+    """是否强制列别名界定"""
     arraysize = 0
+    """数组大小"""
     max_column_name_length = 0
+    """最大列名称长度"""
     try_remove_schema_from_table_name = True
+    """是否尝试从数据表名称中移除模式"""
     run_multiple_statements_as_one = False
+    """是否将多个语句作为一个语句来运行"""
     custom_errors: Dict[
         Pattern[str], Tuple[str, RabbitaiErrorType, Dict[str, Any]]
     ] = {}
+    """自定义错误字典"""
+
+    # endregion
 
     @classmethod
     def get_dbapi_exception_mapping(cls) -> Dict[Type[Exception], Type[Exception]]:
         """
         获取数据库API异常映射（字典）。
 
-        每个引擎都可以实现自己的特定异常并将其聚合为Rabbitai DBAPI异常。
+        每个引擎都可以实现自己的特定异常并将其聚合为RabbitAI DBAPI异常。
 
-        :return: 驱动程序特定异常到rabbitai自定义异常的映射。
+        :return: 驱动程序特定异常到 RabbitAI 自定义异常的映射。
         """
         return {}
 
     @classmethod
     def get_dbapi_mapped_exception(cls, exception: Exception) -> Exception:
         """
-        从特定于驱动程序的异常中获取rabbitai自定义DBAPI异常。
+        从特定于驱动程序的异常中获取 RabbitAI 自定义DBAPI异常。
 
         如果引擎需要对异常执行额外更改，例如更改异常消息或实现自定义更复杂的逻辑，则重写
 
@@ -327,11 +356,12 @@ class BaseEngineSpec:
         """
         获取指定数据库的数据库引擎。
 
-        :param database: 数据库对象。
-        :param schema:
-        :param source:
-        :return:
+        :param database: 数据库模型对象。
+        :param schema: 模式。
+        :param source: 查询源。
+        :return: 数据库引擎 Engine。
         """
+
         user_name = utils.get_username()
         return database.get_sqla_engine(
             schema=schema, nullpool=True, user_name=user_name, source=source
@@ -348,11 +378,12 @@ class BaseEngineSpec:
         """
         构造要在SQLAlchemy查询中使用的时间戳表达式。
 
-        :param col: Target column for the TimestampExpression
-        :param pdf: date format (seconds or milliseconds)
-        :param time_grain: time grain, e.g. P1Y for 1 year
-        :param type_: the source column type
-        :return: TimestampExpression object
+        :param col: TimestampExpression 的目标列。
+        :param pdf: 日期格式(seconds or milliseconds)
+        :param time_grain: 时间刻度，如：P1Y 表示1年
+        :param type_: 列类型。
+
+        :return: TimestampExpression 实例。
         """
 
         if time_grain:
@@ -398,9 +429,7 @@ class BaseEngineSpec:
         return tuple(ret_list)
 
     @classmethod
-    def _sort_time_grains(
-        cls, val: Tuple[Optional[str], str], index: int
-    ) -> Union[float, int, str]:
+    def _sort_time_grains(cls, val: Tuple[Optional[str], str], index: int) -> Union[float, int, str]:
         """
         Return an ordered time-based value of a portion of a time grain
         for sorting
@@ -463,10 +492,11 @@ class BaseEngineSpec:
     @classmethod
     def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
         """
-        Return a dict of all supported time grains including any potential added grains
-        but excluding any potentially disabled grains in the config file.
+        返回所有支持的时间粒度的字典，包括任何可能已添加的粒度，但不包括配置文件中任何可能禁用的粒度。
 
-        :return: All time grain expressions supported by the engine
+        应用配置对象中的 TIME_GRAIN_ADDON_EXPRESSIONS 和 TIME_GRAIN_DENYLIST 分别设置要添加和禁用的时间粒度。
+
+        :return: 引擎支持的所有时间粒度表达式。
         """
 
         time_grain_expressions = cls._time_grain_expressions.copy()
@@ -489,15 +519,13 @@ class BaseEngineSpec:
         )
 
     @classmethod
-    def fetch_data(
-        cls, cursor: Any, limit: Optional[int] = None
-    ) -> List[Tuple[Any, ...]]:
+    def fetch_data(cls, cursor: Any, limit: Optional[int] = None) -> List[Tuple[Any, ...]]:
         """
-        从数据库中提取数据，返回元组的列表。
+        依据指定游标实例，从数据库中提取数据，返回元组的列表。
 
-        :param cursor: Cursor instance
-        :param limit: Maximum number of rows to be returned by the cursor
-        :return: Result of query
+        :param cursor: 游标实例。
+        :param limit: 游标返回的最大行数。
+        :return: 查询结果。
         """
 
         if cls.arraysize:
@@ -514,8 +542,7 @@ class BaseEngineSpec:
         cls, columns: List[Dict[Any, Any]], data: List[Dict[Any, Any]]
     ) -> Tuple[List[Dict[Any, Any]], List[Dict[Any, Any]], List[Dict[Any, Any]]]:
         """
-        Some engines support expanding nested fields. See implementation in Presto
-        spec for details.
+        有些引擎支持扩展嵌套字段。有关详细信息，请参见Presto spec中的实现。
 
         :param columns: columns selected in the query
         :param data: original data set
@@ -535,31 +562,29 @@ class BaseEngineSpec:
     @classmethod
     def epoch_to_dttm(cls) -> str:
         """
-        SQL expression that converts epoch (seconds) to datetime that can be used in a
-        query. The reference column should be denoted as `{col}` in the return
-        expression, e.g. "FROM_UNIXTIME({col})"
+        将纪元（秒）转换为可在查询中使用的日期时间的SQL表达式。
+        在返回表达式中，引用列应表示为 `{col}`，例如 "FROM_UNIXTIME({col})"
 
-        :return: SQL Expression
+        :return: SQL表达式。
         """
         raise NotImplementedError()
 
     @classmethod
     def epoch_ms_to_dttm(cls) -> str:
         """
-        SQL expression that converts epoch (milliseconds) to datetime that can be used
-        in a query.
+        将纪元（毫秒）转换为可在查询中使用的日期时间的SQL表达式。
 
-        :return: SQL Expression
+        :return: SQL表达式。
         """
         return cls.epoch_to_dttm().replace("{col}", "({col}/1000)")
 
     @classmethod
     def get_datatype(cls, type_code: Any) -> Optional[str]:
         """
-        Change column type code from cursor description to string representation.
+        将列类型代码从游标描述更改为字符串表示。
 
-        :param type_code: Type code from cursor description
-        :return: String representation of type code
+        :param type_code: 游标描述的类型代码。
+        :return: 类型代码的字符串表示。
         """
         if isinstance(type_code, str) and type_code != "":
             return type_code.upper()
@@ -568,12 +593,12 @@ class BaseEngineSpec:
     @classmethod
     def normalize_indexes(cls, indexes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Normalizes indexes for more consistency across db engines
+        规范化索引，以提高数据库引擎之间的一致性。
 
-        noop by default
+        默认情况下为noop
 
-        :param indexes: Raw indexes as returned by SQLAlchemy
-        :return: cleaner, more aligned index definition
+        :param indexes: SQLAlchemy返回的原始索引。
+        :return: 更清晰、更一致的索引定义。
         """
         return indexes
 
@@ -582,12 +607,12 @@ class BaseEngineSpec:
         cls, database: "Database", table_name: str, schema_name: str
     ) -> Dict[str, Any]:
         """
-        Returns engine-specific table metadata
+        返回特定于引擎的数据表元数据。
 
-        :param database: Database instance
-        :param table_name: Table name
-        :param schema_name: Schema name
-        :return: Engine-specific table metadata
+        :param database: 数据库模型对象。
+        :param table_name: 数据表名称。
+        :param schema_name: 模式名称。
+        :return: 特定于引擎的数据表元数据。
         """
 
         return {}
@@ -597,12 +622,12 @@ class BaseEngineSpec:
         cls, sql: str, limit: int, database: "Database", force: bool = False
     ) -> str:
         """
-        Alters the SQL statement to apply a LIMIT clause
+        更改SQL语句以应用LIMIT子句
 
-        :param sql: SQL query
-        :param limit: Maximum number of rows to be returned by the query
-        :param database: Database instance
-        :return: SQL query with limit clause
+        :param sql: SQL 查询字符串。
+        :param limit: 查询返回的最大行数
+        :param database: 数据库模型对象。
+        :return: 带 LIMIT子句 的 SQL 查询字符串。
         """
 
         if cls.limit_method == LimitMethod.WRAP_SQL:
@@ -623,10 +648,10 @@ class BaseEngineSpec:
     @classmethod
     def get_limit_from_sql(cls, sql: str) -> Optional[int]:
         """
-        Extract limit from SQL query
+        从指定SQL查询字符串中提取限制（查询返回的最大行数）。
 
-        :param sql: SQL query
-        :return: Value of limit clause in query
+        :param sql: SQL查询字符串。
+        :return: 限制（查询返回的最大行数）。
         """
         parsed_query = sql_parse.ParsedQuery(sql)
         return parsed_query.limit
@@ -634,7 +659,7 @@ class BaseEngineSpec:
     @classmethod
     def set_or_update_query_limit(cls, sql: str, limit: int) -> str:
         """
-        Create a query based on original query but with new limit clause
+        基于原始查询创建查询，但使用新的limit子句。
 
         :param sql: SQL query
         :param limit: New limit to insert/replace into query
@@ -670,7 +695,6 @@ class BaseEngineSpec:
         to_sql_kwargs["name"] = table.table
 
         if table.schema:
-
             # Only add schema when it is preset and non empty.
             to_sql_kwargs["schema"] = table.schema
 
@@ -691,10 +715,9 @@ class BaseEngineSpec:
         return None
 
     @classmethod
-    def get_all_datasource_names(
-        cls, database: "Database", datasource_type: str
-    ) -> List[utils.DatasourceName]:
-        """Returns a list of all tables or views in database.
+    def get_all_datasource_names(cls, database: "Database", datasource_type: str) -> List[utils.DatasourceName]:
+        """
+        Returns a list of all tables or views in database.
 
         :param database: Database instance
         :param datasource_type: Datasource_type can be 'table' or 'view'
@@ -820,6 +843,7 @@ class BaseEngineSpec:
         :param schema: Schema to inspect. If omitted, uses default schema for database
         :return: All tables in schema
         """
+
         tables = inspector.get_table_names(schema)
         if schema and cls.try_remove_schema_from_table_name:
             tables = [re.sub(f"^{schema}\\.", "", table) for table in tables]
@@ -854,6 +878,7 @@ class BaseEngineSpec:
         :param schema: Schema name. If omitted, uses default schema for database
         :return: comment of table
         """
+
         comment = None
         try:
             comment = inspector.get_table_comment(table_name, schema)
@@ -977,9 +1002,7 @@ class BaseEngineSpec:
         raise Exception("Database does not support cost estimation")
 
     @classmethod
-    def query_cost_formatter(
-        cls, raw_cost: List[Dict[str, Any]]
-    ) -> List[Dict[str, str]]:
+    def query_cost_formatter(cls, raw_cost: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """
         Format cost estimate.
 
@@ -989,15 +1012,13 @@ class BaseEngineSpec:
         raise Exception("Database does not support cost estimation")
 
     @classmethod
-    def process_statement(
-        cls, statement: str, database: "Database", user_name: str
-    ) -> str:
+    def process_statement(cls, statement: str, database: "Database", user_name: str) -> str:
         """
         Process a SQL statement by stripping and mutating it.
 
         :param statement: A single SQL statement
         :param database: Database instance
-        :param username: Effective username
+        :param user_name: Effective username
         :return: Dictionary with different costs
         """
 
@@ -1014,7 +1035,7 @@ class BaseEngineSpec:
         cls, database: "Database", schema: str, sql: str, source: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
-        Estimate the cost of a multiple statement SQL query.
+        估计多语句SQL查询的成本。
 
         :param database: Database instance
         :param schema: Database schema
@@ -1046,11 +1067,11 @@ class BaseEngineSpec:
         cls, url: URL, impersonate_user: bool, username: Optional[str]
     ) -> None:
         """
-        Modify the SQL Alchemy URL object with the user to impersonate if applicable.
+        与用户一起修改SQL Alchemy URL对象以模拟（如果适用）。
 
-        :param url: SQLAlchemy URL object
-        :param impersonate_user: Flag indicating if impersonation is enabled
-        :param username: Effective username
+        :param url: SQLAlchemy URL 对象
+        :param impersonate_user: 指示是否启用模拟的标志
+        :param username: 用户名称。
         """
         if impersonate_user and username is not None:
             url.username = username
@@ -1060,24 +1081,22 @@ class BaseEngineSpec:
         cls, connect_args: Dict[str, Any], uri: str, username: Optional[str],
     ) -> None:
         """
-        Update a configuration dictionary
-        that can set the correct properties for impersonating users
+        更新可以为模拟用户设置正确属性的配置字典
 
-        :param connect_args: config to be updated
-        :param uri: URI
-        :param impersonate_user: Flag indicating if impersonation is enabled
-        :param username: Effective username
+        :param connect_args: 要更新的配置。
+        :param uri: 地址字符串。
+        :param username: 用户名称。
         :return: None
         """
 
     @classmethod
     def execute(cls, cursor: Any, query: str, **kwargs: Any) -> None:
         """
-        Execute a SQL query
+        执行指定 SQL 查询。
 
-        :param cursor: Cursor instance
-        :param query: Query to execute
-        :param kwargs: kwargs to be passed to cursor.execute()
+        :param cursor: Cursor 实例。
+        :param query: 要执行的查询字符串。
+        :param kwargs: 要传递到 cursor.execute() 的参数。
         :return:
         """
 
@@ -1086,6 +1105,7 @@ class BaseEngineSpec:
 
         if cls.arraysize:
             cursor.arraysize = cls.arraysize
+
         try:
             cursor.execute(query)
         except Exception as ex:
@@ -1137,8 +1157,10 @@ class BaseEngineSpec:
         :param column_type_mappings:
         :return: SqlAlchemy column type
         """
+
         if not column_type:
             return None
+
         for regex, sqla_type, generic_type in column_type_mappings:
             match = regex.match(column_type)
             if match:
@@ -1161,6 +1183,7 @@ class BaseEngineSpec:
         :param label: Preferred expression label
         :return: Conditionally mutated label
         """
+
         return label
 
     @classmethod
@@ -1182,9 +1205,7 @@ class BaseEngineSpec:
         return label
 
     @classmethod
-    def column_datatype_to_string(
-        cls, sqla_column_type: TypeEngine, dialect: Dialect
-    ) -> str:
+    def column_datatype_to_string(cls, sqla_column_type: TypeEngine, dialect: Dialect) -> str:
         """
         Convert sqlalchemy column type to string representation.
         By default removes collation and character encoding info to avoid unnecessarily
@@ -1194,11 +1215,13 @@ class BaseEngineSpec:
         :param dialect: Sqlalchemy dialect
         :return: Compiled column type
         """
+
         sqla_column_type = sqla_column_type.copy()
         if hasattr(sqla_column_type, "collation"):
             sqla_column_type.collation = None
         if hasattr(sqla_column_type, "charset"):
             sqla_column_type.charset = None
+
         return sqla_column_type.compile(dialect=dialect).upper()
 
     @classmethod
@@ -1220,8 +1243,10 @@ class BaseEngineSpec:
         :param data: List of tuples or pyodbc.Row objects
         :return: List of tuples
         """
+
         if data and type(data[0]).__name__ == "Row":
             data = [tuple(row) for row in data]
+
         return data
 
     @staticmethod
@@ -1287,13 +1312,14 @@ class BaseEngineSpec:
         ] = column_type_mappings,
     ) -> Union[ColumnSpec, None]:
         """
-        Converts native database type to sqlalchemy column type.
+        将数据库类型转换为sqlalchemy列类型。
 
-        :param native_type: Native database type
-        :param source: Type coming from the database table or cursor description
+        :param native_type: 原生数据库类型
+        :param source: 来自数据库表或游标说明的类型
         :param column_type_mappings:
         :return: ColumnSpec object
         """
+
         col_types = cls.get_sqla_column_type(
             native_type, column_type_mappings=column_type_mappings
         )
@@ -1314,10 +1340,9 @@ class BaseEngineSpec:
     @classmethod
     def has_implicit_cancel(cls) -> bool:
         """
-        Return True if the live cursor handles the implicit cancelation of the query,
-        False otherise.
+        如果活动游标处理查询的隐式取消，则返回True，否则返回False。
 
-        :return: Whether the live cursor implicitly cancels the query
+        :return: 活动游标是否隐式取消查询
         :see: handle_cursor
         """
 
@@ -1326,13 +1351,11 @@ class BaseEngineSpec:
     @classmethod
     def get_cancel_query_id(cls, cursor: Any, query: Query) -> Optional[str]:
         """
-        Select identifiers from the database engine that uniquely identifies the
-        queries to cancel. The identifier is typically a session id, process id
-        or similar.
+        从数据库引擎中选择唯一标识要取消的查询的标识符。标识符通常是会话id、进程id或类似的。
 
-        :param cursor: Cursor instance in which the query will be executed
-        :param query: Query instance
-        :return: Query identifier
+        :param cursor: 将在其中执行查询的游标实例
+        :param query: 查询实例。
+        :return: 查询标识。
         """
 
         return None
@@ -1340,20 +1363,30 @@ class BaseEngineSpec:
     @classmethod
     def cancel_query(cls, cursor: Any, query: Query, cancel_query_id: str) -> bool:
         """
-        Cancel query in the underlying database.
+        取消基础数据库中的查询。
 
-        :param cursor: New cursor instance to the db of the query
-        :param query: Query instance
-        :param cancel_query_id: Value returned by get_cancel_query_payload or set in
-        other life-cycle methods of the query
-        :return: True if query cancelled successfully, False otherwise
+        :param cursor: 将新游标实例添加到查询的数据库
+        :param query: 查询实例
+        :param cancel_query_id: 由 get_cancel_query_payload 返回的值或查询对象的其它方法设置的。
+        :return: 如果查询成功取消，则为True，否则为False
         """
 
         return False
 
 
 class BasicParametersSchema(Schema):
-    """schema for adding a database by providing parameters instead of the full SQLAlchemy URI"""
+    """数据库连接参数结构，代替 SQLAlchemy URI。
+
+    定义字段及其类型和约束：
+
+    - username：用户名称，必须的，允许None。
+    - password：用户密码，允许None。
+    - host：主机名称或IP地址，必须的。
+    - port：端口号，必须的。
+    - database：数据库名称，必须的。
+    - query：查询参数，字典。
+    - encryption：是否加密。
+    """
 
     username = fields.String(required=True, allow_none=True, description=__("Username"))
     password = fields.String(allow_none=True, description=__("Password"))
@@ -1373,7 +1406,9 @@ class BasicParametersSchema(Schema):
 
 
 class BasicParametersType(TypedDict, total=False):
-    """数据库基本参数类型。"""
+    """数据库基本参数类型，定义数据库连接中每个参数及其类型。
+    username、password、host、port、database、query、encryption。
+    """
 
     username: Optional[str]
     password: Optional[str]
@@ -1386,11 +1421,10 @@ class BasicParametersType(TypedDict, total=False):
 
 class BasicParametersMixin:
     """
-    Mixin for configuring DB engine specs via a dictionary.
+    用于通过字典配置DB引擎规范的Mixin。
 
-    With this mixin the SQLAlchemy engine can be configured through
-    individual parameters, instead of the full SQLAlchemy URI. This
-    mixin is for the most common pattern of URI:
+    有了这个mixin，可以通过单个参数来配置SQLAlchemy引擎，而不是通过完整的SQLAlchemy URI。
+    此mixin用于最常见的URI模式：
 
         engine+driver://user:password@host:port/dbname[?key=value&key=value...]
 
@@ -1398,18 +1432,19 @@ class BasicParametersMixin:
 
     # schema describing the parameters used to configure the DB
     parameters_schema = BasicParametersSchema()
-
+    """描述用于配置数据库的参数的架构."""
     # recommended driver name for the DB engine spec
     default_driver = ""
-
+    """DB引擎规范的推荐驱动程序名称"""
     # placeholder with the SQLAlchemy URI template
     sqlalchemy_uri_placeholder = (
         "engine+driver://user:password@host:port/dbname[?key=value&key=value...]"
     )
-
-    # query parameter to enable encryption in the database connection
-    # for Postgres this would be `{"sslmode": "verify-ca"}`, eg.
+    """带有SQLAlchemy URI模板的占位符"""
+    # query parameter to enable encryption in the database connection for Postgres
+    # this would be `{"sslmode": "verify-ca"}`, eg.
     encryption_parameters: Dict[str, str] = {}
+    """用于在Postgres的数据库连接中启用加密的查询参数，这将是 `{"sslmode": "verify-ca"}`。"""
 
     @classmethod
     def build_sqlalchemy_uri(
@@ -1418,6 +1453,7 @@ class BasicParametersMixin:
         encryted_extra: Optional[Dict[str, str]] = None,
     ) -> str:
         """
+        构建 SQLAlchemy URI 地址。
 
         :param parameters:
         :param encryted_extra:
@@ -1448,6 +1484,7 @@ class BasicParametersMixin:
         cls, uri: str, encrypted_extra: Optional[Dict[str, Any]] = None
     ) -> BasicParametersType:
         """
+        从指定 SQLAlchemy URI 字符串获取参数对象。
 
         :param uri:
         :param encrypted_extra:
@@ -1555,13 +1592,13 @@ class BasicParametersMixin:
     @classmethod
     def parameters_json_schema(cls) -> Any:
         """
-        Return configuration parameters as OpenAPI.
+        以 OpenAPI 的形式返回配置参数。
         """
         if not cls.parameters_schema:
             return None
 
         spec = APISpec(
-            title="Database Parameters",
+            title="数据库参数",
             version="1.0.0",
             openapi_version="3.0.2",
             plugins=[MarshmallowPlugin()],

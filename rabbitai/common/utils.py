@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 from typing import Any, Dict, Optional
 
@@ -25,10 +27,23 @@ _cache: Dict[CacheRegion, Cache] = {
 
 class QueryCacheManager:
     """
-    Class for manage query-cache getting and setting
+    查询缓存管理器。
+
+    包括以下参数：
+
+    - df: DataFrame = DataFrame(),
+    - query: str = "",
+    - annotation_data: Optional[Dict[str, Any]] = None,
+    - status: Optional[str] = None,
+    - error_message: Optional[str] = None,
+    - is_loaded: bool = False,
+    - stacktrace: Optional[str] = None,
+    - is_cached: Optional[bool] = None,
+    - cache_dttm: Optional[str] = None,
+    - cache_value: Optional[Dict[str, Any]] = None,
+
     """
 
-    # pylint: disable=too-many-instance-attributes,too-many-arguments
     def __init__(
         self,
         df: DataFrame = DataFrame(),
@@ -42,6 +57,19 @@ class QueryCacheManager:
         cache_dttm: Optional[str] = None,
         cache_value: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """
+
+        :param df: 数据帧。
+        :param query: 查询字符串。
+        :param annotation_data: 注释数据字典。
+        :param status: 状态。
+        :param error_message: 错误信息。
+        :param is_loaded: 是否已加载。
+        :param stacktrace: 堆栈跟踪。
+        :param is_cached: 是否已缓存。
+        :param cache_dttm: 缓存时间。
+        :param cache_value: 缓存值。
+        """
         self.df = df
         self.query = query
         self.annotation_data = {} if annotation_data is None else annotation_data
@@ -54,7 +82,6 @@ class QueryCacheManager:
         self.cache_dttm = cache_dttm
         self.cache_value = cache_value
 
-    # pylint: disable=too-many-arguments
     def set_query_result(
         self,
         key: str,
@@ -66,8 +93,18 @@ class QueryCacheManager:
         region: CacheRegion = CacheRegion.DEFAULT,
     ) -> None:
         """
-        Set dataframe of query-result to specific cache region
+        设置指定查询结果的数据帧到指定缓存区。
+
+        :param key: 键。
+        :param query_result: 查询结果。
+        :param annotation_data: 注释数据。
+        :param force_query: 是否强制查询。
+        :param timeout: 超时。
+        :param datasource_uid: 数据源对象标识。
+        :param region: 缓存区。
+        :return:
         """
+
         try:
             self.status = query_result.status
             self.query = query_result.query
@@ -110,8 +147,15 @@ class QueryCacheManager:
         force_cached: Optional[bool] = False,
     ) -> "QueryCacheManager":
         """
-        Initialize QueryCacheManager by query-cache key
+        依据指定查询缓存键，获取查询缓存管理器 QueryCacheManager。
+
+        :param key: 键。
+        :param region: 缓存区。
+        :param force_query: 是否强制查询。
+        :param force_cached: 是否强制缓存。
+        :return:
         """
+
         query_cache = cls()
         if not key or not _cache[region] or force_query:
             return query_cache
@@ -158,6 +202,14 @@ class QueryCacheManager:
     ) -> None:
         """
         set value to specify cache region, proxy for `set_and_log_cache`
+
+        :param key:
+        :param value:
+        :param timeout:
+        :param datasource_uid:
+        :param region:
+        :return:
         """
+
         if key:
             set_and_log_cache(_cache[region], key, value, timeout, datasource_uid)

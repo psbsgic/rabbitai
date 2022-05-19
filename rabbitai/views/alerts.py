@@ -1,6 +1,5 @@
-"""
-DEPRECATION NOTICE: this module is deprecated and will be removed on 2.0.
-"""
+# -*- coding: utf-8 -*-
+
 from croniter import croniter
 from flask import abort, current_app as app, flash, Markup
 from flask_appbuilder import CompactCRUDMixin, permission_name
@@ -22,10 +21,10 @@ from rabbitai.utils.core import get_email_address_str, markdown
 from ..exceptions import RabbitaiException
 from .base import BaseRabbitaiView, RabbitaiModelView
 
-# TODO: access control rules for this module
-
 
 class EnsureEnabledMixin:
+    """混入类，注册请求前要调用的方法以确保该实例以启用。"""
+
     @staticmethod
     def is_enabled() -> bool:
         return bool(app.config["ENABLE_ALERTS"])
@@ -36,9 +35,9 @@ class EnsureEnabledMixin:
             raise NotFound()
 
 
-class AlertLogModelView(
-    CompactCRUDMixin, EnsureEnabledMixin, RabbitaiModelView
-):  # pylint: disable=too-many-ancestors
+class AlertLogModelView(CompactCRUDMixin, EnsureEnabledMixin, RabbitaiModelView):
+    """更改提示日志模型视图。"""
+
     datamodel = SQLAInterface(AlertLog)
     include_route_methods = {RouteMethod.LIST} | {"show"}
     base_order = ("dttm_start", "desc")
@@ -50,9 +49,9 @@ class AlertLogModelView(
     )
 
 
-class AlertObservationModelView(
-    CompactCRUDMixin, EnsureEnabledMixin, RabbitaiModelView
-):  # pylint: disable=too-many-ancestors
+class AlertObservationModelView(CompactCRUDMixin, EnsureEnabledMixin, RabbitaiModelView):
+    """更改提示观察模型视图。"""
+
     datamodel = SQLAInterface(SQLObservation)
     include_route_methods = {RouteMethod.LIST} | {"show"}
     base_order = ("dttm", "desc")
@@ -69,6 +68,8 @@ class AlertObservationModelView(
 
 
 class BaseAlertReportView(BaseRabbitaiView):
+    """基础更改提示报告视图。"""
+
     route_base = "/report"
     class_permission_name = "ReportSchedule"
 
@@ -97,18 +98,20 @@ class BaseAlertReportView(BaseRabbitaiView):
 
 
 class AlertView(BaseAlertReportView):
+    """更改提示视图。"""
     route_base = "/alert"
     class_permission_name = "ReportSchedule"
 
 
 class ReportView(BaseAlertReportView):
+    """报告视图。"""
     route_base = "/report"
     class_permission_name = "ReportSchedule"
 
 
-class AlertModelView(
-    EnsureEnabledMixin, RabbitaiModelView
-):  # pylint: disable=too-many-ancestors
+class AlertModelView(EnsureEnabledMixin, RabbitaiModelView):
+    """更改提示模型视图。"""
+
     datamodel = SQLAInterface(Alert)
     route_base = "/alerts"
     include_route_methods = RouteMethod.CRUD_SET | {"log"}

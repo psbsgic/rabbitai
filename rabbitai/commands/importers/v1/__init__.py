@@ -17,8 +17,7 @@ from rabbitai.models.core import Database
 
 
 class ImportModelsCommand(BaseCommand):
-
-    """Import models"""
+    """导入数据模型命令，导入模型数据到数据库。"""
 
     dao = BaseDAO
     model_name = "model"
@@ -37,6 +36,14 @@ class ImportModelsCommand(BaseCommand):
     def _import(
         session: Session, configs: Dict[str, Any], overwrite: bool = False
     ) -> None:
+        """
+        派生类重写，实现导入逻辑，执行该命令时要调用的方法。
+
+        :param session:
+        :param configs:
+        :param overwrite:
+        :return:
+        """
         raise NotImplementedError("Subclasses MUST implement _import")
 
     @classmethod

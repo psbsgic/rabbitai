@@ -83,18 +83,23 @@ class MachineAuthProvider:
 
 
 class MachineAuthProviderFactory:
-    """机器认证提供者工厂，提供访问 MachineAuthProvider 实例的功能。"""
+    """
+    机器认证提供者工厂，提供访问 MachineAuthProvider 实例的功能。
+
+    依据应用配置对象提供的 MACHINE_AUTH_PROVIDER_CLASS 和 WEBDRIVER_AUTH_FUNC 选项值创建认证提供者实例。
+    """
 
     def __init__(self) -> None:
         self._auth_provider = None
 
     def init_app(self, app: Flask) -> None:
         """
-        初始化，依据应用配置对象提供的 MACHINE_AUTH_PROVIDER_CLASS 选项值创建认证提供者实例。
+        初始化，依据应用配置对象提供的 MACHINE_AUTH_PROVIDER_CLASS 和 WEBDRIVER_AUTH_FUNC 选项值创建认证提供者实例。
 
         :param app:
         :return:
         """
+
         auth_provider_fqclass = app.config["MACHINE_AUTH_PROVIDER_CLASS"]
         auth_provider_classname = auth_provider_fqclass[
                                   auth_provider_fqclass.rfind(".") + 1:

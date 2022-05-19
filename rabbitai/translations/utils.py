@@ -11,7 +11,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_language_pack(locale: str) -> Optional[Dict[str, Any]]:
     """
-    获取或缓存指定语言代码的语言包。
+    获取或缓存指定语言代码的语言包，路径：{定义该方法文件的目录路径}/{语言代码}/LC_MESSAGES/messages.json。
 
     :param locale: 语言代码。
     :return:

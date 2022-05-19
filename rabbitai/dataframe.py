@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Rabbitai utilities for pandas.DataFrame."""
+""" pandas.DataFrame 实用工具函数。"""
 
 import warnings
 from typing import Any, Dict, List
@@ -23,7 +23,7 @@ def _convert_big_integers(val: Any) -> Any:
 
 def df_to_records(dframe: pd.DataFrame) -> List[Dict[str, Any]]:
     """
-    转换 DataFrame 为记录集合。
+    转换指定数据帧 DataFrame 为记录集合，即行数据字典的列表。
 
     :param dframe: 要转换的 DataFrame。
     :returns: 记录字典的列表。

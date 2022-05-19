@@ -26,8 +26,7 @@ from rabbitai.models.dashboard import dashboard_slices
 
 
 class ImportExamplesCommand(ImportModelsCommand):
-
-    """Import examples"""
+    """导入示例命令。"""
 
     dao = BaseDAO
     model_name = "model"

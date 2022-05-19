@@ -1,6 +1,7 @@
 """
 DEPRECATION NOTICE: this module is deprecated and will be removed on 2.0.
 """
+
 import logging
 from io import IOBase
 from typing import cast, Optional, Union

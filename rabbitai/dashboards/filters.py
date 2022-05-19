@@ -15,6 +15,8 @@ from rabbitai.views.base_api import BaseFavoriteFilter
 
 
 class DashboardTitleOrSlugFilter(BaseFilter):
+    """仪表盘标题或类别过滤器。"""
+
     name = _("Title or Slug")
     arg_name = "title_or_slug"
 
@@ -32,7 +34,7 @@ class DashboardTitleOrSlugFilter(BaseFilter):
 
 class DashboardFavoriteFilter(BaseFavoriteFilter):
     """
-    Custom filter for the GET list that filters all dashboards that a user has favored
+    GET 列表的自定义筛选器，用于过滤用户收藏的所有仪表板。
     """
 
     arg_name = "dashboard_is_favorite"
@@ -42,14 +44,15 @@ class DashboardFavoriteFilter(BaseFavoriteFilter):
 
 class DashboardAccessFilter(BaseFilter):
     """
-    List dashboards with the following criteria:
-        1. Those which the user owns
-        2. Those which the user has favorited
-        3. Those which have been published (if they have access to at least one slice)
+    仪表盘访问过滤器。
 
-    If the user is an admin then show all dashboards.
-    This means they do not get curation but can still sort by "published"
-    if they wish to see those dashboards which are published first.
+    依据以下条件列出仪表盘：
+        1. 用户拥有的
+        2. 用户收藏的
+        3. 公开发布的(如果他们有至少一个切片访问权限)
+
+    如果用户是管理员则显示所有仪表盘。
+    这意味着他们没有获得策展权，但如果他们希望看到最先发布的仪表盘，仍然可以按 "published" 排序。
     """
 
     def apply(self, query: Query, value: Any) -> Query:
@@ -125,9 +128,9 @@ class DashboardAccessFilter(BaseFilter):
 
 class FilterRelatedRoles(BaseFilter):
     """
-    A filter to allow searching for related roles of a resource.
+    允许搜索资源的关联角色的过滤器。
 
-    Use in the api by adding something like:
+    通过添加以下内容在api中使用：
     related_field_filters = {
       "roles": RelatedFieldFilter("name", FilterRelatedRoles),
     }

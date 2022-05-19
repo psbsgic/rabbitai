@@ -27,6 +27,14 @@ logger = logging.getLogger(__name__)
 
 
 def generate_cache_key(values_dict: Dict[str, Any], key_prefix: str = "") -> str:
+    """
+    生成缓存键。
+
+    :param values_dict:
+    :param key_prefix:
+    :return:
+    """
+
     hash_str = md5_sha_from_dict(values_dict, default=json_int_dttm_ser)
     return f"{key_prefix}{hash_str}"
 
@@ -38,6 +46,17 @@ def set_and_log_cache(
     cache_timeout: Optional[int] = None,
     datasource_uid: Optional[str] = None,
 ) -> None:
+    """
+    设置并记录到指定缓存实例，同时存储到数据库。
+
+    :param cache_instance: 缓存实例。
+    :param cache_key: 缓存键。
+    :param cache_value: 缓存值。
+    :param cache_timeout: 缓存超时。
+    :param datasource_uid: 数据源对象标识。
+    :return:
+    """
+
     if isinstance(cache_instance.cache, NullCache):
         return
 
@@ -71,6 +90,14 @@ logger = logging.getLogger(__name__)
 
 
 def view_cache_key(*args: Any, **kwargs: Any) -> str:  # pylint: disable=unused-argument
+    """
+    返回浏览缓存的视图缓存键（路由地址），view/{请求路径}/{哈希码}。
+
+    :param args:
+    :param kwargs:
+    :return:
+    """
+
     args_hash = hash(frozenset(request.args.items()))
     return "view/{}/{}".format(request.path, args_hash)
 
@@ -78,7 +105,8 @@ def view_cache_key(*args: Any, **kwargs: Any) -> str:  # pylint: disable=unused-
 def memoized_func(
     key: Callable[..., str] = view_cache_key, cache: Cache = cache_manager.cache,
 ) -> Callable[..., Any]:
-    """Use this decorator to cache functions that have predefined first arg.
+    """
+    Use this decorator to cache functions that have predefined first arg.
 
     enable_cache is treated as True by default,
     except enable_cache = False is passed to the decorated function.
@@ -131,6 +159,7 @@ def etag_cache(
     dataframe cache for requests that produce the same SQL.
 
     """
+
     if max_age is None:
         max_age = app.config["CACHE_DEFAULT_TIMEOUT"]
 

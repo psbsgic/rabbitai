@@ -28,17 +28,21 @@ def import_chart(
     slc_to_override: Optional[Slice],
     import_time: Optional[int] = None,
 ) -> int:
-    """Inserts or overrides slc in the database.
+    """
+    导入切片刀数据库。
 
     remote_id and import_time fields in params_dict are set to track the
     slice origin and ensure correct overrides for multiple imports.
     Slice.perm is used to find the datasources and connect them.
 
-    :param Slice slc_to_import: Slice object to import
+    :param Slice slc_to_import: 要导入的切片对象。
     :param Slice slc_to_override: Slice to replace, id matches remote_id
+    :param import_time: 导入时间。
+
     :returns: The resulting id for the imported slice
     :rtype: int
     """
+
     session = db.session
     make_transient(slc_to_import)
     slc_to_import.dashboards = []
@@ -66,7 +70,6 @@ def import_chart(
 
 
 def import_dashboard(
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     dashboard_to_import: Dashboard,
     dataset_id_mapping: Optional[Dict[int, int]] = None,
     import_time: Optional[int] = None,
@@ -111,6 +114,7 @@ def import_dashboard(
             },
         }
         """
+
         position_data = json.loads(dashboard.position_json)
         position_json = position_data.values()
         for value in position_json:
@@ -249,16 +253,16 @@ def import_dashboard(
     dashboard_to_import.slices = new_slices
     session.add(dashboard_to_import)
     session.flush()
-    return dashboard_to_import.id  # type: ignore
+
+    return dashboard_to_import.id
 
 
-def decode_dashboards(  # pylint: disable=too-many-return-statements
-    o: Dict[str, Any]
-) -> Any:
+def decode_dashboards(o: Dict[str, Any]) -> Any:
     """
     Function to be passed into json.loads obj_hook parameter
     Recreates the dashboard object from a json representation.
     """
+
     from rabbitai.connectors.druid.models import (
         DruidCluster,
         DruidColumn,
@@ -296,7 +300,16 @@ def import_dashboards(
     database_id: Optional[int] = None,
     import_time: Optional[int] = None,
 ) -> None:
-    """Imports dashboards from a stream to databases"""
+    """
+    Imports dashboards from a stream to databases
+
+    :param session:
+    :param content:
+    :param database_id:
+    :param import_time:
+    :return:
+    """
+
     current_tt = int(time.time())
     import_time = current_tt if import_time is None else import_time
     data = json.loads(content, object_hook=decode_dashboards)
@@ -322,7 +335,6 @@ class ImportDashboardsCommand(BaseCommand):
     in Rabbitai.
     """
 
-    # pylint: disable=unused-argument
     def __init__(
         self, contents: Dict[str, str], database_id: Optional[int] = None, **kwargs: Any
     ):

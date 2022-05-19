@@ -91,16 +91,16 @@ class DatasetRelatedDashboard(Schema):
 
 
 class DatasetRelatedCharts(Schema):
-    count = fields.Integer(description="Chart count")
+    count = fields.Integer(description="图表数")
     result = fields.List(
-        fields.Nested(DatasetRelatedChart), description="A list of dashboards"
+        fields.Nested(DatasetRelatedChart), description="仪表盘列表"
     )
 
 
 class DatasetRelatedDashboards(Schema):
-    count = fields.Integer(description="Dashboard count")
+    count = fields.Integer(description="仪表盘数")
     result = fields.List(
-        fields.Nested(DatasetRelatedDashboard), description="A list of dashboards"
+        fields.Nested(DatasetRelatedDashboard), description="仪表盘列表"
     )
 
 

@@ -55,6 +55,6 @@ def get_warning_message(obj: Callable[..., Any], expected_hash: str) -> str:
         f"The object `{obj.__name__}` (in {sourcefile} "
         f"line {lineno}) has a public interface which has currently been "
         "modified. This MUST only be released in a new major version of "
-        "Rabbitai according to SIP-57. To remove this warning message "
+        "RabbitAI according to SIP-57. To remove this warning message "
         f"update the associated hash to '{expected_hash}'.\n\n{code}"
     )

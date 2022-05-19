@@ -34,6 +34,7 @@ def validate_json(value: Union[bytes, bytearray, str]) -> None:
     :raises ValidationError: if value is not serializable to JSON
     :param value: an object that should be parseable to JSON
     """
+
     try:
         utils.validate_json(value)
     except RabbitaiException:

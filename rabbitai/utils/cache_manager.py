@@ -52,12 +52,15 @@ class CacheManager:
 
     @property
     def data_cache(self) -> Cache:
+        """数据缓存实例"""
         return self._data_cache
 
     @property
     def cache(self) -> Cache:
+        """缓存实例。"""
         return self._cache
 
     @property
     def thumbnail_cache(self) -> Cache:
+        """缩略图缓存实例。"""
         return self._thumbnail_cache

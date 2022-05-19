@@ -12,6 +12,7 @@ def is_port_open(host: str, port: int) -> bool:
     """
     Test if a given port in a host is open.
     """
+
     # pylint: disable=invalid-name
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(PORT_TIMEOUT)
@@ -31,6 +32,7 @@ def is_hostname_valid(host: str) -> bool:
     """
     Test if a given hostname can be resolved.
     """
+
     try:
         socket.gethostbyname(host)
         return True
@@ -47,6 +49,7 @@ def is_host_up(host: str) -> bool:
     Note that if we don't get a response the host might still be up,
     since many firewalls block ICMP packets.
     """
+
     param = "-n" if platform.system().lower() == "windows" else "-c"
     command = ["ping", param, "1", host]
     try:

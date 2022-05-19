@@ -1,6 +1,6 @@
 # 使用 Docker 入门指南
 
-Docker是开始 Rabbitai 的一个简单方法。
+Docker是开始 RabbitAI 的简单方式。
 
 ## 先决条件
 
@@ -37,16 +37,16 @@ Docker是开始 Rabbitai 的一个简单方法。
 
 要运行容器，只需运行：`docker-compose up`
 
-等待几分钟 Rabbitai 初始化完成后，您可以打开浏览器并查看[`http://localhost:8088`](http://localhost:8088)
+等待几分钟 RabbitAI 初始化完成后，您可以打开浏览器并查看[`http://localhost:8088`](http://localhost:8088)
 开始你的旅程。
 
 ## 研发
 
-运行时，在修改Rabbitai的Python和JavaScript源代码时容器服务器将重新加载。不过，别忘了重新加载页面以考虑新的前端。
+运行时，在修改 RabbitAI 的 Python 和 JavaScript 源代码时容器服务器将重新加载。不过，别忘了重新加载页面以考虑新的前端。
 
 ## 生产
 
-可以使用 [`docker-compose-non-dev.yml`](../docker-compose-non-dev.yml)在非开发模式下运行Rabbitai。
+可以使用 [`docker-compose-non-dev.yml`](../docker-compose-non-dev.yml)在非开发模式下运行 RabbitAI。
 此文件不包括开发所需的卷，并使用 [`./docker/.env-non-dev`](./.env-non-dev) 将变量 `RABBITAI_ENV` 设置为 `production`。
 
 ## 资源限制

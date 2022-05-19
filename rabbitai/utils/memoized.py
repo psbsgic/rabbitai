@@ -5,13 +5,12 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 
 class _memoized:
-    """Decorator that caches a function's return value each time it is called
+    """
+    一个缓存每次函数调用返回值的装饰器。
 
-    If called later with the same arguments, the cached value is returned, and
-    not re-evaluated.
+    如果稍后使用相同的参数调用，则会返回缓存的值，而不会重新计算。
 
-    Define ``watch`` as a tuple of attribute names if this Decorator
-    should account for instance variable changes.
+    如果此装饰程序应该考虑实例变量的更改，则将“watch”定义为属性名称的元组。
     """
 
     def __init__(
@@ -54,6 +53,14 @@ class _memoized:
 def memoized(
     func: Optional[Callable[..., Any]] = None, watch: Optional[Tuple[str, ...]] = None
 ) -> Callable[..., Any]:
+    """
+    装饰器，缓存函数返回结果。
+
+    :param func: 函数。
+    :param watch: 观察字段名称的元组。
+    :return: 装饰器。
+    """
+
     if func:
         return _memoized(func)
 

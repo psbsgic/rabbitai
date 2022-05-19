@@ -38,8 +38,6 @@ class ImportDashboardsCommand(ImportModelsCommand):
     }
     import_error = DashboardImportError
 
-    # TODO (betodealmeida): refactor to use code from other commands
-    # pylint: disable=too-many-branches, too-many-locals
     @staticmethod
     def _import(
         session: Session, configs: Dict[str, Any], overwrite: bool = False

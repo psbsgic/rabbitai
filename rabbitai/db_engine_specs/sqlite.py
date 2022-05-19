@@ -18,6 +18,8 @@ COLUMN_DOES_NOT_EXIST_REGEX = re.compile("no such column: (?P<column_name>.+)")
 
 
 class SqliteEngineSpec(BaseEngineSpec):
+    """SQLite 数据库引擎规范。"""
+
     engine = "sqlite"
     engine_name = "SQLite"
 
@@ -92,5 +94,12 @@ class SqliteEngineSpec(BaseEngineSpec):
     def get_table_names(
         cls, database: "Database", inspector: Inspector, schema: Optional[str]
     ) -> List[str]:
-        """Need to disregard the schema for Sqlite"""
+        """
+        获取数据表名称的列表。
+
+        :param database:
+        :param inspector:
+        :param schema:
+        :return:
+        """
         return sorted(inspector.get_table_names())

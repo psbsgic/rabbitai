@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 from contextlib import closing
 from typing import Any, Dict, Optional

@@ -1,7 +1,7 @@
 module.exports = {
   siteMetadata: {
-    title: `Rabbitai`,
-    description: `Community website for Rabbitai, a data visualization and data exploration platform`,
+    title: `RabbitAI`,
+    description: `一个简单的数据可视化和智能分析平台`,
     author: `pengsongbo`,
   },
   plugins: [
@@ -22,7 +22,7 @@ module.exports = {
       options: {
         fonts: [
           `Inter`,
-          `source sans pro\:300,400,400i,700`, // you can also specify font weights and styles
+          `source sans pro\:300,400,400i,700`,
         ],
         display: 'swap',
       },

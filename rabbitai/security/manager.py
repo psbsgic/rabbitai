@@ -65,18 +65,13 @@ logger = logging.getLogger(__name__)
 
 
 class RabbitaiSecurityListWidget(ListWidget):
-    """
-    Redeclaring to avoid circular imports
-    """
+    """安全列表部件，模板：rabbitai/fab_overrides/list.html。"""
 
     template = "rabbitai/fab_overrides/list.html"
 
 
 class RabbitaiRoleListWidget(ListWidget):
-    """
-    Role model view from FAB already uses a custom list widget override
-    So we override the override
-    """
+    """角色列表部件，模板：rabbitai/fab_overrides/list_role.html"""
 
     template = "rabbitai/fab_overrides/list_role.html"
 
@@ -110,9 +105,13 @@ RoleModelView.related_views = []
 
 class RabbitaiSecurityManager(SecurityManager):
     """
+    RabbitAI 安全管理器，扩展：SecurityManager。
+
     负责身份验证、注册安全视图、角色和权限自动管理，
     如果要更改任何内容，只需继承和重写，然后将自己的安全管理器传递给AppBuilder。
     """
+
+    # region 类属性
 
     userstatschartview = None
     """用户统计图表视图，默认None"""
@@ -130,27 +129,27 @@ class RabbitaiSecurityManager(SecurityManager):
     """用户模型视图名称集合，UserDBModelView、UserLDAPModelView、UserOAuthModelView、UserRemoteUserModelView"""
 
     GAMMA_READ_ONLY_MODEL_VIEWS = {
-        "Dataset",
-        "DruidColumnInlineView",
-        "DruidDatasourceModelView",
-        "DruidMetricInlineView",
-        "Datasource",
-    } | READ_ONLY_MODEL_VIEWS
+                                      "Dataset",
+                                      "DruidColumnInlineView",
+                                      "DruidDatasourceModelView",
+                                      "DruidMetricInlineView",
+                                      "Datasource",
+                                  } | READ_ONLY_MODEL_VIEWS
     """GAMMA类型角色只读模型视图名称集合，
     Dataset、DruidColumnInlineView、DruidDatasourceModelView、DruidMetricInlineView、Datasource"""
 
     ADMIN_ONLY_VIEW_MENUS = {
-        "AccessRequestsModelView",
-        "SQL Lab",
-        "Refresh Druid Metadata",
-        "ResetPasswordView",
-        "RoleModelView",
-        "Log",
-        "Security",
-        "Row Level Security",
-        "Row Level Security Filters",
-        "RowLevelSecurityFiltersModelView",
-    } | USER_MODEL_VIEWS
+                                "AccessRequestsModelView",
+                                "SQL Lab",
+                                "Refresh Druid Metadata",
+                                "ResetPasswordView",
+                                "RoleModelView",
+                                "Log",
+                                "Security",
+                                "Row Level Security",
+                                "Row Level Security Filters",
+                                "RowLevelSecurityFiltersModelView",
+                            } | USER_MODEL_VIEWS
     """管理员视图菜单名称的集合。"""
 
     ALPHA_ONLY_VIEW_MENUS = {
@@ -162,7 +161,7 @@ class RabbitaiSecurityManager(SecurityManager):
     }
     """ALPHA视图菜单名称的集合。"""
     ADMIN_ONLY_PERMISSIONS = {
-        "can_sql_json",  # TODO: move can_sql_json to sql_lab role
+        "can_sql_json",
         "can_override_role_permissions",
         "can_sync_druid_source",
         "can_override_role_permissions",
@@ -221,6 +220,8 @@ class RabbitaiSecurityManager(SecurityManager):
     )
     """数据访问权限列表"""
 
+    # endregion
+
     def get_schema_perm(
         self, database: Union["Database", str], schema: Optional[str] = None
     ) -> Optional[str]:
@@ -241,7 +242,7 @@ class RabbitaiSecurityManager(SecurityManager):
         """
         分解指定数据库模式权限为数据库名称和模式名称的元组。
 
-        :param schema_permission: 数据库模式权限
+        :param schema_permission: 数据库模式权限，[database_name].[schema_name]
         :return:
         """
 
@@ -359,7 +360,7 @@ class RabbitaiSecurityManager(SecurityManager):
             `all_datasource_access` permission"""
 
     @staticmethod
-    def get_datasource_access_link(datasource: "BaseDatasource",) -> Optional[str]:
+    def get_datasource_access_link(datasource: "BaseDatasource", ) -> Optional[str]:
         """
         Return the link for the denied Rabbitai datasource.
 
@@ -442,13 +443,13 @@ class RabbitaiSecurityManager(SecurityManager):
         for datasource_class in ConnectorRegistry.sources.values():
             user_datasources.update(
                 self.get_session.query(datasource_class)
-                .filter(
+                    .filter(
                     or_(
                         datasource_class.perm.in_(user_perms),
                         datasource_class.schema_perm.in_(schema_perms),
                     )
                 )
-                .all()
+                    .all()
             )
 
         # group all datasources by database
@@ -492,20 +493,21 @@ class RabbitaiSecurityManager(SecurityManager):
 
         base_query = (
             self.get_session.query(self.viewmenu_model.name)
-            .join(self.permissionview_model)
-            .join(self.permission_model)
-            .join(assoc_permissionview_role)
-            .join(self.role_model)
+                .join(self.permissionview_model)
+                .join(self.permission_model)
+                .join(assoc_permissionview_role)
+                .join(self.role_model)
         )
 
         if not g.user.is_anonymous:
             # filter by user id
             view_menu_names = (
                 base_query.join(assoc_user_role)
-                .join(self.user_model)
-                .filter(self.user_model.id == g.user.get_id())
-                .filter(self.permission_model.name == permission_name)
+                    .join(self.user_model)
+                    .filter(self.user_model.id == g.user.get_id())
+                    .filter(self.permission_model.name == permission_name)
             ).all()
+
             return {s.name for s in view_menu_names}
 
         # Properly treat anonymous user
@@ -549,11 +551,11 @@ class RabbitaiSecurityManager(SecurityManager):
         if perms:
             tables = (
                 self.get_session.query(SqlaTable.schema)
-                .filter(SqlaTable.database_id == database.id)
-                .filter(SqlaTable.schema.isnot(None))
-                .filter(SqlaTable.schema != "")
-                .filter(or_(SqlaTable.perm.in_(perms)))
-                .distinct()
+                    .filter(SqlaTable.database_id == database.id)
+                    .filter(SqlaTable.schema.isnot(None))
+                    .filter(SqlaTable.schema != "")
+                    .filter(or_(SqlaTable.perm.in_(perms)))
+                    .distinct()
             )
             accessible_schemas.update([table.schema for table in tables])
 
@@ -666,10 +668,8 @@ class RabbitaiSecurityManager(SecurityManager):
         sesh = self.get_session
         pvms = sesh.query(PermissionView).filter(
             or_(
-                PermissionView.permission   # pylint: disable=singleton-comparison
-                == None,
-                PermissionView.view_menu  # pylint: disable=singleton-comparison
-                == None,
+                PermissionView.permission is None,  # == None
+                PermissionView.view_menu is None,   # == None
             )
         )
         deleted_count = pvms.delete()
@@ -898,9 +898,7 @@ class RabbitaiSecurityManager(SecurityManager):
 
         return pvm.permission.name in {"can_override_role_permissions", "can_approve"}
 
-    def set_perm(  # pylint: disable=no-self-use,unused-argument
-        self, mapper: Mapper, connection: Connection, target: "BaseDatasource"
-    ) -> None:
+    def set_perm(self, mapper: Mapper, connection: Connection, target: "BaseDatasource") -> None:
         """
         Set the datasource permissions.
 
@@ -912,8 +910,8 @@ class RabbitaiSecurityManager(SecurityManager):
         if target.perm != target.get_perm():
             connection.execute(
                 link_table.update()
-                .where(link_table.c.id == target.id)
-                .values(perm=target.get_perm())
+                    .where(link_table.c.id == target.id)
+                    .values(perm=target.get_perm())
             )
 
         if (
@@ -922,8 +920,8 @@ class RabbitaiSecurityManager(SecurityManager):
         ):
             connection.execute(
                 link_table.update()
-                .where(link_table.c.id == target.id)
-                .values(schema_perm=target.get_schema_perm())
+                    .where(link_table.c.id == target.id)
+                    .values(schema_perm=target.get_schema_perm())
             )
 
         pvm_names = []
@@ -934,7 +932,6 @@ class RabbitaiSecurityManager(SecurityManager):
             if target.schema:
                 pvm_names.append(("schema_access", target.get_schema_perm()))
 
-        # TODO(bogdan): modify slice permissions as well.
         for permission_name, view_menu_name in pvm_names:
             permission = self.find_permission(permission_name)
             view_menu = self.find_view_menu(view_menu_name)
@@ -958,8 +955,8 @@ class RabbitaiSecurityManager(SecurityManager):
             if permission and view_menu:
                 pv = (
                     self.get_session.query(self.permissionview_model)
-                    .filter_by(permission=permission, view_menu=view_menu)
-                    .first()
+                        .filter_by(permission=permission, view_menu=view_menu)
+                        .first()
                 )
             if not pv and permission and view_menu:
                 permission_view_table = (
@@ -972,8 +969,6 @@ class RabbitaiSecurityManager(SecurityManager):
                 )
 
     def raise_for_access(
-        # pylint: disable=too-many-arguments,too-many-branches,
-        # pylint: disable=too-many-locals
         self,
         database: Optional["Database"] = None,
         datasource: Optional["BaseDatasource"] = None,
@@ -983,15 +978,16 @@ class RabbitaiSecurityManager(SecurityManager):
         viz: Optional["BaseViz"] = None,
     ) -> None:
         """
-        Raise an exception if the user cannot access the resource.
+        如果用户不能访问资源则引发异常。
 
-        :param database: The Rabbitai database
-        :param datasource: The Rabbitai datasource
-        :param query: The SQL Lab query
-        :param query_context: The query context
-        :param table: The Rabbitai table (requires database)
-        :param viz: The visualization
-        :raises RabbitaiSecurityException: If the user cannot access the resource
+        :param database: RabbitAI 数据库对象。
+        :param datasource: RabbitAI 数据源对象。
+        :param query: SQL 查询对象。
+        :param query_context: 查询上下文。
+        :param table: Rabbitai 数据表对象(要求数据库对象)
+        :param viz: 可视对象。
+
+        :raises RabbitaiSecurityException: 如果用户不能访问资源。
         """
 
         from rabbitai.connectors.sqla.models import SqlaTable
@@ -1069,8 +1065,8 @@ class RabbitaiSecurityManager(SecurityManager):
         session = session or self.get_session
         return (
             session.query(self.user_model)
-            .filter(self.user_model.username == username)
-            .one_or_none()
+                .filter(self.user_model.username == username)
+                .one_or_none()
         )
 
     def get_anonymous_user(self) -> User:  # pylint: disable=no-self-use
@@ -1093,33 +1089,33 @@ class RabbitaiSecurityManager(SecurityManager):
 
             user_roles = (
                 self.get_session.query(assoc_user_role.c.role_id)
-                .filter(assoc_user_role.c.user_id == g.user.get_id())
-                .subquery()
+                    .filter(assoc_user_role.c.user_id == g.user.get_id())
+                    .subquery()
             )
             regular_filter_roles = (
                 self.get_session.query(RLSFilterRoles.c.rls_filter_id)
-                .join(RowLevelSecurityFilter)
-                .filter(
+                    .join(RowLevelSecurityFilter)
+                    .filter(
                     RowLevelSecurityFilter.filter_type
                     == RowLevelSecurityFilterType.REGULAR
                 )
-                .filter(RLSFilterRoles.c.role_id.in_(user_roles))
-                .subquery()
+                    .filter(RLSFilterRoles.c.role_id.in_(user_roles))
+                    .subquery()
             )
             base_filter_roles = (
                 self.get_session.query(RLSFilterRoles.c.rls_filter_id)
-                .join(RowLevelSecurityFilter)
-                .filter(
+                    .join(RowLevelSecurityFilter)
+                    .filter(
                     RowLevelSecurityFilter.filter_type
                     == RowLevelSecurityFilterType.BASE
                 )
-                .filter(RLSFilterRoles.c.role_id.in_(user_roles))
-                .subquery()
+                    .filter(RLSFilterRoles.c.role_id.in_(user_roles))
+                    .subquery()
             )
             filter_tables = (
                 self.get_session.query(RLSFilterTables.c.rls_filter_id)
-                .filter(RLSFilterTables.c.table_id == table.id)
-                .subquery()
+                    .filter(RLSFilterTables.c.table_id == table.id)
+                    .subquery()
             )
             query = (
                 self.get_session.query(
@@ -1127,8 +1123,8 @@ class RabbitaiSecurityManager(SecurityManager):
                     RowLevelSecurityFilter.group_key,
                     RowLevelSecurityFilter.clause,
                 )
-                .filter(RowLevelSecurityFilter.id.in_(filter_tables))
-                .filter(
+                    .filter(RowLevelSecurityFilter.id.in_(filter_tables))
+                    .filter(
                     or_(
                         and_(
                             RowLevelSecurityFilter.filter_type
@@ -1187,6 +1183,13 @@ class RabbitaiSecurityManager(SecurityManager):
 
     @staticmethod
     def can_access_based_on_dashboard(datasource: "BaseDatasource") -> bool:
+        """
+        能否在仪表盘中访问指定数据源。
+
+        :param datasource: 数据源对象。
+        :return:
+        """
+
         from rabbitai import db
         from rabbitai.dashboards.filters import DashboardAccessFilter
         from rabbitai.models.slice import Slice
@@ -1195,8 +1198,8 @@ class RabbitaiSecurityManager(SecurityManager):
         datasource_class = type(datasource)
         query = (
             db.session.query(datasource_class)
-            .join(Slice.table)
-            .filter(datasource_class.id == datasource.id)
+                .join(Slice.table)
+                .filter(datasource_class.id == datasource.id)
         )
 
         query = DashboardAccessFilter("id", SQLAInterface(Dashboard, db.session)).apply(

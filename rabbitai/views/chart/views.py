@@ -23,6 +23,8 @@ from rabbitai.views.utils import bootstrap_user_data
 
 
 class SliceModelView(SliceMixin, RabbitaiModelView, DeleteMixin):
+    """切片（图表）模型视图。"""
+
     route_base = "/chart"
     datamodel = SQLAInterface(Slice)
     include_route_methods = RouteMethod.CRUD_SET | {
@@ -72,6 +74,8 @@ class SliceModelView(SliceMixin, RabbitaiModelView, DeleteMixin):
 
 
 class SliceAsync(SliceModelView):
+    """异步切片模型视图。"""
+
     route_base = "/sliceasync"
     include_route_methods = {RouteMethod.API_READ}
 

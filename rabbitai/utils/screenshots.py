@@ -22,9 +22,15 @@ if TYPE_CHECKING:
 
 
 class BaseScreenshot:
+    """屏幕快照基类，提供生成图表、仪表盘的屏幕快照的基本功能。"""
+
     driver_type = current_app.config["WEBDRIVER_TYPE"]
+    """Web驱动器的类型，默认为应用配置对象的 WEBDRIVER_TYPE """
     thumbnail_type: str = ""
+    """缩略图类型"""
     element: str = ""
+    """元素"""
+
     window_size: WindowSize = (800, 600)
     thumb_size: WindowSize = (400, 300)
 
@@ -34,6 +40,12 @@ class BaseScreenshot:
         self.screenshot: Optional[bytes] = None
 
     def driver(self, window_size: Optional[WindowSize] = None) -> WebDriverProxy:
+        """
+        返回驱动器代理 WebDriverProxy。
+
+        :param window_size:
+        :return:
+        """
         window_size = window_size or self.window_size
         return WebDriverProxy(self.driver_type, window_size)
 
@@ -56,6 +68,14 @@ class BaseScreenshot:
     def get_screenshot(
         self, user: "User", window_size: Optional[WindowSize] = None
     ) -> Optional[bytes]:
+        """
+        获取屏幕快照。
+
+        :param user:
+        :param window_size:
+        :return:
+        """
+
         driver = self.driver(window_size)
         self.screenshot = driver.get_screenshot(self.url, self.element, user)
         return self.screenshot
@@ -67,12 +87,13 @@ class BaseScreenshot:
         thumb_size: Optional[WindowSize] = None,
     ) -> Optional[BytesIO]:
         """
-            Get thumbnail screenshot has BytesIO from cache or fetch
+        获取缩略图屏幕截图具有来自缓存或获取的字节。
 
         :param user: None to use current user or User Model to login and fetch
         :param cache: The cache to use
         :param thumb_size: Override thumbnail site
         """
+
         payload: Optional[bytes] = None
         cache_key = self.cache_key(self.window_size, thumb_size)
         if cache:
@@ -105,7 +126,7 @@ class BaseScreenshot:
         logger.info("Failed at getting from cache: %s", cache_key)
         return None
 
-    def compute_and_cache(  # pylint: disable=too-many-arguments
+    def compute_and_cache(
         self,
         user: "User" = None,
         window_size: Optional[WindowSize] = None,
@@ -123,6 +144,7 @@ class BaseScreenshot:
         :param force: Will force the computation even if it's already cached
         :return: Image payload
         """
+
         cache_key = self.cache_key(window_size, thumb_size)
         window_size = window_size or self.window_size
         thumb_size = thumb_size or self.thumb_size
@@ -179,6 +201,8 @@ class BaseScreenshot:
 
 
 class ChartScreenshot(BaseScreenshot):
+    """图表屏幕快照，提供创建图表屏幕快照的功能。"""
+
     thumbnail_type: str = "chart"
     element: str = "chart-container"
 
@@ -195,6 +219,8 @@ class ChartScreenshot(BaseScreenshot):
 
 
 class DashboardScreenshot(BaseScreenshot):
+    """仪表盘屏幕快照。"""
+
     thumbnail_type: str = "dashboard"
     element: str = "grid-container"
 

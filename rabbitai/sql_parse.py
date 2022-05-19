@@ -26,17 +26,20 @@ logger = logging.getLogger(__name__)
 
 
 class CtasMethod(str, Enum):
+    """创建数据表或视图作为Select方法枚举，TABLE、VIEW。"""
+
     TABLE = "TABLE"
     VIEW = "VIEW"
 
 
 def _extract_limit_from_query(statement: TokenList) -> Optional[int]:
     """
-    Extract limit clause from SQL statement.
+    从指定SQL语句中提取限制从句。
 
-    :param statement: SQL statement
-    :return: Limit extracted from query, None if no limit present in statement
+    :param statement: SQL 语句
+    :return: 限制的查询表达形式或 None。
     """
+
     idx, _ = statement.token_next_by(m=(Keyword, "LIMIT"))
     if idx is not None:
         _, token = statement.token_next(idx=idx)
@@ -53,22 +56,17 @@ def _extract_limit_from_query(statement: TokenList) -> Optional[int]:
 
 def strip_comments_from_sql(statement: str) -> str:
     """
-    Strips comments from a SQL statement, does a simple test first
-    to avoid always instantiating the expensive ParsedQuery constructor
+    去掉指定 SQL 语句字符串中的注释。
 
-    This is useful for engines that don't support comments
-
-    :param statement: A string with the SQL statement
-    :return: SQL statement without comments
+    :param statement: SQL 语句字符串。
+    :return: 无注释的 SQL 语句字符串。
     """
     return ParsedQuery(statement).strip_comments() if "--" in statement else statement
 
 
 @dataclass(eq=True, frozen=True)
 class Table:
-    """
-    A fully qualified SQL table conforming to [[catalog.]schema.]table.
-    """
+    """符合[[catalog.]schema.]table的完全限定SQL表。"""
 
     table: str
     schema: Optional[str] = None
@@ -87,9 +85,16 @@ class Table:
 
 
 class ParsedQuery:
-    """解析的查询，提供将SQL语句解析为数据库对象的功能。"""
+    """解析的查询，使用 sqlparse 包，提供将SQL语句解析为数据库对象的功能。"""
 
     def __init__(self, sql_statement: str, strip_comments: bool = False):
+        """
+        使用指定 SQL 语句字符串和是否去掉注释（默认False），初始化新实例。
+
+        :param sql_statement: SQL 语句字符串。
+        :param strip_comments: 是否去掉注释（默认False）。
+        """
+
         if strip_comments:
             sql_statement = sqlparse.format(sql_statement, strip_comments=True)
 
@@ -105,6 +110,7 @@ class ParsedQuery:
 
     @property
     def tables(self) -> Set[Table]:
+        """获取数据表对象的集合。"""
         if not self._tables:
             for statement in self._parsed:
                 self._extract_from_token(statement)
@@ -156,9 +162,11 @@ class ParsedQuery:
         return self._parsed[0].get_type() == "UNKNOWN"
 
     def stripped(self) -> str:
+        """移除空格、制表符和换行符。"""
         return self.sql.strip(" \t\n;")
 
     def strip_comments(self) -> str:
+        """移除SQL语句中的注释。"""
         return sqlparse.format(self.stripped(), strip_comments=True)
 
     def get_statements(self) -> List[str]:
@@ -234,28 +242,28 @@ class ParsedQuery:
         overwrite: bool = False,
         method: CtasMethod = CtasMethod.TABLE,
     ) -> str:
-        """Reformats the query into the create table as query.
+        """
+        Reformats the query into the create table as query.
 
         Works only for the single select SQL statements, in all other cases
         the sql query is not modified.
+
         :param table_name: table that will contain the results of the query execution
         :param schema_name: schema name for the target table
         :param overwrite: table_name will be dropped if true
         :param method: method for the CTA query, currently view or table creation
         :return: Create table as query
         """
+
         exec_sql = ""
         sql = self.stripped()
-        # TODO(bkyryliuk): quote full_table_name
         full_table_name = f"{schema_name}.{table_name}" if schema_name else table_name
         if overwrite:
             exec_sql = f"DROP {method} IF EXISTS {full_table_name};\n"
         exec_sql += f"CREATE {method} {full_table_name} AS \n{sql}"
         return exec_sql
 
-    def _extract_from_token(  # pylint: disable=too-many-branches
-        self, token: Token
-    ) -> None:
+    def _extract_from_token(self, token: Token) -> None:
         """
         <Identifier> store a list of subtokens and <IdentifierList> store lists of
         subtoken list.
@@ -300,15 +308,18 @@ class ParsedQuery:
                     self._extract_from_token(item)
 
     def set_or_update_query_limit(self, new_limit: int, force: bool = False) -> str:
-        """Returns the query with the specified limit.
+        """
+        Returns the query with the specified limit.
 
         Does not change the underlying query if user did not apply the limit,
         otherwise replaces the limit with the lower value between existing limit
         in the query and new_limit.
 
         :param new_limit: Limit to be incorporated into returned query
+        :param force:
         :return: The original query with new limit
         """
+
         if not self._limit:
             return f"{self.stripped()}\nLIMIT {new_limit}"
         limit_pos = None

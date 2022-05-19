@@ -87,11 +87,10 @@ FRONTEND_CONF_KEYS = (
     "SQLALCHEMY_DISPLAY_TEXT",
     "GLOBAL_ASYNC_QUERIES_WEBSOCKET_URL",
 )
-"""前端配置键列表。"""
+"""前端配置键列表，这些键提供要传递到前端的数据，可以通过后端（Flask）的配置对象相应键来进行设置。"""
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
 config = rabbitai_app.config
 
 
@@ -118,12 +117,13 @@ def json_error_response(
     """
     返回单个错误信息响应对象。
 
-    :param msg:
-    :param status:
-    :param payload:
-    :param link:
-    :return:
+    :param msg: 错误信息。
+    :param status: 状态码。
+    :param payload: 响应的字典内容。
+    :param link: 链接地址。
+    :return: FlaskResponse 实例。
     """
+
     if not payload:
         payload = {"error": "{}".format(msg)}
     if link:
@@ -144,10 +144,10 @@ def json_errors_response(
     """
     返回错误响应对象。
 
-    :param errors:
-    :param status:
-    :param payload:
-    :return:
+    :param errors: 错误对象列表。
+    :param status: 状态。
+    :param payload: 响应的字典内容。
+    :return: FlaskResponse 实例。
     """
 
     if not payload:
@@ -203,8 +203,12 @@ def generate_download_headers(extension: str, filename: Optional[str] = None) ->
 
 def api(f: Callable[..., FlaskResponse]) -> Callable[..., FlaskResponse]:
     """
-    A decorator to label an endpoint as an API. Catches uncaught exceptions and
-    return the response in the JSON format
+    一个装饰器，标记一个端点为 API，捕获未捕获的异常并以JSON格式返回响应。
+
+    :param f: 被装饰的函数。
+    :type f:
+    :return:
+    :rtype:
     """
 
     def wraps(self: "BaseRabbitaiView", *args: Any, **kwargs: Any) -> FlaskResponse:
@@ -319,9 +323,54 @@ def is_user_admin() -> bool:
 
 class BaseRabbitaiView(BaseView):
     """
-    Rabbitai基础视图，构造函数键注册视图中在Flask上公开的Urls 为蓝图。
+    Rabbitai基础视图，扩展：BaseView，构造函数将注册视图中在Flask上公开的 Urls 为蓝图。
+
+    定义以下属性：
+
+    - appbuilder ：Web应用构建者
+    - blueprint ：蓝图，调用 create_blueprint 方法创建。
+    - endpoint ：终结点，默认为类名称 self.__class__.__name__
+    - route_base ：路由基地址，如果要定义自己的相对url，请重写此选项，默认为：/ + self.__class__.__name__.lower()。
+    - template_folder = "templates"：相对于应用的模板文件夹。
+    - static_folder = "static"：相对于应用的静态资源文件夹。
+    - base_permissions ：允许的基本权限的列表。
+    - class_permission_name ：类权限名称，默认：self.__class__.__name__。
+    - previous_class_permission_name ：如果设置安全性，则清除将删除具有此名称的所有权限元组。
+    - method_permission_name ：各方法的权限。
+    - previous_method_permission_name：与 method_permission_name 具有相同结构。如果设置了安全性，converge将用新的方法权限替换所有方法权限。
+    - exclude_route_methods：要排除的路由方法集合。
+    - include_route_methods：如果已定义，则将采用白名单设置，其中排除除在此属性上定义的端点之外的所有端点。
+    - default_view = "list"：默认视图，url_for (method name)。
+    - extra_args ：要注入到模板中的额外参数字典。
+    - _apis ：API。
+
     传递 bootstrap_data（包括用户相关引导数据和通用引导数据）使用模板：rabbitai/spa.html。
     定义方法：json_response、render_app_template
+
+    用户相关数据：
+
+    - username
+    - firstName
+    - lastName
+    - userId
+    - isActive
+    - createdOn
+    - email
+    - roles
+    - permissions
+
+    通用包括：
+
+    - flash_messages
+    - conf
+    - locale
+    - language_pack
+    - feature_flags
+    - menu_data
+    - extra_sequential_color_schemes
+    - extra_categorical_color_schemes
+    - theme_overrides。
+
     """
 
     @staticmethod
@@ -416,25 +465,18 @@ def menu_data() -> Dict[str, Any]:
 def common_bootstrap_payload() -> Dict[str, Any]:
     """
     返回总是要发送到客户端的通用数据字典，
+
     至少包括：
 
-    - flash_messages
-
-    - conf
-
-    - locale
-
-    - language_pack
-
-    - feature_flags
-
-    - menu_data
-
-    - extra_sequential_color_schemes
-
-    - extra_categorical_color_schemes
-
-    - theme_overrides。
+    - flash_messages：快速信息。
+    - conf：要发送到前端的配置字典。
+    - locale：本地语言。
+    - language_pack：语言包。
+    - feature_flags：功能标志字典。
+    - menu_data：菜单数据。
+    - extra_sequential_color_schemes：自定义序列颜色方案。
+    - extra_categorical_color_schemes：自定义类别颜色方案。
+    - theme_overrides：主题。
     """
 
     messages = get_flashed_messages(with_categories=True)
@@ -519,6 +561,7 @@ def show_http_exception(ex: HTTPException) -> FlaskResponse:
 # or RabbitaiErrorsException, with a specific status code and error type
 @rabbitai_app.errorhandler(CommandException)
 def show_command_errors(ex: CommandException) -> FlaskResponse:
+    """应用错误处理查询，显示命令错误。"""
     logger.warning(ex)
     extra = ex.normalized_messages() if isinstance(ex, CommandInvalidError) else {}
     return json_errors_response(
@@ -537,7 +580,7 @@ def show_command_errors(ex: CommandException) -> FlaskResponse:
 # Catch-all, to ensure all errors from the backend conform to SIP-40
 @rabbitai_app.errorhandler(Exception)
 def show_unexpected_exception(ex: Exception) -> FlaskResponse:
-    """显示未知错误。"""
+    """应用错误处理查询，显示未知错误。"""
 
     logger.exception(ex)
     return json_errors_response(
@@ -555,7 +598,7 @@ def show_unexpected_exception(ex: Exception) -> FlaskResponse:
 
 @rabbitai_app.context_processor
 def get_common_bootstrap_data() -> Dict[str, Any]:
-    """获取通用引导数据，并作为模板数据传递到模板。"""
+    """注册为模板上下文处理器，获取通用引导数据 bootstrap_data，并作为模板数据传递到模板。"""
 
     def serialize_bootstrap_data() -> str:
         """序列化引导数据。"""
@@ -568,16 +611,47 @@ def get_common_bootstrap_data() -> Dict[str, Any]:
 
 
 class RabbitaiListWidget(ListWidget):
-    """Rabbitai列表部件，基于模板：rabbitai/fab_overrides/list.html。"""
+    """RabbitAI列表部件，扩展：ListWidget，基于模板：rabbitai/fab_overrides/list.html。"""
 
     template = "rabbitai/fab_overrides/list.html"
 
 
 class RabbitaiModelView(ModelView):
-    """Rabbitai模型视图，传递 bootstrap_data（包括用户相关引导数据和通用引导数据）使用模板：rabbitai/spa.html。"""
+    """
+    Rabbitai模型视图，扩展：ModelView，实现CRUD功能，
+
+    传递 bootstrap_data（包括用户相关数据和通用数据）使用模板：rabbitai/spa.html。
+
+    用户相关数据：
+
+    - username
+    - firstName
+    - lastName
+    - userId
+    - isActive
+    - createdOn
+    - email
+    - roles
+    - permissions
+
+    通用包括：
+
+    - flash_messages
+    - conf
+    - locale
+    - language_pack
+    - feature_flags
+    - menu_data
+    - extra_sequential_color_schemes
+    - extra_categorical_color_schemes
+    - theme_overrides。
+
+    """
 
     page_size = 100
+    """页面大小，默认100"""
     list_widget = RabbitaiListWidget
+    """显示列表的部件"""
 
     def render_app_template(self) -> FlaskResponse:
         """
@@ -585,7 +659,7 @@ class RabbitaiModelView(ModelView):
 
         传递 bootstrap_data（包括用户相关引导数据和通用引导数据）使用模板：rabbitai/spa.html。
 
-        :return:
+        :return: FlaskResponse。
         """
 
         payload = {
@@ -602,7 +676,8 @@ class RabbitaiModelView(ModelView):
 
 
 class ListWidgetWithCheckboxes(ListWidget):
-    """An alternative to list view that renders Boolean fields as checkboxes
+    """
+    An alternative to list view that renders Boolean fields as checkboxes
 
     Works in conjunction with the `checkbox` view."""
 
@@ -617,6 +692,7 @@ def validate_json(form: Form, field: Field) -> None:
     :param field:
     :return:
     """
+
     try:
         json.loads(field.data)
     except Exception as ex:
@@ -626,8 +702,7 @@ def validate_json(form: Form, field: Field) -> None:
 
 class YamlExportMixin:
     """
-    Override this if you want a dict response instead, with a certain key.
-    Used on DatabaseView for cli compatibility
+    导出为 YAML 文件混入类，提供将数据导出为 YAML 格式文件的功能。
     """
 
     yaml_dict_key: Optional[str] = None
@@ -649,7 +724,7 @@ class YamlExportMixin:
 
 
 class DeleteMixin:
-    """删除混入类，提供批量删除对象关系模型的操作。"""
+    """删除混入类，提供批量删除对象关系模型的操作，并公开操作：muldelete。"""
 
     def _delete(self: BaseView, primary_key: int) -> None:
         """
@@ -703,7 +778,9 @@ class DeleteMixin:
                 flash(str(ex), "danger")
             else:
                 self._delete(item.id)
+
         self.update_redirect()
+
         return redirect(self.get_redirect())
 
 
@@ -731,7 +808,10 @@ class CsvResponse(Response):
 
 
 def check_ownership(obj: Any, raise_if_false: bool = True) -> bool:
-    """Meant to be used in `pre_update` hooks on models to enforce ownership
+    """
+    检查拥有者。
+
+    在 `pre_update` 回调中用于强制拥有者检查。
 
     Admin have all access, and other users need to be referenced on either
     the created_by field that comes with the ``AuditMixin``, or in a field
@@ -739,6 +819,7 @@ def check_ownership(obj: Any, raise_if_false: bool = True) -> bool:
     model. It is meant to be used in the ModelView's pre_update hook in
     which raising will abort the update.
     """
+
     if not obj:
         return False
 
@@ -781,12 +862,12 @@ def bind_field(
     _: Any, form: DynamicForm, unbound_field: UnboundField, options: Dict[Any, Any]
 ) -> Field:
     """
-    Customize how fields are bound by stripping all whitespace.
+    通过去除所有空白来自定义字段的绑定方式。
 
-    :param form: The form
-    :param unbound_field: The unbound field
-    :param options: The field options
-    :returns: The bound field
+    :param form: 表单。
+    :param unbound_field: 未绑定字段。
+    :param options: 字段选项字典。
+    :returns: 绑定字段。
     """
 
     filters = unbound_field.kwargs.get("filters", [])
@@ -799,7 +880,7 @@ FlaskForm.Meta.bind_field = bind_field
 
 @rabbitai_app.after_request
 def apply_http_headers(response: Response) -> Response:
-    """Applies the configuration's http headers to all responses"""
+    """每次请求后要调用的方法，应用配置的Http标头到响应对象。"""
 
     # HTTP_HEADERS is deprecated, this provides backwards compatibility
     response.headers.extend(

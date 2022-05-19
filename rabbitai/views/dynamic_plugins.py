@@ -27,7 +27,7 @@ class DynamicPluginsView(ModelView):
     show_columns = add_columns + ["id"]
     list_columns = show_columns
 
-    label_columns = {"name": "Name", "key": "Key", "bundle_url": "Bundle URL"}
+    label_columns = {"name": "插件名称", "key": "唯一标识", "bundle_url": "包地址"}
 
     description_columns = {
         "name": _("A human-friendly name"),

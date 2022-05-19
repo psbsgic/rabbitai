@@ -59,7 +59,7 @@ class DashboardDAO(BaseDAO):
         return dashboard.changed_on.replace(microsecond=0)
 
     @staticmethod
-    def get_dashboard_and_slices_changed_on(  # pylint: disable=invalid-name
+    def get_dashboard_and_slices_changed_on(
         id_or_slug_or_dashboard: Union[str, Dashboard]
     ) -> datetime:
         """
@@ -85,7 +85,7 @@ class DashboardDAO(BaseDAO):
         return max(dashboard_changed_on, slices_changed_on).replace(microsecond=0)
 
     @staticmethod
-    def get_dashboard_and_datasets_changed_on(  # pylint: disable=invalid-name
+    def get_dashboard_and_datasets_changed_on(
         id_or_slug_or_dashboard: Union[str, Dashboard]
     ) -> datetime:
         """

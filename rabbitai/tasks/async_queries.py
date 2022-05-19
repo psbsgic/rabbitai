@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import copy
 import logging
 from typing import Any, cast, Dict, Optional
@@ -16,12 +18,17 @@ from rabbitai.utils.cache import generate_cache_key, set_and_log_cache
 from rabbitai.views.utils import get_datasource_info, get_viz
 
 logger = logging.getLogger(__name__)
-query_timeout = current_app.config[
-    "SQLLAB_ASYNC_TIME_LIMIT_SEC"
-]  # TODO: new config key
+query_timeout = current_app.config["SQLLAB_ASYNC_TIME_LIMIT_SEC"]
 
 
 def ensure_user_is_set(user_id: Optional[int]) -> None:
+    """
+    确保 g.user 已设置为指定用户。
+
+    :param user_id:
+    :return:
+    """
+
     user_is_not_set = not (hasattr(g, "user") and g.user is not None)
     if user_is_not_set and user_id is not None:
         g.user = security_manager.get_user_by_id(user_id)
@@ -30,9 +37,15 @@ def ensure_user_is_set(user_id: Optional[int]) -> None:
 
 
 @celery_app.task(name="load_chart_data_into_cache", soft_time_limit=query_timeout)
-def load_chart_data_into_cache(
-    job_metadata: Dict[str, Any], form_data: Dict[str, Any],
-) -> None:
+def load_chart_data_into_cache(job_metadata: Dict[str, Any], form_data: Dict[str, Any],) -> None:
+    """
+    加载图表数据到缓存。
+
+    :param job_metadata: 任务元数据。
+    :param form_data: 表单数据。
+    :return:
+    """
+
     from rabbitai.charts.commands.data import ChartDataCommand
 
     try:
@@ -49,8 +62,7 @@ def load_chart_data_into_cache(
         logger.warning("A timeout occurred while loading chart data, error: %s", exc)
         raise exc
     except Exception as exc:
-        # TODO: QueryContext should support SIP-40 style errors
-        error = exc.message if hasattr(exc, "message") else str(exc)  # type: ignore # pylint: disable=no-member
+        error = exc.message if hasattr(exc, "message") else str(exc)
         errors = [{"message": error}]
         async_query_manager.update_job(
             job_metadata, async_query_manager.STATUS_ERROR, errors=errors
@@ -59,12 +71,22 @@ def load_chart_data_into_cache(
 
 
 @celery_app.task(name="load_explore_json_into_cache", soft_time_limit=query_timeout)
-def load_explore_json_into_cache(  # pylint: disable=too-many-locals
+def load_explore_json_into_cache(
     job_metadata: Dict[str, Any],
     form_data: Dict[str, Any],
     response_type: Optional[str] = None,
     force: bool = False,
 ) -> None:
+    """
+    加载浏览Json数据到缓存。
+
+    :param job_metadata: 任务元数据。
+    :param form_data: 表单数据。
+    :param response_type: 响应类型。
+    :param force: 是否强制。
+    :return:
+    """
+
     cache_key_prefix = "ejr-"  # ejr: explore_json request
     try:
         ensure_user_is_set(job_metadata.get("user_id"))
@@ -104,10 +126,10 @@ def load_explore_json_into_cache(  # pylint: disable=too-many-locals
         raise ex
     except Exception as exc:
         if isinstance(exc, RabbitaiVizException):
-            errors = exc.errors  # pylint: disable=no-member
+            errors = exc.errors
         else:
             error = (
-                exc.message if hasattr(exc, "message") else str(exc)  # type: ignore # pylint: disable=no-member
+                exc.message if hasattr(exc, "message") else str(exc)
             )
             errors = [error]
 

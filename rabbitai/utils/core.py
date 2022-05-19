@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Utility functions used across Rabbitai"""
+""" Rabbitai 使用的实用函数 """
 
 import collections
 import decimal
@@ -96,17 +96,20 @@ if TYPE_CHECKING:
     from rabbitai.connectors.base.models import BaseColumn, BaseDatasource
     from rabbitai.models.core import Database
 
-
 logging.getLogger("MARKDOWN").setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 DTTM_ALIAS = "__timestamp"
+"""时间戳列别名，__timestamp"""
 
 TIME_COMPARISION = "__"
+"""时间比较，__"""
 
 JS_MAX_INTEGER = 9007199254740991  # Largest int Java Script can handle 2^53-1
+"""JS最大整数"""
 
 InputType = TypeVar("InputType")
+"""输入类型，TypeVar("InputType")"""
 
 
 class LenientEnum(Enum):
@@ -129,6 +132,7 @@ class AdhocMetricExpressionType(str, Enum):
 
 class AnnotationType(str, Enum):
     """注释类型枚举，FORMULA、INTERVAL、EVENT、TIME_SERIES。"""
+
     FORMULA = "FORMULA"
     INTERVAL = "INTERVAL"
     EVENT = "EVENT"
@@ -136,7 +140,7 @@ class AnnotationType(str, Enum):
 
 
 class GenericDataType(IntEnum):
-    """适合前端和后端的数据库列类型。"""
+    """通用数据类型，适合前端和后端的数据库列类型。"""
 
     NUMERIC = 0
     STRING = 1
@@ -156,7 +160,7 @@ class ChartDataResultFormat(str, Enum):
 
 
 class ChartDataResultType(str, Enum):
-    """图表数据响应类型枚举。"""
+    """图表数据响应类型枚举，COLUMNS、TIMEGRAINS、QUERY、SAMPLES、FULL、RESULTS、POST_PROCESSED。"""
 
     COLUMNS = "columns"
     FULL = "full"
@@ -168,14 +172,16 @@ class ChartDataResultType(str, Enum):
 
 
 class DatasourceDict(TypedDict):
-    """数据源字典类型。"""
+    """数据源字典类型，定义：id、type。"""
 
     type: str
     id: int
 
 
 class AdhocFilterClause(TypedDict, total=False):
-    """动态过滤从句。"""
+    """动态过滤器从句，
+
+    定义属性及其类型：clause、expressionType、filterOptionName、comparator、operator、subject、isExtra、sqlExpression。"""
 
     clause: str
     expressionType: str
@@ -188,6 +194,8 @@ class AdhocFilterClause(TypedDict, total=False):
 
 
 class QueryObjectFilterClause(TypedDict, total=False):
+    """查询对象过滤从句类型，定义属性及其类：col、op、val、grain、isExtra。"""
+
     col: str
     op: str  # pylint: disable=invalid-name
     val: Optional[FilterValues]
@@ -197,6 +205,7 @@ class QueryObjectFilterClause(TypedDict, total=False):
 
 class ExtraFiltersTimeColumnType(str, Enum):
     """自定义过滤器时间列类型枚举。"""
+
     GRANULARITY = "__granularity"
     TIME_COL = "__time_col"
     TIME_GRAIN = "__time_grain"
@@ -253,16 +262,14 @@ class QueryMode(str, LenientEnum):
 
 
 class QuerySource(Enum):
-    """
-    The source of a SQL query.
-    """
+    """SQL 查询源枚举，CHART、DASHBOARD、SQL_LAB。"""
 
     CHART = 0
     DASHBOARD = 1
     SQL_LAB = 2
 
 
-class QueryStatus(str, Enum):  # pylint: disable=too-few-public-methods
+class QueryStatus(str, Enum):
     """Enum-type class for query statuses"""
 
     STOPPED: str = "stopped"
@@ -322,9 +329,7 @@ class TimeRangeEndpoint(str, Enum):
 
 
 class TemporalType(str, Enum):
-    """
-    Supported temporal types
-    """
+    """支持的日期时间类型枚举。"""
 
     DATE = "DATE"
     DATETIME = "DATETIME"
@@ -419,6 +424,7 @@ def cast_to_num(value: Optional[Union[float, int, str]]) -> Optional[Union[float
     :returns: value cast to `int` if value is all digits, `float` if `value` is
               decimal value and `None`` if it can't be converted
     """
+
     if value is None:
         return None
     if isinstance(value, (int, float)):
@@ -470,6 +476,8 @@ def list_minus(l: List[Any], minus: List[Any]) -> List[Any]:
 
 
 class DashboardEncoder(json.JSONEncoder):
+    """仪表盘 Json 编码器。"""
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.sort_keys = True
@@ -519,9 +527,7 @@ def format_timedelta(time_delta: timedelta) -> str:
     return str(time_delta)
 
 
-def base_json_conv(  # pylint: disable=inconsistent-return-statements,too-many-return-statements
-    obj: Any,
-) -> Any:
+def base_json_conv(obj: Any, ) -> Any:
     if isinstance(obj, memoryview):
         obj = obj.tobytes()
     if isinstance(obj, np.int64):
@@ -555,6 +561,7 @@ def json_iso_dttm_ser(obj: Any, pessimistic: bool = False) -> str:
     >>> json.dumps({'dttm': dttm}, default=json_iso_dttm_ser)
     '{"dttm": "1970-01-01T00:00:00"}'
     """
+
     val = base_json_conv(obj)
     if val is not None:
         return val
@@ -663,7 +670,7 @@ def markdown(raw: str, markup_wrap: Optional[bool] = False) -> str:
 
 
 def readfile(file_path: str) -> Optional[str]:
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         content = f.read()
     return content
 
@@ -683,7 +690,7 @@ def generic_find_constraint_name(
     return None
 
 
-def generic_find_fk_constraint_name(  # pylint: disable=invalid-name
+def generic_find_fk_constraint_name(
     table: str, columns: Set[str], referenced: str, insp: Inspector
 ) -> Optional[str]:
     """Utility to find a foreign-key constraint name in alembic migrations"""
@@ -697,7 +704,7 @@ def generic_find_fk_constraint_name(  # pylint: disable=invalid-name
     return None
 
 
-def generic_find_fk_constraint_names(  # pylint: disable=invalid-name
+def generic_find_fk_constraint_names(
     table: str, columns: Set[str], referenced: str, insp: Inspector
 ) -> Set[str]:
     """Utility to find foreign-key constraint names in alembic migrations"""
@@ -728,6 +735,14 @@ def generic_find_uq_constraint_name(
 def get_datasource_full_name(
     database_name: str, datasource_name: str, schema: Optional[str] = None
 ) -> str:
+    """
+    返回数据源的完全限定名称。
+
+    :param database_name:
+    :param datasource_name:
+    :param schema:
+    :return:
+    """
     if not schema:
         return "[{}].[{}]".format(database_name, datasource_name)
     return "[{}].[{}].[{}]".format(database_name, schema, datasource_name)
@@ -751,9 +766,7 @@ class SigalrmTimeout:
         self.seconds = seconds
         self.error_message = error_message
 
-    def handle_timeout(  # pylint: disable=unused-argument
-        self, signum: int, frame: Any
-    ) -> None:
+    def handle_timeout(self, signum: int, frame: Any) -> None:
         logger.error("Process timed out", exc_info=True)
         raise RabbitaiTimeoutException(
             error_type=RabbitaiErrorType.BACKEND_TIMEOUT_ERROR,
@@ -771,9 +784,7 @@ class SigalrmTimeout:
             logger.warning("timeout can't be used in the current context")
             logger.exception(ex)
 
-    def __exit__(  # pylint: disable=redefined-outer-name,unused-variable,redefined-builtin
-        self, type: Any, value: Any, traceback: TracebackType
-    ) -> None:
+    def __exit__(self, type: Any, value: Any, traceback: TracebackType) -> None:
         try:
             signal.alarm(0)
         except ValueError as ex:
@@ -810,10 +821,15 @@ timeout: Union[Type[TimerTimeout], Type[SigalrmTimeout]] = (
 
 
 def pessimistic_connection_handling(some_engine: Engine) -> None:
+    """
+    监听指定数据库引擎的 engine_connect 事件，用于测试数据库连接的有效性。
+
+    :param some_engine: 数据库引擎。
+    :return:
+    """
+
     @event.listens_for(some_engine, "engine_connect")
-    def ping_connection(  # pylint: disable=unused-variable
-        connection: Connection, branch: bool
-    ) -> None:
+    def ping_connection(connection: Connection, branch: bool) -> None:
         if branch:
             # 'branch' refers to a sub-connection of a connection,
             # we don't want to bother pinging on these.
@@ -848,7 +864,7 @@ def pessimistic_connection_handling(some_engine: Engine) -> None:
             connection.should_close_with_result = save_should_close_with_result
 
 
-def notify_user_about_perm_udate(  # pylint: disable=too-many-arguments
+def notify_user_about_perm_udate(
     granter: User,
     user: User,
     role: Role,
@@ -856,6 +872,18 @@ def notify_user_about_perm_udate(  # pylint: disable=too-many-arguments
     tpl_name: str,
     config: Dict[str, Any],
 ) -> None:
+    """
+    提示用户权限更新，向用户发送邮件。
+
+    :param granter:
+    :param user:
+    :param role:
+    :param datasource:
+    :param tpl_name:
+    :param config:
+    :return:
+    """
+
     msg = render_template(
         tpl_name, granter=granter, user=user, role=role, datasource=datasource
     )
@@ -874,7 +902,7 @@ def notify_user_about_perm_udate(  # pylint: disable=too-many-arguments
     )
 
 
-def send_email_smtp(  # pylint: disable=invalid-name,too-many-arguments,too-many-locals
+def send_email_smtp(
     to: str,
     subject: str,
     html_content: str,
@@ -888,10 +916,11 @@ def send_email_smtp(  # pylint: disable=invalid-name,too-many-arguments,too-many
     mime_subtype: str = "mixed",
 ) -> None:
     """
-    Send an email with html content, eg:
+    发送Html内容的邮件，例如：
     send_email_smtp(
         'test@example.com', 'foo', '<b>Foo</b> bar',['/dev/null'], dryrun=True)
     """
+
     smtp_mail_from = config["SMTP_MAIL_FROM"]
     smtp_mail_to = get_email_address_list(to)
 
@@ -954,6 +983,17 @@ def send_mime_email(
     config: Dict[str, Any],
     dryrun: bool = False,
 ) -> None:
+    """
+    发送邮件。
+
+    :param e_from:
+    :param e_to:
+    :param mime_msg:
+    :param config:
+    :param dryrun:
+    :return:
+    """
+
     smtp_host = config["SMTP_HOST"]
     smtp_port = config["SMTP_PORT"]
     smtp_user = config["SMTP_USER"]
@@ -980,6 +1020,13 @@ def send_mime_email(
 
 
 def get_email_address_list(address_string: str) -> List[str]:
+    """
+    获取邮件地址列表。
+
+    :param address_string:
+    :return:
+    """
+
     address_string_list: List[str] = []
     if isinstance(address_string, str):
         address_string_list = re.split(r",|\s|;", address_string)
@@ -987,6 +1034,13 @@ def get_email_address_list(address_string: str) -> List[str]:
 
 
 def get_email_address_str(address_string: str) -> str:
+    """
+    获取邮件地址字符串。
+
+    :param address_string:
+    :return:
+    """
+
     address_list = get_email_address_list(address_string)
     address_list_str = ", ".join(address_list)
 
@@ -995,6 +1049,7 @@ def get_email_address_str(address_string: str) -> str:
 
 def choicify(values: Iterable[Any]) -> List[Tuple[Any, Any]]:
     """Takes an iterable and makes an iterable of tuples with it"""
+
     return [(v, v) for v in values]
 
 
@@ -1004,6 +1059,7 @@ def zlib_compress(data: Union[bytes, str]) -> bytes:
     >>> json_str = '{"test": 1}'
     >>> blob = zlib_compress(json_str)
     """
+
     if isinstance(data, str):
         return zlib.compress(bytes(data, "utf-8"))
     return zlib.compress(data)
@@ -1018,6 +1074,7 @@ def zlib_decompress(blob: bytes, decode: Optional[bool] = True) -> Union[bytes, 
     >>> got_str == json_str
     True
     """
+
     if isinstance(blob, bytes):
         decompressed = zlib.decompress(blob)
     else:
@@ -1028,6 +1085,14 @@ def zlib_decompress(blob: bytes, decode: Optional[bool] = True) -> Union[bytes, 
 def simple_filter_to_adhoc(
     filter_clause: QueryObjectFilterClause, clause: str = "where",
 ) -> AdhocFilterClause:
+    """
+    简化指定查询对象过滤器从句为动态过滤器。
+
+    :param filter_clause:
+    :param clause:
+    :return:
+    """
+
     result: AdhocFilterClause = {
         "clause": clause.upper(),
         "expressionType": "SIMPLE",
@@ -1043,6 +1108,13 @@ def simple_filter_to_adhoc(
 
 
 def form_data_to_adhoc(form_data: Dict[str, Any], clause: str) -> AdhocFilterClause:
+    """
+    转换表单数据中的过滤器。
+
+    :param form_data:
+    :param clause:
+    :return:
+    """
     if clause not in ("where", "having"):
         raise ValueError(__("Unsupported clause type: %(clause)s", clause=clause))
     result: AdhocFilterClause = {
@@ -1105,9 +1177,14 @@ def merge_extra_form_data(form_data: Dict[str, Any]) -> None:
         )
 
 
-def merge_extra_filters(  # pylint: disable=too-many-branches
-    form_data: Dict[str, Any],
-) -> None:
+def merge_extra_filters(form_data: Dict[str, Any], ) -> None:
+    """
+    合并额外过滤器。
+
+    :param form_data: 表单数据。
+    :return:
+    """
+
     # extra_filters are temporary/contextual filters (using the legacy constructs)
     # that are external to the slice definition. We use those for dynamic
     # interactive filters like the ones emitted by the "Filter Box" visualization.
@@ -1129,6 +1206,7 @@ def merge_extra_filters(  # pylint: disable=too-many-branches
             "__time_origin": "druid_time_origin",
             "__granularity": "granularity",
         }
+
         # Grab list of existing filters 'keyed' on the column and operator
 
         def get_filter_key(f: Dict[str, Any]) -> str:
@@ -1191,6 +1269,7 @@ def merge_request_params(form_data: Dict[str, Any], params: Dict[str, Any]) -> N
     :param form_data: object to be updated
     :param params: request parameters received via query string
     """
+
     url_params = form_data.get("url_params", {})
     for key, value in params.items():
         if key in ("form_data", "r"):
@@ -1216,10 +1295,10 @@ def get_or_create_db(
     """
     从数据库中获取或创建数据库对象。
 
-    :param database_name:
-    :param sqlalchemy_uri:
-    :param always_create:
-    :return:
+    :param database_name: 数据库名称。
+    :param sqlalchemy_uri: 数据库地址。
+    :param always_create: 是否总是创建，默认 True。
+    :return: 数据库模型对象实例。
     """
 
     from rabbitai import db
@@ -1249,7 +1328,7 @@ def get_or_create_db(
 
 
 def get_example_database() -> "Database":
-    """获取示例数据库。"""
+    """获取示例数据库模型对象，数据库地址来自：SQLALCHEMY_EXAMPLES_URI 或 SQLALCHEMY_DATABASE_URI。"""
 
     from rabbitai import conf
 
@@ -1258,7 +1337,8 @@ def get_example_database() -> "Database":
 
 
 def get_main_database() -> "Database":
-    """获取主数据库。"""
+    """获取主数据库模型对象，如果不存在则创建并保存到数据库，数据库地址来自：SQLALCHEMY_DATABASE_URI。"""
+
     from rabbitai import conf
 
     db_uri = conf.get("SQLALCHEMY_DATABASE_URI")
@@ -1325,10 +1405,11 @@ def ensure_path_exists(path: str) -> None:
             raise
 
 
-def convert_legacy_filters_into_adhoc(form_data: FormData,) -> None:
+def convert_legacy_filters_into_adhoc(form_data: FormData, ) -> None:
     """
+    转换经典过滤器 {"having": "having_filters", "where": "filters"} 到 adhoc，并存储到表单数据的 adhoc_filters。
 
-    :param form_data:
+    :param form_data: 表单数据。
     :return:
     """
 
@@ -1351,13 +1432,14 @@ def convert_legacy_filters_into_adhoc(form_data: FormData,) -> None:
             del form_data[key]
 
 
-def split_adhoc_filters_into_base_filters(form_data: FormData,) -> None:
+def split_adhoc_filters_into_base_filters(form_data: FormData, ) -> None:
     """
     Mutates form data to restructure the adhoc filters in the form of the four base
     filters, `where`, `having`, `filters`, and `having_filters` which represent
     free form where sql, free form having sql, structured where clauses and structured
     having clauses.
     """
+
     adhoc_filters = form_data.get("adhoc_filters")
     if isinstance(adhoc_filters, list):
         simple_where_filters = []
@@ -1389,6 +1471,7 @@ def split_adhoc_filters_into_base_filters(form_data: FormData,) -> None:
                     sql_where_filters.append(adhoc_filter.get("sqlExpression"))
                 elif clause == "HAVING":
                     sql_having_filters.append(adhoc_filter.get("sqlExpression"))
+
         form_data["where"] = " AND ".join(
             ["({})".format(sql) for sql in sql_where_filters]
         )
@@ -1451,12 +1534,12 @@ def time_function(
     func: Callable[..., FlaskResponse], *args: Any, **kwargs: Any
 ) -> Tuple[float, Any]:
     """
-    Measures the amount of time a function takes to execute in ms
+    测量执行指定可调用对象的耗时（毫秒），返回耗时和响应对象。
 
-    :param func: The function execution time to measure
-    :param args: args to be passed to the function
-    :param kwargs: kwargs to be passed to the function
-    :return: A tuple with the duration and response from the function
+    :param func: 要进行耗时测量的函数。
+    :param args: 要传递到函数的列表参数。
+    :param kwargs: 要传递到函数的关键字参数。
+    :return: 耗时和函数响应结果的元组。
     """
     start = default_timer()
     response = func(*args, **kwargs)
@@ -1474,6 +1557,7 @@ def shortid() -> str:
 
 class DatasourceName(NamedTuple):
     """数据源（数据表或视图）名称，包括：table、schema。"""
+
     table: str
     schema: str
 
@@ -1509,7 +1593,7 @@ def split(
         elif character == ")":
             parens -= 1
         elif character == quote:
-            if quotes and string[j - len(escaped_quote) + 1 : j + 1] != escaped_quote:
+            if quotes and string[j - len(escaped_quote) + 1: j + 1] != escaped_quote:
                 quotes = False
             elif not quotes:
                 quotes = True
@@ -1518,31 +1602,30 @@ def split(
 
 def get_iterable(x: Any) -> List[Any]:
     """
-    Get an iterable (list) representation of the object.
+    获取对象的迭代（列表）表示形式。
 
-    :param x: The object
-    :returns: An iterable representation
+    :param x: 对象。
+    :returns: 迭代（列表）表示形式。
     """
     return x if isinstance(x, list) else [x]
 
 
 def get_form_data_token(form_data: Dict[str, Any]) -> str:
     """
-    Return the token contained within form data or generate a new one.
+    返回包含在表单数据中的令牌或生成新的令牌。
 
-    :param form_data: chart form data
-    :return: original token if predefined, otherwise new uuid4 based token
+    :param form_data: 表单数据
+    :return: 原始令牌（如果预定义），否则基于uuid4的新令牌。
     """
     return form_data.get("token") or "token_" + uuid.uuid4().hex[:8]
 
 
 def get_column_name_from_metric(metric: Metric) -> Optional[str]:
     """
-    Extract the column that a metric is referencing. If the metric isn't
-    a simple metric, always returns `None`.
+    提取指定指标引用的列名称。如果指标不是简单指标则总是返回 `None`。
 
-    :param metric: Ad-hoc metric
-    :return: column name if simple metric, otherwise None
+    :param metric: 动态指标。
+    :return: 如果简单指标返回列名称，否则返回 None。
     """
     if is_adhoc_metric(metric):
         metric = cast(AdhocMetric, metric)
@@ -1553,17 +1636,21 @@ def get_column_name_from_metric(metric: Metric) -> Optional[str]:
 
 def get_column_names_from_metrics(metrics: List[Metric]) -> List[str]:
     """
-    Extract the columns that a list of metrics are referencing. Expcludes all
-    SQL metrics.
+    提取指标列表引用的列。排除所有SQL指标。
 
-    :param metrics: Ad-hoc metric
-    :return: column name if simple metric, otherwise None
+    :param metrics: 指标列表。
+    :return: 如果简单指标返回列名称，否则返回 None。
     """
     return [col for col in map(get_column_name_from_metric, metrics) if col]
 
 
 def extract_dataframe_dtypes(df: pd.DataFrame) -> List[GenericDataType]:
-    """Serialize pandas/numpy dtypes to generic types"""
+    """
+    转换指定数据帧各列的数据类型为通用类型。
+
+    :param df: 数据帧。
+    :return: 通用类型名称的列表。
+    """
 
     # omitting string types as those will be the default type
     inferred_type_map: Dict[str, GenericDataType] = {
@@ -1588,6 +1675,12 @@ def extract_dataframe_dtypes(df: pd.DataFrame) -> List[GenericDataType]:
 
 
 def extract_column_dtype(col: "BaseColumn") -> GenericDataType:
+    """
+    获取指定列的通用数据类型。
+
+    :param col: 列模型对象。
+    :return:
+    """
     if col.is_temporal:
         return GenericDataType.TEMPORAL
     if col.is_numeric:
@@ -1599,7 +1692,14 @@ def extract_column_dtype(col: "BaseColumn") -> GenericDataType:
 def indexed(
     items: List[Any], key: Union[str, Callable[[Any], Any]]
 ) -> Dict[Any, List[Any]]:
-    """Build an index for a list of objects"""
+    """
+    为对象列表建立索引 Dict[Any, Any]。
+
+    :param items: 对象列表。
+    :param key: 键。
+    :return: 索引 Dict[Any, Any]。
+    """
+
     idx: Dict[Any, Any] = {}
     for item in items:
         key_ = getattr(item, key) if isinstance(key, str) else key(item)
@@ -1608,12 +1708,21 @@ def indexed(
 
 
 def is_test() -> bool:
+    """是否测试环境"""
     return strtobool(os.environ.get("RABBITAI_TESTENV", "false"))
 
 
 def get_time_filter_status(  # pylint: disable=too-many-branches
     datasource: "BaseDatasource", applied_time_extras: Dict[str, str],
 ) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
+    """
+    获取时间过滤器状态，返回应用时间过滤的列名称及其类型的字典和拒绝的时间过滤的列名称及其类型的字典。
+
+    :param datasource: 数据源模型对象。
+    :param applied_time_extras: 要应用的自定义时间。
+    :return: 应用时间过滤的列名称及其类型的字典和拒绝的时间过滤的列名称及其类型的字典。
+    """
+
     temporal_columns = {col.column_name for col in datasource.columns if col.is_dttm}
     applied: List[Dict[str, str]] = []
     rejected: List[Dict[str, str]] = []
@@ -1679,19 +1788,37 @@ def get_time_filter_status(  # pylint: disable=too-many-branches
 
 
 def format_list(items: Sequence[str], sep: str = ", ", quote: str = '"') -> str:
+    """
+    格式化指定序列为列表。
+
+    :param items:
+    :param sep:
+    :param quote:
+    :return:
+    """
     quote_escaped = "\\" + quote
     return sep.join(f"{quote}{x.replace(quote, quote_escaped)}{quote}" for x in items)
 
 
 def find_duplicates(items: Iterable[InputType]) -> List[InputType]:
-    """Find duplicate items in an iterable."""
+    """
+    查找重复项。
+    :param items: 可迭代对象。
+    :return:
+    """
     return [item for item, count in collections.Counter(items).items() if count > 1]
 
 
 def remove_duplicates(
     items: Iterable[InputType], key: Optional[Callable[[InputType], Any]] = None
 ) -> List[InputType]:
-    """Remove duplicate items in an iterable."""
+    """
+    删除可迭代对象中的重复项。
+
+    :param items: 可迭代对象。
+    :param key:
+    :return:
+    """
     if not key:
         return list(dict.fromkeys(items).keys())
     seen = set()
@@ -1710,8 +1837,19 @@ def normalize_dttm_col(
     offset: int,
     time_shift: Optional[timedelta],
 ) -> None:
+    """
+    规范化时间列。
+
+    :param df: 数据帧。
+    :param timestamp_format: 时间戳格式字符串。
+    :param offset: 偏移。
+    :param time_shift: 时间平移。
+    :return:
+    """
+
     if DTTM_ALIAS not in df.columns:
         return
+
     if timestamp_format in ("epoch_s", "epoch_ms"):
         dttm_col = df[DTTM_ALIAS]
         if is_numeric_dtype(dttm_col):
@@ -1735,7 +1873,7 @@ def normalize_dttm_col(
 
 def parse_boolean_string(bool_str: Optional[str]) -> bool:
     """
-    Convert a string representation of a true/false value into a boolean
+    将 true/false 值的字符串表示形式转换为布尔值
 
     >>> parse_boolean_string(None)
     False
@@ -1754,8 +1892,8 @@ def parse_boolean_string(bool_str: Optional[str]) -> bool:
     >>> parse_boolean_string('1')
     True
 
-    :param bool_str: string representation of a value that is assumed to be boolean
-    :return: parsed boolean value
+    :param bool_str: 假定为布尔值的字符串表示形式
+    :return: 布尔值。
     """
     if bool_str is None:
         return False

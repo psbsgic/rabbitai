@@ -10,9 +10,9 @@ from rabbitai.models.helpers import AuditMixinNullable
 
 class UserAttribute(Model, AuditMixinNullable):
     """
-    附加到用户的自定义属性。
+    用户特性对象关系模型，附加到用户的自定义属性。
 
-    扩展用户属性很棘手，因为它依赖于身份验证类型——Rabbitai中的循环依赖。
+    扩展用户属性很棘手，因为它依赖于身份验证类型——RabbitAI 中的循环依赖。
     相反，我们使用自定义模型来添加属性。
 
     """

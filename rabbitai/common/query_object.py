@@ -29,9 +29,6 @@ from rabbitai.views.utils import get_time_range_endpoints
 config = app.config
 logger = logging.getLogger(__name__)
 
-# TODO: Type Metrics dictionary with TypedDict when it becomes a vanilla python type
-#  https://github.com/python/mypy/issues/5288
-
 
 class DeprecatedField(NamedTuple):
     old_name: str
@@ -52,36 +49,91 @@ DEPRECATED_EXTRAS_FIELDS = (
 
 class QueryObject:
     """
-    The query object's schema matches the interfaces of DB connectors like sqla
-    and druid. The query objects are constructed on the client.
+    查询对象，查询对象的结构与数据库连接器（如sqla和druid）的接口相匹配。查询对象是在客户机上构造的。
+
+    包括以下参数：
+
+    - datasource: 数据源对象，可选。
+    - result_type: 返回结果类型 ChartDataResultType，可选。
+    - annotation_layers: 注释层（字典的列表），可选。
+    - applied_time_extras: 应用的自定义时间（字典的列表），可选。
+    - apply_fetch_values_predicate: 是否应用提取值判断。
+    - granularity: 时间粒度。
+    - metrics: 指标列表。
+    - groupby: 分组列名称的列表。
+    - filters: 过滤器 QueryObjectFilterClause 的列表。
+    - time_range: 时间范围。
+    - time_shift: 时间位移。
+    - is_timeseries: 是否时间序列。
+    - timeseries_limit: 时间序列限制。
+    - row_limit: 行限制。
+    - row_offset: 行位移。
+    - timeseries_limit_metric: 时间序列限制指标。
+    - order_desc: 是否降序。
+    - extras: 自定义数据。
+    - columns: 列集合。
+    - orderby: 排序列
+    - post_processing: 后处理。
+    - is_rowcount: 是否行计数。
+
     """
 
+    # region 类属性
+
     annotation_layers: List[Dict[str, Any]]
+    """注释层的列表"""
     applied_time_extras: Dict[str, str]
+    """应用的时间额外数据字典"""
     apply_fetch_values_predicate: bool
+    """是否应用提取值预测"""
     granularity: Optional[str]
+    """粒度"""
     from_dttm: Optional[datetime]
+    """开始时间"""
     to_dttm: Optional[datetime]
+    """结束时间"""
     inner_from_dttm: Optional[datetime]
+    """内部开始时间"""
     inner_to_dttm: Optional[datetime]
+    """内部结束时间"""
     is_timeseries: bool
+    """是否时间序列"""
     time_shift: Optional[timedelta]
+    """时间偏移"""
     groupby: List[str]
+    """分组字段列表"""
     metrics: Optional[List[Metric]]
+    """指标列表"""
     row_limit: int
+    """行限制"""
     row_offset: int
+    """行位移"""
     filter: List[QueryObjectFilterClause]
+    """查询对象过滤器的列表"""
     timeseries_limit: int
+    """时间序列限制"""
     timeseries_limit_metric: Optional[Metric]
+    """时间序列限制指标"""
     order_desc: bool
+    """是否排序"""
     extras: Dict[str, Any]
+    """额外数据（字典）"""
     columns: List[str]
+    """列名称的列表"""
     orderby: List[OrderBy]
+    """排序表达式的列表"""
     post_processing: List[Dict[str, Any]]
+    """对数据帧要进行的后处理操作，操作和选项字典的列表。"""
     datasource: Optional[BaseDatasource]
+    """数据源对象"""
     result_type: Optional[ChartDataResultType]
+    """结果类型"""
     is_rowcount: bool
+    """是否行数"""
     time_offsets: List[str]
+    """时间位移列表"""
+
+    # endregion
 
     def __init__(
         self,
@@ -109,6 +161,33 @@ class QueryObject:
         is_rowcount: bool = False,
         **kwargs: Any,
     ):
+        """
+
+        :param datasource: 数据源对象，可选。
+        :param result_type: 返回结果类型 ChartDataResultType，可选。
+        :param annotation_layers: 注释层（字典的列表），可选。
+        :param applied_time_extras: 应用的自定义时间（字典的列表），可选。
+        :param apply_fetch_values_predicate: 是否应用提取值判断。
+        :param granularity: 时间粒度。
+        :param metrics: 指标列表。
+        :param groupby: 分组列名称的列表。
+        :param filters: 过滤器 QueryObjectFilterClause 的列表。
+        :param time_range: 时间范围。
+        :param time_shift: 时间位移。
+        :param is_timeseries: 是否时间序列。
+        :param timeseries_limit: 时间序列限制。
+        :param row_limit: 行限制。
+        :param row_offset: 行位移。
+        :param timeseries_limit_metric: 时间序列限制指标。
+        :param order_desc: 是否降序。
+        :param extras: 自定义数据。
+        :param columns: 列集合。
+        :param orderby: 排序列
+        :param post_processing: 后处理。
+        :param is_rowcount: 是否行计数。
+        :param kwargs: 其它关键字参数。
+        """
+
         columns = columns or []
         groupby = groupby or []
         extras = extras or {}
@@ -233,10 +312,9 @@ class QueryObject:
         columns."""
         return self.columns
 
-    def validate(
-        self, raise_exceptions: Optional[bool] = True
-    ) -> Optional[QueryObjectValidationError]:
+    def validate(self, raise_exceptions: Optional[bool] = True) -> Optional[QueryObjectValidationError]:
         """Validate query object"""
+
         error: Optional[QueryObjectValidationError] = None
         all_labels = self.metric_names + self.column_names
         if len(set(all_labels)) < len(all_labels):
@@ -253,6 +331,8 @@ class QueryObject:
         return error
 
     def to_dict(self) -> Dict[str, Any]:
+        """转换该对象为属性名称及其值的字典。"""
+
         query_object_dict = {
             "apply_fetch_values_predicate": self.apply_fetch_values_predicate,
             "granularity": self.granularity,
@@ -284,12 +364,10 @@ class QueryObject:
         the use-provided inputs to bounds, which may be time-relative (as in
         "5 days ago" or "now").
         """
+
         cache_dict = self.to_dict()
         cache_dict.update(extra)
 
-        # TODO: the below KVs can all be cleaned up and moved to `to_dict()` at some
-        #  predetermined point in time when orgs are aware that the previously
-        #  chached results will be invalidated.
         if not self.apply_fetch_values_predicate:
             del cache_dict["apply_fetch_values_predicate"]
         if self.datasource:
@@ -329,7 +407,7 @@ class QueryObject:
 
     def exec_post_processing(self, df: DataFrame) -> DataFrame:
         """
-        Perform post processing operations on DataFrame.
+        对指定数据帧执行后处理操作（这些操作定义在 pandas_postprocessing 模块中）。
 
         :param df: DataFrame returned from database model.
         :return: new DataFrame to which all post processing operations have been
@@ -337,6 +415,7 @@ class QueryObject:
         :raises QueryObjectValidationError: If the post processing operation
                  is incorrect
         """
+
         for post_process in self.post_processing:
             operation = post_process.get("operation")
             if not operation:
@@ -352,4 +431,5 @@ class QueryObject:
                 )
             options = post_process.get("options", {})
             df = getattr(pandas_postprocessing, operation)(df, **options)
+
         return df

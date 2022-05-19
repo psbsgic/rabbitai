@@ -27,8 +27,13 @@ def sql_like_sum(series: pd.Series) -> pd.Series:
 
 def pivot_table(df: pd.DataFrame, form_data: Dict[str, Any]) -> pd.DataFrame:
     """
-    Pivot table.
+    依据指定表单数据，对指定数据帧生成透视表。
+
+    :param df:
+    :param form_data:
+    :return:
     """
+
     if form_data.get("granularity") == "all" and DTTM_ALIAS in df:
         del df[DTTM_ALIAS]
 
@@ -100,16 +105,13 @@ pivot_v2_aggfunc_map = {
 }
 
 
-def pivot_table_v2(  # pylint: disable=too-many-branches
-    df: pd.DataFrame, form_data: Dict[str, Any]
-) -> pd.DataFrame:
+def pivot_table_v2(df: pd.DataFrame, form_data: Dict[str, Any]) -> pd.DataFrame:
     """
     Pivot table v2.
     """
     if form_data.get("granularity_sqla") == "all" and DTTM_ALIAS in df:
         del df[DTTM_ALIAS]
 
-    # TODO (betodealmeida): implement metricsLayout
     metrics = [get_metric_name(m) for m in form_data["metrics"]]
     aggregate_function = form_data.get("aggregateFunction", "Sum")
     groupby = form_data.get("groupbyRows") or []

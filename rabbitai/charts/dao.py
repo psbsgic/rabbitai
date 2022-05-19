@@ -16,11 +16,20 @@ logger = logging.getLogger(__name__)
 
 
 class ChartDAO(BaseDAO):
+    """图表数据访问对象，提供 Slice 模型对象的数据库CRUD操作。"""
+
     model_cls = Slice
     base_filter = ChartFilter
 
     @staticmethod
     def bulk_delete(models: Optional[List[Slice]], commit: bool = True) -> None:
+        """
+        从数据库中批量删除指定切片对象关系模型对应的记录。
+
+        :param models: 要删除的切片对象关系模型。
+        :param commit:
+        :return:
+        """
         item_ids = [model.id for model in models] if models else []
         # bulk delete, first delete related data
         if models:
@@ -42,18 +51,39 @@ class ChartDAO(BaseDAO):
 
     @staticmethod
     def save(slc: Slice, commit: bool = True) -> None:
+        """
+        保存指定数据模型到数据库。
+
+        :param slc:
+        :param commit:
+        :return:
+        """
         db.session.add(slc)
         if commit:
             db.session.commit()
 
     @staticmethod
     def overwrite(slc: Slice, commit: bool = True) -> None:
+        """
+        更新到数据库。
+
+        :param slc:
+        :param commit:
+        :return:
+        """
         db.session.merge(slc)
         if commit:
             db.session.commit()
 
     @staticmethod
     def favorited_ids(charts: List[Slice], current_user_id: int) -> List[FavStar]:
+        """
+        返回关注者标识。
+
+        :param charts:
+        :param current_user_id:
+        :return:
+        """
         ids = [chart.id for chart in charts]
         return [
             star.obj_id

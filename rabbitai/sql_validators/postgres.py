@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re
 from typing import List, Optional
 
@@ -7,7 +9,7 @@ from rabbitai.models.core import Database
 from rabbitai.sql_validators.base import BaseSQLValidator, SQLValidationAnnotation
 
 
-class PostgreSQLValidator(BaseSQLValidator):  # pylint: disable=too-few-public-methods
+class PostgreSQLValidator(BaseSQLValidator):
     """Validate SQL queries using the pgsanity module"""
 
     name = "PostgreSQLValidator"

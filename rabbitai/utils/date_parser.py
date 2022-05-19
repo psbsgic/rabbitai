@@ -61,7 +61,7 @@ def parse_human_datetime(human_readable: str) -> datetime:
 
 
 def normalize_time_delta(human_readable: str) -> Dict[str, int]:
-    x_unit = r"^\s*([0-9]+)\s+(second|minute|hour|day|week|month|quarter|year)s?\s+(ago|later)*$"  # pylint: disable=line-too-long
+    x_unit = r"^\s*([0-9]+)\s+(second|minute|hour|day|week|month|quarter|year)s?\s+(ago|later)*$"
     matched = re.match(x_unit, human_readable, re.IGNORECASE)
     if not matched:
         raise TimeDeltaAmbiguousError(human_readable)
@@ -175,19 +175,19 @@ def get_since_until(
         and time_range.startswith("previous calendar week")
         and separator not in time_range
     ):
-        time_range = "DATETRUNC(DATEADD(DATETIME('today'), -1, WEEK), WEEK) : DATETRUNC(DATETIME('today'), WEEK)"  # pylint: disable=line-too-long
+        time_range = "DATETRUNC(DATEADD(DATETIME('today'), -1, WEEK), WEEK) : DATETRUNC(DATETIME('today'), WEEK)"
     if (
         time_range
         and time_range.startswith("previous calendar month")
         and separator not in time_range
     ):
-        time_range = "DATETRUNC(DATEADD(DATETIME('today'), -1, MONTH), MONTH) : DATETRUNC(DATETIME('today'), MONTH)"  # pylint: disable=line-too-long
+        time_range = "DATETRUNC(DATEADD(DATETIME('today'), -1, MONTH), MONTH) : DATETRUNC(DATETIME('today'), MONTH)"
     if (
         time_range
         and time_range.startswith("previous calendar year")
         and separator not in time_range
     ):
-        time_range = "DATETRUNC(DATEADD(DATETIME('today'), -1, YEAR), YEAR) : DATETRUNC(DATETIME('today'), YEAR)"  # pylint: disable=line-too-long
+        time_range = "DATETRUNC(DATEADD(DATETIME('today'), -1, YEAR), YEAR) : DATETRUNC(DATETIME('today'), YEAR)"
 
     if time_range and separator in time_range:
         time_range_lookup = [
@@ -197,11 +197,11 @@ def get_since_until(
             ),
             (
                 r"^last\s+([0-9]+)\s+(second|minute|hour|day|week|month|year)s?$",
-                lambda delta, unit: f"DATEADD(DATETIME('{_relative_start}'), -{int(delta)}, {unit})",  # pylint: disable=line-too-long
+                lambda delta, unit: f"DATEADD(DATETIME('{_relative_start}'), -{int(delta)}, {unit})",
             ),
             (
                 r"^next\s+([0-9]+)\s+(second|minute|hour|day|week|month|year)s?$",
-                lambda delta, unit: f"DATEADD(DATETIME('{_relative_end}'), {int(delta)}, {unit})",  # pylint: disable=line-too-long
+                lambda delta, unit: f"DATEADD(DATETIME('{_relative_end}'), {int(delta)}, {unit})",
             ),
             (
                 r"^(DATETIME.*|DATEADD.*|DATETRUNC.*|LASTDAY.*|HOLIDAY.*)$",
@@ -263,6 +263,7 @@ def add_ago_to_since(since: str) -> str:
     :returns: Since with ago added if necessary
     :rtype: str
     """
+
     since_words = since.split(" ")
     grains = ["days", "years", "hours", "day", "year", "weeks"]
     if len(since_words) == 2 and since_words[1] in grains:

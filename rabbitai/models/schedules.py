@@ -15,9 +15,12 @@ from rabbitai.models.alerts import Alert
 from rabbitai.models.helpers import AuditMixinNullable, ImportExportMixin
 
 metadata = Model.metadata
+"""对象关系模型元数据对象"""
 
 
 class ScheduleType(str, enum.Enum):
+    """计划类型枚举，slice、dashboard、alert。"""
+
     slice = "slice"
     dashboard = "dashboard"
     alert = "alert"
@@ -60,9 +63,9 @@ class EmailSchedule:
     delivery_type = Column(Enum(EmailDeliveryType))
 
 
-class DashboardEmailSchedule(
-    Model, AuditMixinNullable, ImportExportMixin, EmailSchedule
-):
+class DashboardEmailSchedule(Model, AuditMixinNullable, ImportExportMixin, EmailSchedule):
+    """仪表盘邮件计划对象关系模型"""
+
     __tablename__ = "dashboard_email_schedules"
     dashboard_id = Column(Integer, ForeignKey("dashboards.id"))
     dashboard = relationship(
@@ -71,13 +74,22 @@ class DashboardEmailSchedule(
 
 
 class SliceEmailSchedule(Model, AuditMixinNullable, ImportExportMixin, EmailSchedule):
+    """切片邮件计划对象关系模型。"""
+
     __tablename__ = "slice_email_schedules"
+
     slice_id = Column(Integer, ForeignKey("slices.id"))
     slice = relationship("Slice", backref="email_schedules", foreign_keys=[slice_id])
     email_format = Column(Enum(SliceEmailReportFormat))
 
 
 def get_scheduler_model(report_type: str) -> Optional[Type[EmailSchedule]]:
+    """
+    依据指定报告类型获取计划对象关系模型。
+
+    :param report_type:
+    :return:
+    """
     if report_type == ScheduleType.dashboard:
         return DashboardEmailSchedule
     if report_type == ScheduleType.slice:

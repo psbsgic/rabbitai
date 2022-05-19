@@ -37,13 +37,15 @@ slice_user = Table(
     Column("user_id", Integer, ForeignKey("ab_user.id")),
     Column("slice_id", Integer, ForeignKey("slices.id")),
 )
+"""切片-用户关系数据表。"""
 logger = logging.getLogger(__name__)
 
 
 class Slice(Model, AuditMixinNullable, ImportExportMixin):
-    """切片本质上是一个报告或数据视图。"""
+    """切片（图表）对象关系模型，切片本质上是一个报告或数据视图。"""
 
     __tablename__ = "slices"
+
     id = Column(Integer, primary_key=True)
     slice_name = Column(String(250))
     datasource_id = Column(Integer)
@@ -84,6 +86,7 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
         "query_context",
         "cache_timeout",
     ]
+    """导出字段名称列表"""
     export_parent = "table"
 
     def __repr__(self) -> str:
@@ -91,13 +94,18 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def cls_model(self) -> Type["BaseDatasource"]:
+        """获取数据源对象关系模型类。"""
+
         return ConnectorRegistry.sources[self.datasource_type]
 
     @property
     def datasource(self) -> Optional["BaseDatasource"]:
+        """获取数据源对象实例。"""
         return self.get_datasource
 
     def clone(self) -> "Slice":
+        """返回该实例的副本。"""
+
         return Slice(
             slice_name=self.slice_name,
             datasource_id=self.datasource_id,
@@ -109,28 +117,31 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
             cache_timeout=self.cache_timeout,
         )
 
-    # pylint: disable=using-constant-test
     @datasource.getter  # type: ignore
     @memoized
     def get_datasource(self) -> Optional["BaseDatasource"]:
+        """从数据库中查询第一个满足条件的数据源对象实例。"""
         return db.session.query(self.cls_model).filter_by(id=self.datasource_id).first()
 
     @renders("datasource_name")
     def datasource_link(self) -> Optional[Markup]:
-        # pylint: disable=no-member
+        """获取数据源连接。"""
+
         datasource = self.datasource
         return datasource.link if datasource else None
 
     @renders("datasource_url")
     def datasource_url(self) -> Optional[str]:
-        # pylint: disable=no-member
+        """获取数据源访问地址。"""
+
         if self.table:
             return self.table.explore_url
         datasource = self.datasource
         return datasource.explore_url if datasource else None
 
     def datasource_name_text(self) -> Optional[str]:
-        # pylint: disable=no-member
+        """获取数据源名称。"""
+
         if self.table:
             if self.table.schema:
                 return f"{self.table.schema}.{self.table.table_name}"
@@ -143,15 +154,16 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def datasource_edit_url(self) -> Optional[str]:
-        # pylint: disable=no-member
+        """获取数据源编辑地址。"""
+
         datasource = self.datasource
         return datasource.url if datasource else None
 
-    # pylint: enable=using-constant-test
-
-    @property  # type: ignore
+    @property
     @memoized
     def viz(self) -> Optional[BaseViz]:
+        """获取可视化对象。"""
+
         form_data = json.loads(self.params)
         viz_class = viz_types.get(self.viz_type)
         datasource = self.datasource
@@ -161,20 +173,23 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def description_markeddown(self) -> str:
+        """获取描述信息的 markdown 文本。"""
         return utils.markdown(self.description)
 
     @property
     def data(self) -> Dict[str, Any]:
-        """Data used to render slice in templates"""
+        """获取在模板中渲染切片的数据。"""
+
         data: Dict[str, Any] = {}
         self.token = ""
         try:
             viz = self.viz
             data = viz.data if viz else self.form_data
             self.token = utils.get_form_data_token(data)
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             logger.exception(ex)
             data["error"] = str(ex)
+
         return {
             "cache_timeout": self.cache_timeout,
             "changed_on": self.changed_on.isoformat(),
@@ -215,10 +230,12 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def form_data(self) -> Dict[str, Any]:
+        """获取表单数据，该数据存储在 params 字段中，再加上：slice_id、viz_type、datasource、cache_timeout等。"""
+
         form_data: Dict[str, Any] = {}
         try:
             form_data = json.loads(self.params)
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             logger.error("Malformed json in slice's params", exc_info=True)
             logger.exception(ex)
         form_data.update(
@@ -232,6 +249,7 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
         if self.cache_timeout:
             form_data["cache_timeout"] = self.cache_timeout
         update_time_range(form_data)
+
         return form_data
 
     def get_explore_url(
@@ -239,6 +257,14 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
         base_url: str = "/rabbitai/explore",
         overrides: Optional[Dict[str, Any]] = None,
     ) -> str:
+        """
+        获取浏览地址 {base_url}/?form_data={params}。
+
+        :param base_url: 基地址，默认为：/rabbitai/explore。
+        :param overrides: 查询参数字典。
+        :return:
+        """
+
         overrides = overrides or {}
         form_data = {"slice_id": self.id}
         form_data.update(overrides)
@@ -247,33 +273,38 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def slice_url(self) -> str:
-        """Defines the url to access the slice"""
+        """获取访问该切片的地址。"""
         return self.get_explore_url()
 
     @property
     def explore_json_url(self) -> str:
-        """Defines the url to access the slice"""
+        """获取访问该切片Json的地址。"""
         return self.get_explore_url("/rabbitai/explore_json")
 
     @property
     def edit_url(self) -> str:
+        """获取编辑该切片的地址：/chart/edit/{self.id}。"""
         return f"/chart/edit/{self.id}"
 
     @property
     def chart(self) -> str:
+        """获取图表名称。"""
         return self.slice_name or "<empty>"
 
     @property
     def slice_link(self) -> Markup:
+        """获取切片连接 Markup"""
         name = escape(self.chart)
         return Markup(f'<a href="{self.url}">{name}</a>')
 
     @property
     def changed_by_url(self) -> str:
-        return f"/rabbitai/profile/{self.changed_by.username}"  # type: ignore
+        """获取更改者信息地址：/rabbitai/profile/{self.changed_by.username}。"""
+        return f"/rabbitai/profile/{self.changed_by.username}"
 
     @property
     def icons(self) -> str:
+        """获取图标的Html元素字符串。"""
         return f"""
         <a
                 href="{self.datasource_edit_url}"
@@ -285,10 +316,20 @@ class Slice(Model, AuditMixinNullable, ImportExportMixin):
 
     @property
     def url(self) -> str:
+        """获取地址。"""
         return f"/rabbitai/explore/?form_data=%7B%22slice_id%22%3A%20{self.id}%7D"
 
 
 def set_related_perm(_mapper: Mapper, _connection: Connection, target: Slice) -> None:
+    """
+    设置指定目标对象的权限。
+
+    :param _mapper: 映射。
+    :param _connection: 连接。
+    :param target: 目标对象（切片）。
+    :return:
+    """
+
     src_class = target.cls_model
     id_ = target.datasource_id
     if id_:
@@ -301,7 +342,16 @@ def set_related_perm(_mapper: Mapper, _connection: Connection, target: Slice) ->
 def event_after_chart_changed(
     _mapper: Mapper, _connection: Connection, target: Slice
 ) -> None:
-    url = get_url_path("Rabbitai.slice", slice_id=target.id, standalone="true")
+    """
+    处理图表更改后事件。
+
+    :param _mapper:
+    :param _connection:
+    :param target:
+    :return:
+    """
+
+    url = get_url_path("rabbitai.slice", slice_id=target.id, standalone="true")
     cache_chart_thumbnail.delay(url, target.digest, force=True)
 
 

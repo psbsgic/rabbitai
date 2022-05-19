@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -22,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class CreateDatabaseCommand(BaseCommand):
+    """创建数据库命令，调用 DatabaseDAO 的相关方法。"""
+
     def __init__(self, user: User, data: Dict[str, Any]):
         self._actor = user
         self._properties = data.copy()

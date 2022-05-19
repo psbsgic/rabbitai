@@ -22,6 +22,7 @@ REMOVE_KEYS = ["datasource_type", "datasource_name"]
 
 
 class ExportChartsCommand(ExportModelsCommand):
+    """导出图表对象关系模型到文件的命令。"""
 
     dao = ChartDAO
     not_found = ChartNotFoundError
@@ -37,8 +38,7 @@ class ExportChartsCommand(ExportModelsCommand):
             include_defaults=True,
             export_uuids=True,
         )
-        # TODO (betodealmeida): move this logic to export_to_dict once this
-        #  becomes the default export endpoint
+
         for key in REMOVE_KEYS:
             del payload[key]
         if payload.get("params"):

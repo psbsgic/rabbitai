@@ -34,6 +34,7 @@ class AthenaEngineSpec(BaseEngineSpec):
         "1969-12-28T00:00:00Z/P1W": "date_add('day', -1, date_trunc('week', \
                                     date_add('day', 1, CAST({col} AS TIMESTAMP))))",
     }
+    """时间刻度表达式字典。"""
 
     custom_errors: Dict[Pattern[str], Tuple[str, RabbitaiErrorType, Dict[str, Any]]] = {
         SYNTAX_ERROR_REGEX: (
@@ -48,6 +49,14 @@ class AthenaEngineSpec(BaseEngineSpec):
 
     @classmethod
     def convert_dttm(cls, target_type: str, dttm: datetime) -> Optional[str]:
+        """
+        转换指定日期时间。
+
+        :param target_type: 目标类型名称。
+        :param dttm: 日期时间对象。
+        :return:
+        """
+
         tt = target_type.upper()
         if tt == utils.TemporalType.DATE:
             return f"from_iso8601_date('{dttm.date().isoformat()}')"

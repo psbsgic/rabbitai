@@ -20,7 +20,15 @@ if TYPE_CHECKING:
 def get_physical_table_metadata(
     database: Database, table_name: str, schema_name: Optional[str] = None,
 ) -> List[Dict[str, str]]:
-    """Use SQLAlchemy inspector to get table metadata"""
+    """
+    Use SQLAlchemy inspector to get table metadata
+
+    :param database:
+    :param table_name:
+    :param schema_name:
+    :return:
+    """
+
     db_engine_spec = database.db_engine_spec
     db_dialect = database.get_dialect()
     # ensure empty schema
@@ -50,7 +58,13 @@ def get_physical_table_metadata(
 
 
 def get_virtual_table_metadata(dataset: "SqlaTable") -> List[Dict[str, str]]:
-    """Use SQLparser to get virtual dataset metadata"""
+    """
+    Use SQLparser to get virtual dataset metadata
+
+    :param dataset:
+    :return:
+    """
+
     if not dataset.sql:
         raise RabbitaiGenericDBErrorException(
             message=_("Virtual dataset query cannot be empty"),
@@ -79,8 +93,7 @@ def get_virtual_table_metadata(dataset: "SqlaTable") -> List[Dict[str, str]]:
                 level=ErrorLevel.ERROR,
             )
         )
-    # TODO(villebro): refactor to use same code that's used by
-    #  sql_lab.py:execute_sql_statements
+
     try:
         with closing(engine.raw_connection()) as conn:
             cursor = conn.cursor()
@@ -91,4 +104,5 @@ def get_virtual_table_metadata(dataset: "SqlaTable") -> List[Dict[str, str]]:
             cols = result_set.columns
     except Exception as exc:
         raise RabbitaiGenericDBErrorException(message=str(exc))
+
     return cols

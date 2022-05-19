@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import inspect
 import json
 from typing import Any, Dict, Optional, Type
@@ -21,101 +23,86 @@ database_schemas_query_schema = {
     "type": "object",
     "properties": {"force": {"type": "boolean"}},
 }
-
-database_name_description = "A database name to identify this connection."
-port_description = "Port number for the database connection."
+"""数据库模式查询结构。"""
+database_name_description = "用于标识此连接的数据库名称。"
+port_description = "数据库连接的端口号。"
 cache_timeout_description = (
-    "Duration (in seconds) of the caching timeout for charts of this database. "
-    "A timeout of 0 indicates that the cache never expires. "
-    "Note this defaults to the global timeout if undefined."
+    "此数据库图表的缓存超时持续时间（秒）。"
+    "超时0表示缓存永不过期。"
+    "注意：如果未定义，则默认为全局超时。"
 )
-expose_in_sqllab_description = "Expose this database to SQLLab"
+expose_in_sqllab_description = "将此数据库公开给 SQL Lab"
 allow_run_async_description = (
-    "Operate the database in asynchronous mode, meaning  "
-    "that the queries are executed on remote workers as opposed "
-    "to on the web server itself. "
-    "This assumes that you have a Celery worker setup as well "
-    "as a results backend. Refer to the installation docs "
-    "for more information."
+    "以异步模式操作数据库，这意味着查询是在远程工作者上执行的，而不是在web服务器本身上执行的。"
+    "这假设您有一个Celery工作者设置以及一个结果后端。有关更多信息，请参阅安装文档。"
 )
 allow_csv_upload_description = (
-    "Allow to upload CSV file data into this database"
-    "If selected, please set the schemas allowed for csv upload in Extra."
+    "如果选中允许将CSV文件数据上载到此数据库，请额外设置允许CSV上载的架构。"
 )
-allow_ctas_description = "Allow CREATE TABLE AS option in SQL Lab"
-allow_cvas_description = "Allow CREATE VIEW AS option in SQL Lab"
+allow_ctas_description = "在SQL工具箱中允许 CREATE TABLE AS 选项"
+allow_cvas_description = "在SQL工具箱中允许 CREATE VIEW AS 选项"
 allow_dml_description = (
-    "Allow users to run non-SELECT statements "
-    "(UPDATE, DELETE, CREATE, ...) "
-    "in SQL Lab"
+    "允许用户在 SQL工具箱中运行非-SELECT 语句(UPDATE, DELETE, CREATE, ...) "
 )
 allow_multi_schema_metadata_fetch_description = (
-    "Allow SQL Lab to fetch a list of all tables and all views across "
-    "all database schemas. For large data warehouse with thousands of "
-    "tables, this can be expensive and put strain on the system."
+    "允许SQL Lab获取所有数据库模式中所有表和所有视图的列表。"
+    "对于具有数千个表的大型数据仓库，这可能会很昂贵，并给系统带来压力。"
 )  # pylint: disable=invalid-name
 configuration_method_description = (
-    "Configuration_method is used on the frontend to "
-    "inform the backend whether to explode parameters "
-    "or to provide only a sqlalchemy_uri."
+    "在前端使用 Configuration_method 通知后端是分解参数还是只提供sqlalchemy_uri。"
 )
 impersonate_user_description = (
-    "If Presto, all the queries in SQL Lab are going to be executed as the "
-    "currently logged on user who must have permission to run them.<br/>"
-    "If Hive and hive.server2.enable.doAs is enabled, will run the queries as "
-    "service account, but impersonate the currently logged on user "
-    "via hive.server2.proxy.user property."
+    "如果是Presto，则SQL Lab中的所有查询都将作为当前登录的用户执行，该用户必须具有运行这些查询的权限。"
+    "<br/>"
+    "如果启用了Hive和Hive.server2.enable.doAs，则将以服务帐户的形式运行查询，"
+    "但会通过Hive.server2.proxy.user属性模拟当前登录的用户。"
 )
 force_ctas_schema_description = (
-    "When allowing CREATE TABLE AS option in SQL Lab, "
-    "this option forces the table to be created in this schema"
+    "当在SQL Lab中允许 CREATE TABLE AS 选项时, "
+    "此选项强制在此模式中创建表"
 )
 encrypted_extra_description = markdown(
-    "JSON string containing additional connection configuration.<br/>"
-    "This is used to provide connection information for systems like "
-    "Hive, Presto, and BigQuery, which do not conform to the username:password "
-    "syntax normally used by SQLAlchemy.",
+    "包含附加连接配置的JSON字符串。<br/>"
+    "这用于为Hive、Presto和BigQuery等系统提供连接信息，这些系统不符合SQLAlchemy通常使用的用户名：密码语法。",
     True,
 )
 extra_description = markdown(
-    "JSON string containing extra configuration elements.<br/>"
-    "1. The ``engine_params`` object gets unpacked into the "
+    "包含额外配置元素的JSON字符串。<br/>"
+    "1. ``engine_params`` 对象被提取到 "
     "[sqlalchemy.create_engine]"
     "(https://docs.sqlalchemy.org/en/latest/core/engines.html#"
-    "sqlalchemy.create_engine) call, while the ``metadata_params`` "
-    "gets unpacked into the [sqlalchemy.MetaData]"
+    "sqlalchemy.create_engine) 调用，而 ``metadata_params`` "
+    "被提取到 [sqlalchemy.MetaData]"
     "(https://docs.sqlalchemy.org/en/rel_1_0/core/metadata.html"
-    "#sqlalchemy.schema.MetaData) call.<br/>"
-    "2. The ``metadata_cache_timeout`` is a cache timeout setting "
-    "in seconds for metadata fetch of this database. Specify it as "
+    "#sqlalchemy.schema.MetaData) 调用。<br/>"
+    "2. ``metadata_cache_timeout`` 是用于获取此数据库元数据的缓存超时设置（以秒为单位）。"
+    "指定为 "
     '**"metadata_cache_timeout": {"schema_cache_timeout": 600, '
     '"table_cache_timeout": 600}**. '
-    "If unset, cache will not be enabled for the functionality. "
-    "A timeout of 0 indicates that the cache never expires.<br/>"
-    "3. The ``schemas_allowed_for_csv_upload`` is a comma separated list "
-    "of schemas that CSVs are allowed to upload to. "
-    'Specify it as **"schemas_allowed_for_csv_upload": '
-    '["public", "csv_upload"]**. '
-    "If database flavor does not support schema or any schema is allowed "
-    "to be accessed, just leave the list empty<br/>"
-    "4. the ``version`` field is a string specifying the this db's version. "
-    "This should be used with Presto DBs so that the syntax is correct<br/>"
-    "5. The ``allows_virtual_table_explore`` field is a boolean specifying "
-    "whether or not the Explore button in SQL Lab results is shown.",
+    "如果未设置，将不会为该功能启用缓存。"
+    "超时0表示缓存永不过期。<br/>"
+    "3. ``schemas_allowed_for_csv_upload`` 是允许上传CSV文件的以逗号分隔的模式列表。"
+    '指定为 **"schemas_allowed_for_csv_upload": '
+    '["public", "csv_upload"]** 。'
+    "如果数据库不支持模式或允许访问任何模式，只需将列表留空即可<br/>"
+    "4. ``version`` 字段是数据库版本的字符串表示。"
+    "这应该与Presto DBs一起使用，以便语法正确<br/>"
+    "5. ``allows_virtual_table_explore`` 字段是一个布尔值"
+    "指示是否显示SQL工具箱结果中的“浏览”按钮。",
     True,
 )
 get_export_ids_schema = {"type": "array", "items": {"type": "integer"}}
+"""获取导出标识结构"""
 sqlalchemy_uri_description = markdown(
-    "Refer to the "
-    "[SqlAlchemy docs]"
+    "更多信息参考 "
+    "[SqlAlchemy 文档]"
     "(https://docs.sqlalchemy.org/en/rel_1_2/core/engines.html#"
-    "database-urls) "
-    "for more information on how to structure your URI.",
+    "database-urls) ",
     True,
 )
 server_cert_description = markdown(
-    "Optional CA_BUNDLE contents to validate HTTPS requests. Only available "
-    "on certain database engines.",
+    "选项 CA_BUNDLE 内容以验证HTTPS请求。"
+    "仅在某些数据库引擎上可用。",
     True,
 )
 
@@ -174,6 +161,7 @@ def extra_validator(value: str) -> str:
     Validate that extra is a valid JSON string, and that metadata_params
     keys are on the call signature for SQLAlchemy Metadata
     """
+
     if value:
         try:
             extra_ = json.loads(value)
@@ -211,11 +199,11 @@ class DatabaseParametersSchemaMixin:
     When using this mixin make sure that `sqlalchemy_uri` is not required.
     """
 
-    engine = fields.String(allow_none=True, description="SQLAlchemy engine to use")
+    engine = fields.String(allow_none=True, description="SQLAlchemy 引擎")
     parameters = fields.Dict(
         keys=fields.String(),
         values=fields.Raw(),
-        description="DB-specific parameters for configuration",
+        description="用于配置的数据库特定参数",
     )
     configuration_method = EnumField(
         ConfigurationMethod,
@@ -224,11 +212,8 @@ class DatabaseParametersSchemaMixin:
         missing=ConfigurationMethod.SQLALCHEMY_FORM,
     )
 
-    # pylint: disable=no-self-use, unused-argument
     @pre_load
-    def build_sqlalchemy_uri(
-        self, data: Dict[str, Any], **kwargs: Any
-    ) -> Dict[str, Any]:
+    def build_sqlalchemy_uri(self, data: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         """
         Build SQLAlchemy URI from separate parameters.
 
@@ -236,8 +221,9 @@ class DatabaseParametersSchemaMixin:
         parameters (eg, username, password, host, etc.), instead of requiring
         the constructed SQLAlchemy URI to be passed.
         """
+
         parameters = data.pop("parameters", {})
-        # TODO(AAfghahi) standardize engine.
+
         engine = (
             data.pop("engine", None)
             or parameters.pop("engine", None)
@@ -261,7 +247,7 @@ class DatabaseParametersSchemaMixin:
                 )
 
             # validate parameters
-            parameters = engine_spec.parameters_schema.load(parameters)  # type: ignore
+            parameters = engine_spec.parameters_schema.load(parameters)
 
             serialized_encrypted_extra = data.get("encrypted_extra") or "{}"
             try:
@@ -269,7 +255,7 @@ class DatabaseParametersSchemaMixin:
             except json.decoder.JSONDecodeError:
                 encrypted_extra = {}
 
-            data["sqlalchemy_uri"] = engine_spec.build_sqlalchemy_uri(  # type: ignore
+            data["sqlalchemy_uri"] = engine_spec.build_sqlalchemy_uri(
                 parameters, encrypted_extra
             )
 
@@ -277,6 +263,14 @@ class DatabaseParametersSchemaMixin:
 
 
 def get_engine_spec(engine: Optional[str]) -> Type[BaseEngineSpec]:
+    """
+    获取数据库引擎规范 BaseEngineSpec。
+
+    :param engine: 引擎名称。
+
+    :return: 数据库引擎规范 BaseEngineSpec。
+    """
+
     if not engine:
         raise ValidationError(
             [
@@ -295,14 +289,16 @@ def get_engine_spec(engine: Optional[str]) -> Type[BaseEngineSpec]:
 
 
 class DatabaseValidateParametersSchema(Schema):
+    """数据库验证参数结构。"""
+
     class Meta:  # pylint: disable=too-few-public-methods
         unknown = EXCLUDE
 
-    engine = fields.String(required=True, description="SQLAlchemy engine to use")
+    engine = fields.String(required=True, description="SQLAlchemy 引擎")
     parameters = fields.Dict(
         keys=fields.String(),
         values=fields.Raw(allow_none=True),
-        description="DB-specific parameters for configuration",
+        description="用于配置的数据库特定参数",
     )
     database_name = fields.String(
         description=database_name_description, allow_none=True, validate=Length(1, 250),
@@ -328,6 +324,8 @@ class DatabaseValidateParametersSchema(Schema):
 
 
 class DatabasePostSchema(Schema, DatabaseParametersSchemaMixin):
+    """新建数据库对象模型结构。"""
+
     class Meta:  # pylint: disable=too-few-public-methods
         unknown = EXCLUDE
 
@@ -370,6 +368,8 @@ class DatabasePostSchema(Schema, DatabaseParametersSchemaMixin):
 
 
 class DatabasePutSchema(Schema, DatabaseParametersSchemaMixin):
+    """更新数据库对象模型结构。"""
+
     class Meta:  # pylint: disable=too-few-public-methods
         unknown = EXCLUDE
 
@@ -412,6 +412,8 @@ class DatabasePutSchema(Schema, DatabaseParametersSchemaMixin):
 
 
 class DatabaseTestConnectionSchema(Schema, DatabaseParametersSchemaMixin):
+    """数据库测试连接结构。"""
+
     database_name = fields.String(
         description=database_name_description, allow_none=True, validate=Length(1, 250),
     )
@@ -434,6 +436,7 @@ class DatabaseTestConnectionSchema(Schema, DatabaseParametersSchemaMixin):
 
 
 class TableMetadataOptionsResponseSchema(Schema):
+    """数据表元数据选项响应结构。"""
     deferrable = fields.Bool()
     initially = fields.Bool()
     match = fields.Bool()
@@ -442,20 +445,21 @@ class TableMetadataOptionsResponseSchema(Schema):
 
 
 class TableMetadataColumnsResponseSchema(Schema):
+    """数据表元数据列响应结构。"""
     keys = fields.List(fields.String(), description="")
-    longType = fields.String(description="The actual backend long type for the column")
-    name = fields.String(description="The column name")
-    type = fields.String(description="The column type")
+    longType = fields.String(description="列的实际后端长类型")
+    name = fields.String(description="列名称")
+    type = fields.String(description="列数据类型")
     duplicates_constraint = fields.String(required=False)
 
 
 class TableMetadataForeignKeysIndexesResponseSchema(Schema):
     column_names = fields.List(
         fields.String(
-            description="A list of column names that compose the foreign key or index"
+            description="组成外键或索引的列名列表"
         )
     )
-    name = fields.String(description="The name of the foreign key or index")
+    name = fields.String(description="外键或索引的名称")
     options = fields.Nested(TableMetadataOptionsResponseSchema)
     referred_columns = fields.List(fields.String())
     referred_schema = fields.String()
@@ -465,38 +469,38 @@ class TableMetadataForeignKeysIndexesResponseSchema(Schema):
 
 class TableMetadataPrimaryKeyResponseSchema(Schema):
     column_names = fields.List(
-        fields.String(description="A list of column names that compose the primary key")
+        fields.String(description="组成主键的列名列表")
     )
-    name = fields.String(description="The primary key index name")
+    name = fields.String(description="主键名称")
     type = fields.String()
 
 
 class TableMetadataResponseSchema(Schema):
-    name = fields.String(description="The name of the table")
+    name = fields.String(description="数据表名称")
     columns = fields.List(
         fields.Nested(TableMetadataColumnsResponseSchema),
-        description="A list of columns and their metadata",
+        description="列及其元数据的列表",
     )
     foreignKeys = fields.List(
         fields.Nested(TableMetadataForeignKeysIndexesResponseSchema),
-        description="A list of foreign keys and their metadata",
+        description="外键及其元数据的列表",
     )
     indexes = fields.List(
         fields.Nested(TableMetadataForeignKeysIndexesResponseSchema),
-        description="A list of indexes and their metadata",
+        description="索引及其元数据的列表",
     )
     primaryKey = fields.Nested(
-        TableMetadataPrimaryKeyResponseSchema, description="Primary keys metadata"
+        TableMetadataPrimaryKeyResponseSchema, description="主键元数据"
     )
-    selectStar = fields.String(description="SQL select star")
+    selectStar = fields.String(description="SQL SELECT *")
 
 
 class SelectStarResponseSchema(Schema):
-    result = fields.String(description="SQL select star")
+    result = fields.String(description="SQL SELECT *")
 
 
 class SchemasResponseSchema(Schema):
-    result = fields.List(fields.String(description="A database schema name"))
+    result = fields.List(fields.String(description="数据库模式名称"))
 
 
 class DatabaseRelatedChart(Schema):
@@ -513,16 +517,16 @@ class DatabaseRelatedDashboard(Schema):
 
 
 class DatabaseRelatedCharts(Schema):
-    count = fields.Integer(description="Chart count")
+    count = fields.Integer(description="图表数")
     result = fields.List(
-        fields.Nested(DatabaseRelatedChart), description="A list of dashboards"
+        fields.Nested(DatabaseRelatedChart), description="仪表盘的列表"
     )
 
 
 class DatabaseRelatedDashboards(Schema):
-    count = fields.Integer(description="Dashboard count")
+    count = fields.Integer(description="仪表盘数")
     result = fields.List(
-        fields.Nested(DatabaseRelatedDashboard), description="A list of dashboards"
+        fields.Nested(DatabaseRelatedDashboard), description="仪表盘的列表"
     )
 
 
@@ -587,10 +591,19 @@ class ImportV1DatabaseSchema(Schema):
 
 
 class EncryptedField(fields.String):
+    """加密的字段"""
     pass
 
 
-def encrypted_field_properties(self, field: Any, **_) -> Dict[str, Any]:  # type: ignore
+def encrypted_field_properties(self, field: Any, **_) -> Dict[str, Any]:
+    """
+
+    :param self:
+    :param field:
+    :param _:
+    :return:
+    """
+
     ret = {}
     if isinstance(field, EncryptedField):
         if self.openapi_version.major > 2:

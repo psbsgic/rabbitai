@@ -22,9 +22,21 @@ def cache_chart_thumbnail(
     window_size: Optional[WindowSize] = None,
     thumb_size: Optional[WindowSize] = None,
 ) -> None:
+    """
+    缓存图表的缩略图。
+
+    :param url: 地址字符串。
+    :param digest: 数字签名字符串。
+    :param force: 是否强制。
+    :param window_size: 窗口大小。
+    :param thumb_size: 缩略图大小。
+    :return:
+    """
+
     if not thumbnail_cache:
         logger.warning("No cache set, refusing to compute")
         return None
+
     logger.info("Caching chart: %s", url)
     screenshot = ChartScreenshot(url, digest)
     with session_scope(nullpool=True) as session:

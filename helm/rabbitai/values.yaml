@@ -5,7 +5,7 @@
 replicaCount: 1
 
 # User ID directive. This user must have enough permissions to run the bootstrap script
-# Runn containers as root is not recommended in production. Change this to another UID - e.g. 1000 to be more secure
+# Run containers as root is not recommended in production. Change this to another UID - e.g. 1000 to be more secure
 runAsUser: 0
 
 # Install additional packages and do any other bootstrap configuration in this script
@@ -16,7 +16,7 @@ bootstrapScript: |
   pip install \
     psycopg2==2.8.5 \
     redis==3.2.1 && \
-  if [ ! -f ~/bootstrap ]; then echo "Running Superset with uid {{ .Values.runAsUser }}" > ~/bootstrap; fi
+  if [ ! -f ~/bootstrap ]; then echo "Running Rabbitai with uid {{ .Values.runAsUser }}" > ~/bootstrap; fi
 
 ## The name of the secret which we will use to generate a rabbitai_config.py file
 ## Note: this secret must have the key rabbitai_config.py in it and can include other files as well
@@ -106,7 +106,7 @@ configMountPath: "/app/pythonpath"
 extraConfigMountPath: "/app/configs"
 
 image:
-  repository: apache/rabbitai
+  repository: rabbitai
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -151,7 +151,7 @@ resources: {}
   #   memory: 128Mi
 
 ##
-## Superset node configuration
+## Rabbitai node configuration
 rabbitaiNode:
   command:
     - "/bin/sh"
@@ -164,7 +164,7 @@ rabbitaiNode:
     db_port: "5432"
     db_user: rabbitai
     db_pass: rabbitai
-    db_name: rabbitai
+    db_name: rabbitaidb
   forceReload: false # If true, forces deployment to reload on each upgrade
   initContainers:
     - name: wait-for-postgres
@@ -180,7 +180,7 @@ rabbitaiNode:
   podAnnotations: {}
 
 ##
-## Superset worker configuration
+## Rabbitai worker configuration
 rabbitaiWorker:
   command:
     - "/bin/sh"
@@ -201,7 +201,7 @@ rabbitaiWorker:
   podAnnotations: {}
 
 ##
-## Superset beat configuration (to trigger scheduled jobs like reports)
+## Rabbitai beat configuration (to trigger scheduled jobs like reports)
 rabbitaiCeleryBeat:
   # This is only required if you intend to use alerts and reports
   enabled: false
@@ -245,9 +245,9 @@ init:
   createAdmin: true
   adminUser:
     username: admin
-    firstname: Superset
-    lastname: Admin
-    email: admin@rabbitai.com
+    firstname: Peng
+    lastname: Songbo
+    email: pengsongbo@hotmail.com
     password: admin
   initContainers:
     - name: wait-for-postgres
@@ -310,7 +310,7 @@ postgresql:
   postgresqlPassword: rabbitai
   ##
   ## PostgreSQL Database to create.
-  postgresqlDatabase: rabbitai
+  postgresqlDatabase: rabbitaidb
   ##
   ## Persistent Volume Storage configuration.
   ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes

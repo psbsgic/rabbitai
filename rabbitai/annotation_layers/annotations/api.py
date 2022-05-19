@@ -106,7 +106,7 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     openapi_spec_methods = openapi_spec_methods_override
 
     @staticmethod
-    def _apply_layered_relation_to_rison(  # pylint: disable=invalid-name
+    def _apply_layered_relation_to_rison(
         layer_id: int, rison_parameters: Dict[str, Any]
     ) -> None:
         if "filters" not in rison_parameters:
@@ -120,9 +120,7 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @permission_name("get")
     @rison(get_list_schema)
-    def get_list(  # pylint: disable=arguments-differ
-        self, pk: int, **kwargs: Any
-    ) -> Response:
+    def get_list(self, pk: int, **kwargs: Any) -> Response:
         """Get a list of annotations
         ---
         get:
@@ -181,9 +179,7 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @permission_name("get")
     @rison(get_item_schema)
-    def get(  # pylint: disable=arguments-differ
-        self, pk: int, annotation_id: int, **kwargs: Any
-    ) -> Response:
+    def get(self, pk: int, annotation_id: int, **kwargs: Any) -> Response:
         """Get item from Model
         ---
         get:
@@ -307,9 +303,7 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("put")
-    def put(  # pylint: disable=arguments-differ
-        self, pk: int, annotation_id: int
-    ) -> Response:
+    def put(self, pk: int, annotation_id: int) -> Response:
         """Updates an Annotation
         ---
         put:
@@ -383,9 +377,7 @@ class AnnotationRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("delete")
-    def delete(  # pylint: disable=arguments-differ
-        self, pk: int, annotation_id: int
-    ) -> Response:
+    def delete(self, pk: int, annotation_id: int) -> Response:
         """Deletes an Annotation
         ---
         delete:

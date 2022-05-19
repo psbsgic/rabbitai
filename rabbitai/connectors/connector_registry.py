@@ -17,13 +17,23 @@ if TYPE_CHECKING:
 
 
 class ConnectorRegistry:
-    """所有可用数据源引擎的注册表。"""
+    """
+    所有可用数据源引擎的注册表，通过 register_sources 方法注册可用数据源。
+    使用数据源类型和数据源对象关系模型 `BaseDatasource` 实例的字典 sources 存储数据源，提供依据数据源类型从数据库访问数据源对象实例的方法。
+    """
 
     sources: Dict[str, Type["BaseDatasource"]] = {}
-    """数据源类型和数据源实例。"""
+    """数据源类型和数据源对象关系模型 BaseDatasource 实例的字典。"""
 
     @classmethod
     def register_sources(cls, datasource_config: "OrderedDict[str, List[str]]") -> None:
+        """
+        注册指定模块名称及其类名称列表的字典提供的数据源到该注册表，导入模块获取类实例。
+
+        :param datasource_config: 模块名称和数据源类名称列表的字典。
+        :return: None。
+        """
+
         for module_name, class_names in datasource_config.items():
             class_names = [str(s) for s in class_names]
             module_obj = __import__(module_name, fromlist=class_names)
@@ -31,13 +41,21 @@ class ConnectorRegistry:
                 source_class = getattr(module_obj, class_name)
                 cls.sources[source_class.type] = source_class
 
+    # region 获取数据源
+
     @classmethod
-    def get_datasource(
-        cls, datasource_type: str, datasource_id: int, session: Session
-    ) -> "BaseDatasource":
-        """Safely get a datasource instance, raises `DatasetNotFoundError` if
-        `datasource_type` is not registered or `datasource_id` does not
-        exist."""
+    def get_datasource(cls, datasource_type: str, datasource_id: int, session: Session) -> "BaseDatasource":
+        """
+        依据指定数据源类型和数据源标识，安全的从数据库中获取数据源实例，即  `BaseDatasource` 的派生类型实例。
+
+        如果 `datasource_type` 未注册或 `datasource_id` 不存在，则 raises `DatasetNotFoundError`。
+
+        :param datasource_type: 数据源的类型。
+        :param datasource_id: 数据源标识。
+        :param session: 数据库会话对象。
+        :return: 数据源实例。
+        """
+
         if datasource_type not in cls.sources:
             raise DatasetNotFoundError()
 
@@ -54,6 +72,13 @@ class ConnectorRegistry:
 
     @classmethod
     def get_all_datasources(cls, session: Session) -> List["BaseDatasource"]:
+        """
+        从数据库中获取所有数据源对象实例。
+
+        :param session: 数据库会话对象。
+        :return:
+        """
+
         datasources: List["BaseDatasource"] = []
         for source_type in ConnectorRegistry.sources:
             source_class = ConnectorRegistry.sources[source_type]
@@ -65,13 +90,14 @@ class ConnectorRegistry:
     @classmethod
     def get_datasource_by_id(cls, session: Session, datasource_id: int,) -> "BaseDatasource":
         """
-        Find a datasource instance based on the unique id.
+        从数据库中查找具有指定标识的数据源对象实例。
 
-        :param session: Session to use
-        :param datasource_id: unique id of datasource
-        :return: Datasource corresponding to the id
-        :raises NoResultFound: if no datasource is found corresponding to the id
+        :param session: 数据库会话对象。
+        :param datasource_id: 数据源标识。
+        :return: 数据源对象实例。
+        :raises NoResultFound: 如果未找到具有指定标识的数据源。
         """
+
         for datasource_class in ConnectorRegistry.sources.values():
             try:
                 return (
@@ -93,6 +119,17 @@ class ConnectorRegistry:
         schema: str,
         database_name: str,
     ) -> Optional["BaseDatasource"]:
+        """
+        获取具有指定名称的数据源对象实例。
+
+        :param session: 数据库会话对象。
+        :param datasource_type: 数据源类型。
+        :param datasource_name: 数据源名称。
+        :param schema: 模式。
+        :param database_name: 数据库名称。
+        :return:
+        """
+
         datasource_class = ConnectorRegistry.sources[datasource_type]
         return datasource_class.get_datasource_by_name(
             session, datasource_name, schema, database_name
@@ -106,6 +143,15 @@ class ConnectorRegistry:
         permissions: Set[str],
         schema_perms: Set[str],
     ) -> List["BaseDatasource"]:
+        """
+        按照权限查询数据源。
+
+        :param session: 数据库会话对象。
+        :param database: 数据库对象实例。
+        :param permissions: 权限。
+        :param schema_perms: 模式权限。
+        :return:
+        """
 
         datasource_class = ConnectorRegistry.sources[database.type]
         return (
@@ -124,7 +170,14 @@ class ConnectorRegistry:
     def get_eager_datasource(
         cls, session: Session, datasource_type: str, datasource_id: int
     ) -> "BaseDatasource":
-        """Returns datasource with columns and metrics."""
+        """
+        返回包含列和指标的数据源模型实例。
+
+        :param session: 数据库会话对象。
+        :param datasource_type: 数据源类型。
+        :param datasource_id: 数据源标识。
+        :return:
+        """
 
         datasource_class = ConnectorRegistry.sources[datasource_type]
         return (
@@ -145,7 +198,19 @@ class ConnectorRegistry:
         datasource_name: str,
         schema: Optional[str] = None,
     ) -> List["BaseDatasource"]:
+        """
+        查找具有指定名称的数据源对象实例。
+
+        :param session: 数据库会话对象。
+        :param database: 数据库数据模型实例。
+        :param datasource_name: 数据源名称。
+        :param schema: 模式。
+        :return: 数据源模型实例。
+        """
+
         datasource_class = ConnectorRegistry.sources[database.type]
         return datasource_class.query_datasources_by_name(
             session, database, datasource_name, schema=schema
         )
+
+    # endregion

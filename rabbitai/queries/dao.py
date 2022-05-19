@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class QueryDAO(BaseDAO):
-    """对查询对象 Query 实现CRUD操作。"""
+    """查询对象关系模型 Query 数据访问对象，实现CRUD操作。"""
 
     model_cls = Query
     base_filter = QueryFilter

@@ -29,26 +29,31 @@ from rabbitai.models.helpers import AuditMixinNullable
 from rabbitai.models.slice import Slice
 
 metadata = Model.metadata
+"""对象关系模型元数据对象"""
 
 
 class ReportScheduleType(str, enum.Enum):
+    """报告计划类型枚举，ALERT、REPORT"""
     ALERT = "Alert"
     REPORT = "Report"
 
 
 class ReportScheduleValidatorType(str, enum.Enum):
-    """ Validator types for alerts """
+    """报告计划验证器类型枚举，NOT_NULL、OPERATOR"""
 
     NOT_NULL = "not null"
     OPERATOR = "operator"
 
 
 class ReportRecipientType(str, enum.Enum):
+    """报告接受者类型枚举，EMAIL、SLACK"""
     EMAIL = "Email"
     SLACK = "Slack"
 
 
 class ReportState(str, enum.Enum):
+    """报告状态枚举。"""
+
     SUCCESS = "Success"
     WORKING = "Working"
     ERROR = "Error"
@@ -57,12 +62,16 @@ class ReportState(str, enum.Enum):
 
 
 class ReportDataFormat(str, enum.Enum):
+    """报告数据格式枚举，VISUALIZATION、DATA、TEXT。"""
+
     VISUALIZATION = "PNG"
     DATA = "CSV"
     TEXT = "TEXT"
 
 
 class ReportCreationMethodType(str, enum.Enum):
+    """报告创建方法类型枚举，CHARTS、DASHBOARDS、ALERTS_REPORTS。"""
+
     CHARTS = "charts"
     DASHBOARDS = "dashboards"
     ALERTS_REPORTS = "alerts_reports"
@@ -78,11 +87,12 @@ report_schedule_user = Table(
     ),
     UniqueConstraint("user_id", "report_schedule_id"),
 )
+"""报告计划-用户关系数据表。"""
 
 
 class ReportSchedule(Model, AuditMixinNullable):
     """
-    Report Schedules, supports alerts and reports
+    报告计划对象关系模型，支持警报和报告。
     """
 
     __tablename__ = "report_schedule"
@@ -95,9 +105,7 @@ class ReportSchedule(Model, AuditMixinNullable):
     context_markdown = Column(Text)
     active = Column(Boolean, default=True, index=True)
     crontab = Column(String(1000), nullable=False)
-    creation_method = Column(
-        String(255), server_default=ReportCreationMethodType.ALERTS_REPORTS
-    )
+    creation_method = Column(String(255), server_default=ReportCreationMethodType.ALERTS_REPORTS)
     timezone = Column(String(100), default="UTC", nullable=False)
     report_format = Column(String(50), default=ReportDataFormat.VISUALIZATION)
     sql = Column(Text())
@@ -106,9 +114,7 @@ class ReportSchedule(Model, AuditMixinNullable):
     chart = relationship(Slice, backref="report_schedules", foreign_keys=[chart_id])
     # (Alerts/Reports) M-O to dashboard
     dashboard_id = Column(Integer, ForeignKey("dashboards.id"), nullable=True)
-    dashboard = relationship(
-        Dashboard, backref="report_schedules", foreign_keys=[dashboard_id]
-    )
+    dashboard = relationship(Dashboard, backref="report_schedules", foreign_keys=[dashboard_id])
     # (Alerts) M-O to database
     database_id = Column(Integer, ForeignKey("dbs.id"), nullable=True)
     database = relationship(Database, foreign_keys=[database_id])
@@ -143,12 +149,11 @@ class ReportRecipients(Model, AuditMixinNullable):
     """报表收件人，用于支持多种通知类型，例如：Slack、email"""
 
     __tablename__ = "report_recipient"
+
     id = Column(Integer, primary_key=True)
     type = Column(String(50), nullable=False)
     recipient_config_json = Column(Text, default="{}")
-    report_schedule_id = Column(
-        Integer, ForeignKey("report_schedule.id"), nullable=False
-    )
+    report_schedule_id = Column(Integer, ForeignKey("report_schedule.id"), nullable=False)
     report_schedule = relationship(
         ReportSchedule,
         backref=backref("recipients", cascade="all,delete,delete-orphan"),

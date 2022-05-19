@@ -8,6 +8,8 @@ from rabbitai.errors import ErrorLevel, RabbitaiError, RabbitaiErrorType
 
 
 class RabbitaiException(Exception):
+    """RabbitAI异常。"""
+
     status = 500
     message = ""
 

@@ -13,18 +13,31 @@ logger = logging.getLogger(__name__)
 def convert_filter_scopes(
     json_metadata: Dict[Any, Any], filters: List[Slice]
 ) -> Dict[int, Dict[str, Dict[str, Any]]]:
+    """
+
+    :param json_metadata:
+    :param filters:
+    :return:
+    """
+
     filter_scopes = {}
     immuned_by_id: List[int] = json_metadata.get("filter_immune_slices") or []
     immuned_by_column: Dict[str, List[int]] = defaultdict(list)
-    for slice_id, columns in json_metadata.get(
-        "filter_immune_slice_fields", {}
-    ).items():
+    for slice_id, columns in json_metadata.get("filter_immune_slice_fields", {}).items():
         for column in columns:
             immuned_by_column[column].append(int(slice_id))
 
     def add_filter_scope(
         filter_fields: Dict[str, Dict[str, Any]], filter_field: str, filter_id: int
     ) -> None:
+        """
+
+        :param filter_fields:
+        :param filter_field:
+        :param filter_id:
+        :return:
+        """
+
         # in case filter field is invalid
         if isinstance(filter_field, str):
             current_filter_immune = list(
@@ -66,6 +79,13 @@ def copy_filter_scopes(
     old_to_new_slc_id_dict: Dict[int, int],
     old_filter_scopes: Dict[int, Dict[str, Dict[str, Any]]],
 ) -> Dict[str, Dict[Any, Any]]:
+    """
+
+    :param old_to_new_slc_id_dict:
+    :param old_filter_scopes:
+    :return:
+    """
+
     new_filter_scopes: Dict[str, Dict[Any, Any]] = {}
     for (filter_id, scopes) in old_filter_scopes.items():
         new_filter_key = old_to_new_slc_id_dict.get(int(filter_id))

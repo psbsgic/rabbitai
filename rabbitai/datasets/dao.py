@@ -15,12 +15,22 @@ from rabbitai.views.base import DatasourceFilter
 logger = logging.getLogger(__name__)
 
 
-class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
+class DatasetDAO(BaseDAO):
+    """数据集数据访问对象。"""
+
     model_cls = SqlaTable
+    """模型类，SqlaTable"""
     base_filter = DatasourceFilter
+    """基本过滤器"""
 
     @staticmethod
     def get_owner_by_id(owner_id: int) -> Optional[object]:
+        """
+        从数据库中获取具有指定标识的用户对象模型实例。
+
+        :param owner_id:
+        :return:
+        """
         return (
             db.session.query(current_app.appbuilder.sm.user_model)
             .filter_by(id=owner_id)
@@ -29,6 +39,12 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_database_by_id(database_id: int) -> Optional[Database]:
+        """
+        从数据库中获取具有指定标识的数据库对象模型实例。
+
+        :param database_id:
+        :return:
+        """
         try:
             return db.session.query(Database).filter_by(id=database_id).one_or_none()
         except SQLAlchemyError as ex:  # pragma: no cover
@@ -37,6 +53,12 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_related_objects(database_id: int) -> Dict[str, Any]:
+        """
+        从数据库中查询与指定数据库对象模型相关的对象（图表、仪表盘）。
+
+        :param database_id:
+        :return:
+        """
         charts = (
             db.session.query(Slice)
             .filter(
@@ -61,6 +83,14 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
     def validate_table_exists(
         database: Database, table_name: str, schema: Optional[str]
     ) -> bool:
+        """
+        验证数据表是否存在。
+
+        :param database:
+        :param table_name:
+        :param schema:
+        :return:
+        """
         try:
             database.get_table(table_name, schema=schema)
             return True
@@ -171,6 +201,7 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
         - If there are extra columns on the metadata db that are not defined on the List
         then we delete.
         """
+
         new_columns = []
         for column in property_columns:
             column_id = column.get("id")
@@ -319,8 +350,10 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
 
 
 class DatasetColumnDAO(BaseDAO):
+    """数据集列数据访问对象。"""
     model_cls = TableColumn
 
 
 class DatasetMetricDAO(BaseDAO):
+    """数据集指标数据访问对象。"""
     model_cls = SqlMetric

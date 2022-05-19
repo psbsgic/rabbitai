@@ -24,7 +24,7 @@ def build_job_metadata(
     channel_id: str, job_id: str, user_id: Optional[str], **kwargs: Any
 ) -> Dict[str, Any]:
     """
-    构建任务元数据，Json格式字典。
+    构建任务元数据，Json格式字典。包括键：channel_id、job_id、user_id、status、errors、result_url
 
     :param channel_id: 通道标识。
     :param job_id: 任务标识。
@@ -43,8 +43,18 @@ def build_job_metadata(
 
 
 def parse_event(event_data: Tuple[str, Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    解析指定事件数据。
+
+    :param event_data: 事件数据，事件标识和数据字典的元组。
+    :type event_data:
+    :return:
+    :rtype:
+    """
+
     event_id = event_data[0]
     event_payload = event_data[1]["data"]
+
     return {"id": event_id, **json.loads(event_payload)}
 
 
@@ -58,7 +68,7 @@ def increment_id(redis_id: str) -> str:
 
 
 class AsyncQueryManager:
-    """异步查询管理器。"""
+    """异步查询管理器，基于 Redis 建立异步查询处理机制，每次Web请求后生成新的令牌，方法响应对象。"""
 
     MAX_EVENT_COUNT = 100
     STATUS_PENDING = "pending"
@@ -79,7 +89,8 @@ class AsyncQueryManager:
 
     def init_app(self, app: Flask) -> None:
         """
-        依据指定应用的配置对象初始化该实例。
+        依据指定应用的配置对象初始化该实例。依据应用配置提供的有关异步查询选项，创建 Redis，设置相关属性。
+        定义一个Web请求后回调，验证会话的有效性，生成令牌等。
 
         :param app: Flask应用实例。
         :return:
@@ -104,18 +115,14 @@ class AsyncQueryManager:
         )
         self._stream_prefix = config["GLOBAL_ASYNC_QUERIES_REDIS_STREAM_PREFIX"]
         self._stream_limit = config["GLOBAL_ASYNC_QUERIES_REDIS_STREAM_LIMIT"]
-        self._stream_limit_firehose = config[
-            "GLOBAL_ASYNC_QUERIES_REDIS_STREAM_LIMIT_FIREHOSE"
-        ]
+        self._stream_limit_firehose = config["GLOBAL_ASYNC_QUERIES_REDIS_STREAM_LIMIT_FIREHOSE"]
         self._jwt_cookie_name = config["GLOBAL_ASYNC_QUERIES_JWT_COOKIE_NAME"]
         self._jwt_cookie_secure = config["GLOBAL_ASYNC_QUERIES_JWT_COOKIE_SECURE"]
         self._jwt_cookie_domain = config["GLOBAL_ASYNC_QUERIES_JWT_COOKIE_DOMAIN"]
         self._jwt_secret = config["GLOBAL_ASYNC_QUERIES_JWT_SECRET"]
 
         @app.after_request
-        def validate_session(  # pylint: disable=unused-variable
-            response: Response,
-        ) -> Response:
+        def validate_session(response: Response) -> Response:
             """
             验证会话，每次请求后要调用的方法，重置用户令牌。
 
@@ -157,19 +164,32 @@ class AsyncQueryManager:
 
     def generate_jwt(self, data: Dict[str, Any]) -> str:
         """
-        生成JWT。
+        使用 HS256 算法生成JWT。
 
         :param data:
         :return:
         """
+
         encoded_jwt = jwt.encode(data, self._jwt_secret, algorithm="HS256")
         return encoded_jwt.decode("utf-8")
 
     def parse_jwt(self, token: str) -> Dict[str, Any]:
+        """
+        使用 HS256 算法解析指定令牌为 jwt 数据。
+
+        :param token: 令牌。
+        :return:
+        """
         data = jwt.decode(token, self._jwt_secret, algorithms=["HS256"])
         return data
 
     def parse_jwt_from_request(self, req: Request) -> Dict[str, Any]:
+        """
+        依据Web请求的 cookies 数据（令牌），解析为 jwt 数据。
+
+        :param req: Web请求。
+        :return:
+        """
         token = req.cookies.get(self._jwt_cookie_name)
         if not token:
             raise AsyncQueryTokenException("Token not preset")
@@ -182,20 +202,24 @@ class AsyncQueryManager:
 
     def init_job(self, channel_id: str, user_id: Optional[str]) -> Dict[str, Any]:
         """
-        初始化一个任务。
+        依据指定通道标识、用户标识，初始化一个任务。
 
-        :param channel_id:
-        :param user_id:
-        :return:
+        :param channel_id: 通道标识。
+        :param user_id: 用户标识。
+        :return: 任务元数据。
         """
         job_id = str(uuid.uuid4())
-        return build_job_metadata(
-            channel_id, job_id, user_id, status=self.STATUS_PENDING
-        )
+        return build_job_metadata(channel_id, job_id, user_id, status=self.STATUS_PENDING)
 
-    def read_events(
-        self, channel: str, last_id: Optional[str]
-    ) -> List[Optional[Dict[str, Any]]]:
+    def read_events(self, channel: str, last_id: Optional[str]) -> List[Optional[Dict[str, Any]]]:
+        """
+        读取事件。
+
+        :param channel: 通道。
+        :param last_id: 最近标识。
+        :return:
+        """
+
         stream_name = f"{self._stream_prefix}{channel}"
         start_id = increment_id(last_id) if last_id else "-"
         results = self._redis.xrange(  # type: ignore
@@ -203,9 +227,7 @@ class AsyncQueryManager:
         )
         return [] if not results else list(map(parse_event, results))
 
-    def update_job(
-        self, job_metadata: Dict[str, Any], status: str, **kwargs: Any
-    ) -> None:
+    def update_job(self, job_metadata: Dict[str, Any], status: str, **kwargs: Any) -> None:
         """
         更新任务。添加到 Redis。
 

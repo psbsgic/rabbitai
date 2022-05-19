@@ -18,7 +18,7 @@ config = app.config
 
 
 class DatasourceAccessRequest(Model, AuditMixinNullable):
-    """数据源和数据库访问请求的 ORM 模型。"""
+    """数据源和数据库访问请求的 ORM 模型，存储：id、datasource_id和datasource_type（数据源标识和类型）。"""
 
     __tablename__ = "access_request"
 
@@ -27,15 +27,16 @@ class DatasourceAccessRequest(Model, AuditMixinNullable):
     datasource_type = Column(String(200))
 
     ROLES_DENYLIST = set(config["ROBOT_PERMISSION_ROLES"])
+    """拒绝访问的角色集合"""
 
     @property
     def cls_model(self) -> Type["BaseDatasource"]:
-        """获取数据源的类。"""
+        """获取数据源的对象关系模型类。"""
         return ConnectorRegistry.sources[self.datasource_type]
 
     @property
     def username(self) -> Markup:
-        """获取用户名称。"""
+        """获取用户名称，即创建者。"""
         return self.creator()
 
     @property
@@ -43,7 +44,7 @@ class DatasourceAccessRequest(Model, AuditMixinNullable):
         """获取数据源对象。"""
         return self.get_datasource
 
-    @datasource.getter  # type: ignore
+    @datasource.getter
     @memoized
     def get_datasource(self) -> "BaseDatasource":
         """从数据库中获取数据源对象并缓存。"""
@@ -64,17 +65,18 @@ class DatasourceAccessRequest(Model, AuditMixinNullable):
         """
 
         action_list = ""
-        perm = self.datasource.perm  # pylint: disable=no-member
+        perm = self.datasource.perm
         pv = security_manager.find_permission_view_menu("datasource_access", perm)
         for role in pv.role:
             if role.name in self.ROLES_DENYLIST:
                 continue
+
             href = (
                 f"/rabbitai/approve?datasource_type={self.datasource_type}&"
                 f"datasource_id={self.datasource_id}&"
                 f"created_by={self.created_by.username}&role_to_grant={role.name}"
             )
-            link = '<a href="{}">Grant {} Role</a>'.format(href, role.name)
+            link = '<a href="{}">授权 {} 角色</a>'.format(href, role.name)
             action_list = action_list + "<li>" + link + "</li>"
         return "<ul>" + action_list + "</ul>"
 
@@ -89,8 +91,8 @@ class DatasourceAccessRequest(Model, AuditMixinNullable):
                 f"datasource_id={self.datasource_id}&"
                 f"created_by={self.created_by.username}&role_to_extend={role.name}"
             )
-            link = '<a href="{}">Extend {} Role</a>'.format(href, role.name)
+            link = '<a href="{}">扩展 {} 角色</a>'.format(href, role.name)
             if role.name in self.ROLES_DENYLIST:
-                link = "{} Role".format(role.name)
+                link = "{} 角色".format(role.name)
             action_list = action_list + "<li>" + link + "</li>"
         return "<ul>" + action_list + "</ul>"

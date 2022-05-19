@@ -58,6 +58,13 @@ def df_to_escaped_csv(df: pd.DataFrame, **kwargs: Any) -> Any:
 def get_chart_csv_data(
     chart_url: str, auth_cookies: Optional[Dict[str, str]] = None
 ) -> Optional[bytes]:
+    """
+
+    :param chart_url:
+    :param auth_cookies:
+    :return:
+    """
+
     content = None
     if auth_cookies:
         opener = urllib.request.build_opener()

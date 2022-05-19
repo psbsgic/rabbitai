@@ -186,9 +186,7 @@ class DruidMetricInlineView(CompactCRUDMixin, EnsureEnabledMixin, RabbitaiModelV
     edit_form_extra_fields = add_form_extra_fields
 
 
-class DruidClusterModelView(
-    EnsureEnabledMixin, RabbitaiModelView, DeleteMixin, YamlExportMixin,
-):
+class DruidClusterModelView(EnsureEnabledMixin, RabbitaiModelView, DeleteMixin, YamlExportMixin,):
     datamodel = SQLAInterface(models.DruidCluster)
     include_route_methods = RouteMethod.CRUD_SET
     list_title = _("Druid Clusters")
@@ -250,9 +248,7 @@ class DruidClusterModelView(
         DeleteMixin._delete(self, pk)
 
 
-class DruidDatasourceModelView(
-    EnsureEnabledMixin, DatasourceModelView, DeleteMixin, YamlExportMixin,
-):
+class DruidDatasourceModelView(EnsureEnabledMixin, DatasourceModelView, DeleteMixin, YamlExportMixin,):
     datamodel = SQLAInterface(models.DruidDatasource)
     include_route_methods = RouteMethod.CRUD_SET
     list_title = _("Druid Datasources")
@@ -373,9 +369,7 @@ class Druid(EnsureEnabledMixin, BaseRabbitaiView):
 
     @has_access
     @expose("/refresh_datasources/")
-    def refresh_datasources(  # pylint: disable=no-self-use
-        self, refresh_all: bool = True
-    ) -> FlaskResponse:
+    def refresh_datasources(self, refresh_all: bool = True) -> FlaskResponse:
         """endpoint that refreshes druid datasources metadata"""
         session = db.session()
         DruidCluster = ConnectorRegistry.sources[  # pylint: disable=invalid-name

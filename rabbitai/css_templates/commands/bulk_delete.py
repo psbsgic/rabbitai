@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class BulkDeleteCssTemplateCommand(BaseCommand):
+    """批量删除CSS模板对象关系模型命令。"""
+
     def __init__(self, user: User, model_ids: List[int]):
         self._actor = user
         self._model_ids = model_ids

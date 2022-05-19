@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExportSavedQueriesCommand(ExportModelsCommand):
+    """导出保存的查询命令。"""
 
     dao = SavedQueryDAO
     not_found = SavedQueryNotFoundError
@@ -50,7 +51,7 @@ class ExportSavedQueriesCommand(ExportModelsCommand):
             include_defaults=True,
             export_uuids=True,
         )
-        # TODO (betodealmeida): move this logic to export_to_dict once this
+        # TODO: move this logic to export_to_dict once this
         # becomes the default export endpoint
         if "extra" in payload:
             try:

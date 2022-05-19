@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class CacheRestApi(BaseRabbitaiModelRestApi):
+    """缓存 API 视图，提供 CacheKey 对象关系模型的相关 API。"""
+
     datamodel = SQLAInterface(CacheKey)
     resource_name = "cachekey"
     allow_browser_login = True

@@ -15,9 +15,20 @@ def retry_call(
     **kwargs: Any
 ) -> Any:
     """
-    Retry a given call.
+    尝试调用被装饰函数。
+
+    :param func:
+    :param args:
+    :param strategy:
+    :param exception:
+    :param fargs:
+    :param fkwargs:
+    :param kwargs:
+    :return:
     """
+
     decorated = backoff.on_exception(strategy, exception, *args, **kwargs)(func)
     fargs = fargs or []
     fkwargs = fkwargs or {}
+
     return decorated(*fargs, **fkwargs)

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""This module contains the 'Viz' objects
+"""
+该模块包含可视化 'Viz' 对象，
 
-These objects represent the backend of all the visualizations that
-Rabbitai can render.
+这些对象表示 Rabbitai 可以呈现的所有可视化的后端。
 """
 
 import copy
@@ -88,22 +88,27 @@ METRIC_KEYS = [
     "y",
     "size",
 ]
+"""指标键的列表，键包括：metric、metrics、percent_metrics、metric_2、secondary_metric、x、y、size。"""
 
-# This regex is to get user defined filter column name, which is the first param in the filter_values function.
-# see the definition of filter_values template:
-# https://github.com/apache/rabbitai/blob/24ad6063d736c1f38ad6f962e586b9b1a21946af/rabbitai/jinja_context.py#L63
 FILTER_VALUES_REGEX = re.compile(r"filter_values\(['\"](\w+)['\"]\,")
+"""此正则表达式用于获取用户定义的过滤器列名，它是 filter_values 函数中的第一个参数。"""
 
 
 class BaseViz:
-    """基础可视对象，所有可视对象的基类。"""
+    """基础可视对象，所有可视对象的基类，提供依据前端表单数据从数据源查询（应用过滤、自定义数据等）数据的功能。"""
 
     viz_type: Optional[str] = None
+    """可视类型名称，一般从表单数据中获取。"""
     verbose_name = "Base Viz"
+    """显示名称"""
     credits = ""
+    """用户凭据"""
     is_timeseries = False
+    """是否时间序列，默认False"""
     cache_type = "df"
+    """缓存类型，默认df"""
     enforce_numerical_metrics = True
+    """是否强制数值指标，默认True"""
 
     def __init__(
         self,
@@ -113,50 +118,71 @@ class BaseViz:
         force_cached: bool = False,
     ) -> None:
         """
-        使用指定数据源对象、表单数据、是否强制、是否强制缓存，创建新实例。
+        使用指定数据源模型对象、来自前端的表单数据、是否强制、是否强制缓存，创建新实例。
 
-        :param datasource: 数据源对象。
-        :param form_data: 表单数据。
-        :param force: 是否强制。
-        :param force_cached: 是否强制缓存。
+        :param datasource: 数据源模型对象。
+        :param form_data: 来自前端的表单数据。
+        :param force: 是否强制，默认 False。
+        :param force_cached: 是否强制缓存，默认 False。
         """
 
         if not datasource:
             raise QueryObjectValidationError(_("Viz is missing a datasource"))
 
         self.datasource = datasource
+        """数据源模型对象"""
         self.request = request
+        """Web请求对象"""
         self.viz_type = form_data.get("viz_type")
+        """可视类型，表单数据的 viz_type 键值"""
         self.form_data = form_data
+        """来自前端的表单数据（字典）"""
 
         self.query = ""
+        """查询字符串"""
         self.token = utils.get_form_data_token(form_data)
-
+        """从表单数据获取的令牌"""
         self.groupby: List[str] = self.form_data.get("groupby") or []
+        """分组列名称或列表，表单数据的 groupby 键值"""
         self.time_shift = timedelta()
-
+        """时间增量对象"""
         self.status: Optional[str] = None
+        """状态。"""
         self.error_msg = ""
+        """错误信息。"""
         self.results: Optional[QueryResult] = None
+        """查询结果对象。"""
         self.errors: List[Dict[str, Any]] = []
+        """错误列表。"""
         self.force = force
+        """是否强制。"""
         self._force_cached = force_cached
+        """是否已强制缓存。"""
         self.from_dttm: Optional[datetime] = None
+        """起始时间。"""
         self.to_dttm: Optional[datetime] = None
+        """终止时间。"""
         self._extra_chart_data: List[Tuple[str, pd.DataFrame]] = []
-
+        """额外图表数据，命名数据帧元组的列表。"""
         self.process_metrics()
 
         self.applied_filters: List[Dict[str, str]] = []
+        """已应用的过滤器列表，List[Dict[str, str]]。"""
         self.rejected_filters: List[Dict[str, str]] = []
+        """已拒绝的过滤器列表，List[Dict[str, str]]。"""
 
     @property
     def force_cached(self) -> bool:
+        """是否已强制缓存。"""
         return self._force_cached
 
     def process_metrics(self) -> None:
-        # metrics in Viz is order sensitive, so metric_dict should be OrderedDict
+        """新建该实例时调用该方法，处理指标，收集表单数据中的指标及其标签，创建 metric_dict、all_metrics、metric_labels。"""
+
+        # 指标在 Viz 是排序敏感的，所以 metric_dict 应该是 OrderedDict
         self.metric_dict = OrderedDict()
+        """指标显示名称（数据帧的列名称）和指标对象的排序字典。"""
+
         fd = self.form_data
         for mkey in METRIC_KEYS:
             val = fd.get(mkey)
@@ -169,48 +195,58 @@ class BaseViz:
 
         # Cast to list needed to return serializable object in py3
         self.all_metrics = list(self.metric_dict.values())
+        """指标对象的列表"""
         self.metric_labels = list(self.metric_dict.keys())
+        """指标显示名称（数据帧的列名称）的列表"""
 
     @staticmethod
     def handle_js_int_overflow(data: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        处理JS整数溢出，将超出JS处理范围的整数数据转换为字符串。
+
+        :param data: 数据记录。
+        :return:
+        """
         for d in data.get("records", {}):
             for k, v in list(d.items()):
                 if isinstance(v, int):
-                    # if an int is too big for Java Script to handle
-                    # convert it to a string
+                    # 如果整数数据太大超出JS处理范围，转换为字符串
                     if abs(v) > JS_MAX_INTEGER:
                         d[k] = str(v)
         return data
 
     def run_extra_queries(self) -> None:
-        """Lifecycle method to use when more than one query is needed
+        """
+        需要多个查询时使用的生命周期方法
 
-        In rare-ish cases, a visualization may need to execute multiple
-        queries. That is the case for FilterBox or for time comparison
-        in Line chart for instance.
+        在极少数情况下，可视化可能需要执行多个查询。例如，FilterBox或折线图中的时间比较就是这种情况。
 
-        In those cases, we need to make sure these queries run before the
-        main `get_payload` method gets called, so that the overall caching
-        metadata can be right. The way it works here is that if any of
-        the previous `get_df_payload` calls hit the cache, the main
-        payload's metadata will reflect that.
+        在这些情况下，我们需要确保在调用主 `get_payload` 方法之前运行这些查询，以便整体缓存元数据是正确的。
+        它在这里的工作方式是，如果之前的任何 `get_df_payload` 调用命中缓存，则主负载的元数据将反映这一点。
 
-        The multi-query support may need more work to become a first class
-        use case in the framework, and for the UI to reflect the subtleties
-        (show that only some of the queries were served from cache for
-        instance). In the meantime, since multi-query is rare, we treat
-        it with a bit of a hack. Note that the hack became necessary
-        when moving from caching the visualization's data itself, to caching
-        the underlying query(ies).
+        多查询支持可能需要更多的工作才能成为框架中的第一类用例，UI也需要反映细节（例如，显示只有一些查询是从缓存提供的）。
+        同时，由于多查询非常罕见，我们对其进行了一些处理。请注意，当从缓存可视化数据本身移动到缓存底层查询时，这种攻击是必要的。
+
         """
         pass
 
     def apply_rolling(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        对指定数据帧应用 rolling 操作（移动计算）。
+        依据表单数据中提供的 rolling 相关信息（rolling_type、rolling_periods、min_periods），
+        对指定数据帧应用滚动 rolling 操作，即调用数据帧的 rolling(**kwargs) 方法。
+
+        :param df: 数据帧。
+        :return: 应用 rolling 操作后的数据帧。
+        """
+
+        # 获取 rolling 操作相关属性
         fd = self.form_data
         rolling_type = fd.get("rolling_type")
         rolling_periods = int(fd.get("rolling_periods") or 0)
         min_periods = int(fd.get("min_periods") or 0)
 
+        # 计算
         if rolling_type in ("mean", "std", "sum") and rolling_periods:
             kwargs = dict(window=rolling_periods, min_periods=min_periods)
             if rolling_type == "mean":
@@ -221,8 +257,10 @@ class BaseViz:
                 df = df.rolling(**kwargs).sum()
         elif rolling_type == "cumsum":
             df = df.cumsum()
+
         if min_periods:
             df = df[min_periods:]
+
         if df.empty:
             raise QueryObjectValidationError(
                 _(
@@ -231,9 +269,16 @@ class BaseViz:
                     "rolling window."
                 )
             )
+
         return df
 
     def get_samples(self) -> List[Dict[str, Any]]:
+        """
+        获取样本数据，字典的列表，内部构造查询对象，调用：get_df_payload。
+
+        :return: List[Dict[str, Any]]
+        """
+
         query_obj = self.query_obj()
         query_obj.update(
             {
@@ -245,11 +290,18 @@ class BaseViz:
                 "columns": [o.column_name for o in self.datasource.columns],
             }
         )
-        df = self.get_df_payload(query_obj)["df"]  # leverage caching logic
+        df = self.get_df_payload(query_obj)["df"]
+
         return df.to_dict(orient="records")
 
     def get_df(self, query_obj: Optional[QueryObjectDict] = None) -> pd.DataFrame:
-        """Returns a pandas dataframe based on the query object"""
+        """
+        基于当前数据源，依据指定查询对象从数据源中查询并返回数据帧。
+
+        :param query_obj: 查询对象。
+        :return: 数据帧。
+        """
+
         if not query_obj:
             query_obj = self.query_obj()
         if not query_obj:
@@ -263,18 +315,18 @@ class BaseViz:
             if granularity_col:
                 timestamp_format = granularity_col.python_date_format
 
-        # The datasource here can be different backend but the interface is common
+        # 这里的数据源可以是不同的后端，但接口是通用的
         self.results = self.datasource.query(query_obj)
+        """查询结果对象"""
         self.query = self.results.query
+        """查询字符串"""
         self.status = self.results.status
+        """查询状态"""
         self.errors = self.results.errors
-
+        """查询错误"""
         df = self.results.df
-        # Transform the timestamp we received from database to pandas supported
-        # datetime format. If no python_date_format is specified, the pattern will
-        # be considered as the default ISO date format
-        # If the datetime format is unix, the parse will use the corresponding
-        # parsing logic.
+        # 将从数据库接收到的时间戳转换为支持的日期时间格式。
+        # 如果未指定 python_date_format，该模式将被视为默认的ISO日期格式。如果日期时间格式为unix，则使用相应的解析逻辑。
         if not df.empty:
             utils.normalize_dttm_col(
                 df=df,
@@ -287,24 +339,54 @@ class BaseViz:
                 self.df_metrics_to_num(df)
 
             df.replace([np.inf, -np.inf], np.nan, inplace=True)
+
         return df
 
     def df_metrics_to_num(self, df: pd.DataFrame) -> None:
-        """Converting metrics to numeric when pandas.read_sql cannot"""
+        """
+        转换指定数据帧的指标列为数值。
+
+        :param df: 数据帧。
+        :return:
+        """
         metrics = self.metric_labels
         for col, dtype in df.dtypes.items():
             if dtype.type == np.object_ and col in metrics:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
 
     def process_query_filters(self) -> None:
+        """处理查询过滤器，将表单数据中的过滤器转换为查询过滤器。"""
+
         utils.convert_legacy_filters_into_adhoc(self.form_data)
         merge_extra_filters(self.form_data)
         utils.split_adhoc_filters_into_base_filters(self.form_data)
 
     def query_obj(self) -> QueryObjectDict:
-        """Building a query object"""
+        """
+        基于当前表单数据提供的信息，构建一个查询对象 QueryObjectDict。
+
+        包括以下属性（键）：
+
+        - granularity,
+        - from_dttm,
+        - to_dttm,
+        - is_timeseries,
+        - groupby,
+        - metrics,
+        - row_limit,
+        - filter,
+        - timeseries_limit,
+        - extras,
+        - timeseries_limit_metric,
+        - order_desc,
+
+
+        :return: 查询对象 QueryObjectDict
+        """
+
         form_data = self.form_data
 
+        # 处理过滤
         self.process_query_filters()
 
         gb = self.groupby
@@ -339,6 +421,7 @@ class BaseViz:
 
         time_shift = form_data.get("time_shift", "")
         self.time_shift = parse_past_timedelta(time_shift)
+        """时间增量"""
         from_dttm = None if since is None else (since - self.time_shift)
         to_dttm = None if until is None else (until - self.time_shift)
         if from_dttm and to_dttm and from_dttm > to_dttm:
@@ -347,10 +430,11 @@ class BaseViz:
             )
 
         self.from_dttm = from_dttm
+        """起始时间"""
         self.to_dttm = to_dttm
+        """终止时间"""
 
-        # extras are used to query elements specific to a datasource type
-        # for instance the extra where clause that applies only to Tables
+        # extras用于查询特定于数据源类型的元素，例如仅适用于表的extra where子句
         extras = {
             "druid_time_origin": form_data.get("druid_time_origin", ""),
             "having": form_data.get("having", ""),
@@ -377,6 +461,8 @@ class BaseViz:
 
     @property
     def cache_timeout(self) -> int:
+        """返回缓存超时，其值可能来自：表单数据、数据源对象、数据库对象、配置对象。"""
+
         if self.form_data.get("cache_timeout") is not None:
             return int(self.form_data["cache_timeout"])
         if self.datasource.cache_timeout is not None:
@@ -391,6 +477,8 @@ class BaseViz:
         return config["CACHE_DEFAULT_TIMEOUT"]
 
     def get_json(self) -> str:
+        """返回 payload 的Json字符串。"""
+
         return json.dumps(
             self.get_payload(), default=utils.json_int_dttm_ser, ignore_nan=True
         )
@@ -408,6 +496,7 @@ class BaseViz:
         different time shifts wil differ only in the `from_dttm`, `to_dttm`,
         `inner_from_dttm`, and `inner_to_dttm` values which are stripped.
         """
+
         cache_dict = copy.copy(query_obj)
         cache_dict.update(extra)
 
@@ -429,8 +518,15 @@ class BaseViz:
         return md5_sha_from_str(json_data)
 
     def get_payload(self, query_obj: Optional[QueryObjectDict] = None) -> VizPayload:
-        """Returns a payload of metadata and data"""
+        """
+        返回元数据和数据的有效负载 VizPayload。依次调用 run_extra_queries() 、get_df_payload 方法，
+        得到 payload，添加 data，applied_filters，rejected_filters
 
+        :param query_obj: 查询对象。
+        :return: VizPayload。
+        """
+
+        # 执行额外查询
         try:
             self.run_extra_queries()
         except RabbitaiSecurityException as ex:
@@ -478,9 +574,31 @@ class BaseViz:
     def get_df_payload(
         self, query_obj: Optional[QueryObjectDict] = None, **kwargs: Any
     ) -> Dict[str, Any]:
-        """Handles caching around the df payload retrieval"""
+        """
+        依据指定查询对象获取数据帧载荷，优先从缓存中获取。
+
+        - cache_key,
+        - cached_dttm,
+        - cache_timeout,
+        - df,
+        - errors,
+        - form_data,
+        - is_cached,
+        - query,
+        - from_dttm,
+        - to_dttm,
+        - status,
+        - stacktrace,
+        - rowcount,
+
+        :param query_obj: 查询对象。
+        :param kwargs: 关键字参数。
+        :return: 字典。
+        """
+
         if not query_obj:
             query_obj = self.query_obj()
+
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         cache_value = None
         logger.info("Cache key: {}".format(cache_key))
@@ -566,6 +684,7 @@ class BaseViz:
                     self.cache_timeout,
                     self.datasource.uid,
                 )
+
         return {
             "cache_key": cache_key,
             "cached_dttm": cache_value["dttm"] if cache_value is not None else None,
@@ -583,11 +702,24 @@ class BaseViz:
         }
 
     def json_dumps(self, obj: Any, sort_keys: bool = False) -> str:
+        """
+        序列化指定对象为Json字符串。
+
+        :param obj:
+        :param sort_keys:
+        :return:
+        """
         return json.dumps(
             obj, default=utils.json_int_dttm_ser, ignore_nan=True, sort_keys=sort_keys
         )
 
     def has_error(self, payload: VizPayload) -> bool:
+        """
+        指定可视化载荷中是否有错误。
+
+        :param payload:
+        :return:
+        """
         return (
             payload.get("status") == utils.QueryStatus.FAILED
             or payload.get("error") is not None
@@ -599,7 +731,9 @@ class BaseViz:
 
     @property
     def data(self) -> Dict[str, Any]:
-        """This is the data object serialized to the js layer"""
+        """数据，应该字符串键和任何值的字典，这是序列化到js层的数据对象，
+        包括属性：form_data、token、viz_name、filter_select_enabled"""
+
         content = {
             "form_data": self.form_data,
             "token": self.token,
@@ -609,44 +743,55 @@ class BaseViz:
         return content
 
     def get_csv(self) -> Optional[str]:
-        df = self.get_df_payload()["df"]  # leverage caching logic
+        """返回CSV格式数据。"""
+
+        df = self.get_df_payload()["df"]
         include_index = not isinstance(df.index, pd.RangeIndex)
         return csv.df_to_escaped_csv(df, index=include_index, **config["CSV_EXPORT"])
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        """
+        返回指定数据帧的记录数据 VizData，df.to_dict(orient="records")。
+
+        :param df:
+        :return:
+        """
         return df.to_dict(orient="records")
 
     @property
     def json_data(self) -> str:
+        """返回要传递到JS的数据。"""
         return json.dumps(self.data)
 
     def raise_for_access(self) -> None:
         """
-        Raise an exception if the user cannot access the resource.
+        如果用户无法访问资源，则引发异常。
 
-        :raises RabbitaiSecurityException: If the user cannot access the resource
+        :raises RabbitaiSecurityException: 如果用户无法访问资源
         """
 
         security_manager.raise_for_access(viz=self)
 
 
 class TableViz(BaseViz):
-    """A basic html table that is sortable and searchable"""
+    """表格可视对象，可排序和可搜索的基本html表。"""
 
     viz_type = "table"
     verbose_name = _("Table View")
-    credits = 'a <a href="https://github.com/airbnb/rabbitai">Rabbitai</a> original'
+    credits = 'a <a href="https://github.com/psbsgic/rabbitai">Rabbitai</a> original'
     is_timeseries = False
     enforce_numerical_metrics = False
 
     def process_metrics(self) -> None:
-        """Process form data and store parsed column configs.
-        1. Determine query mode based on form_data params.
-             - Use `query_mode` if it has a valid value
-             - Set as RAW mode if `all_columns` is set
-             - Otherwise defaults to AGG mode
-        2. Determine output columns based on query mode.
+        """处理表单数据并存储解析的列配置。
+
+        1. 基于 form_data 参数确定查询模式。
+             - 如果  `query_mode` 有有效值
+             - 如果设置 `all_columns` 则设置为 RAW 模式
+             - 否则默认为 AGG 模式
+        2. 根据查询模式确定输出列。
         """
+
         # Verify form data first: if not specifying query mode, then cannot have both
         # GROUP BY and RAW COLUMNS.
         fd = self.form_data
@@ -682,8 +827,11 @@ class TableViz(BaseViz):
             percent_columns = utils.get_metric_names(fd.get("percent_metrics") or [])
 
         self.columns = columns
+        """列名称的列表"""
         self.percent_columns = percent_columns
+        """百分比列名称的列表"""
         self.is_timeseries = self.should_be_timeseries()
+        """是否时间序列"""
 
     def should_be_timeseries(self) -> bool:
         fd = self.form_data
@@ -698,7 +846,10 @@ class TableViz(BaseViz):
         return bool(fd.get("include_time"))
 
     def query_obj(self) -> QueryObjectDict:
+        """依据表单数据，构建并返回字典形式的查询对象。"""
+
         d = super().query_obj()
+
         fd = self.form_data
         if self.query_mode == QueryMode.RAW:
             d["columns"] = fd.get("all_columns")
@@ -735,6 +886,7 @@ class TableViz(BaseViz):
         the union of the metrics representing the non-percent and percent metrics. Note
         the percent metrics have yet to be transformed.
         """
+
         # Transform the data frame to adhere to the UI ordering of the columns and
         # metrics whilst simultaneously computing the percentages (via normalization)
         # for the percent metrics.
@@ -762,11 +914,11 @@ class TableViz(BaseViz):
 
 
 class TimeTableViz(BaseViz):
-    """A data table with rich time-series related columns"""
+    """具有丰富的时间序列相关列的数据表。"""
 
     viz_type = "time_table"
     verbose_name = _("Time Table View")
-    credits = 'a <a href="https://github.com/airbnb/rabbitai">Rabbitai</a> original'
+    credits = 'a <a href="https://github.com/psbsgic/rabbitai">Rabbitai</a> original'
     is_timeseries = True
 
     def query_obj(self) -> QueryObjectDict:
@@ -783,6 +935,12 @@ class TimeTableViz(BaseViz):
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        """
+        返回按照时间戳进行透视的数据。
+
+        :param df:
+        :return:
+        """
         if df.empty:
             return None
 
@@ -803,7 +961,7 @@ class TimeTableViz(BaseViz):
 
 
 class PivotTableViz(BaseViz):
-    """A pivot table view, define your rows, columns and metrics"""
+    """透视表视图，定义行、列和指标。"""
 
     viz_type = "pivot_table"
     verbose_name = _("Pivot Table")
@@ -851,6 +1009,15 @@ class PivotTableViz(BaseViz):
     def get_aggfunc(
         metric: str, df: pd.DataFrame, form_data: Dict[str, Any]
     ) -> Union[str, Callable[[Any], Any]]:
+        """
+        获取聚合函数。
+
+        :param metric: 指标名称。
+        :param df: 数据帧。
+        :param form_data: 表单数据。
+        :return:
+        """
+
         aggfunc = form_data.get("pandas_aggfunc") or "sum"
         if pd.api.types.is_numeric_dtype(df[metric]):
             # Ensure that Pandas's sum function mimics that of SQL.
@@ -935,7 +1102,7 @@ class PivotTableViz(BaseViz):
 
 
 class TreemapViz(BaseViz):
-    """Tree map visualisation for hierarchical data."""
+    """分层数据的树状图可视化。"""
 
     viz_type = "treemap"
     verbose_name = _("Treemap")
@@ -977,7 +1144,7 @@ class TreemapViz(BaseViz):
 
 
 class CalHeatmapViz(BaseViz):
-    """Calendar heatmap."""
+    """日历热图。"""
 
     viz_type = "cal_heatmap"
     verbose_name = _("Calendar Heatmap")
@@ -1067,7 +1234,7 @@ class NVD3Viz(BaseViz):
 
 
 class BubbleViz(NVD3Viz):
-    """Based on the NVD3 bubble chart"""
+    """基于NVD3气泡图"""
 
     viz_type = "bubble"
     verbose_name = _("Bubble Chart")
@@ -1117,7 +1284,7 @@ class BubbleViz(NVD3Viz):
 
 
 class BulletViz(NVD3Viz):
-    """Based on the NVD3 bullet chart"""
+    """基于NVD3子弹图"""
 
     viz_type = "bullet"
     verbose_name = _("Bullet Chart")
@@ -1144,7 +1311,7 @@ class BulletViz(NVD3Viz):
 
 
 class BigNumberViz(BaseViz):
-    """Put emphasis on a single metric with this big number viz"""
+    """用这个大数字强调一个指标"""
 
     viz_type = "big_number"
     verbose_name = _("Big Number with Trendline")
@@ -1198,7 +1365,7 @@ class BigNumberTotalViz(BaseViz):
 
 
 class NVD3TimeSeriesViz(NVD3Viz):
-    """A rich line chart component with tons of options"""
+    """具有大量选项的丰富折线图组件"""
 
     viz_type = "line"
     verbose_name = _("Time Series - Line Chart")
@@ -1411,7 +1578,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
 
 
 class MultiLineViz(NVD3Viz):
-    """Pile on multiple line charts"""
+    """在多个折线图上叠加"""
 
     viz_type = "line_multi"
     verbose_name = _("Time Series - Multiple Line Charts")
@@ -2596,6 +2763,12 @@ class DeckGrid(BaseDeckGLViz):
 
 
 def geohash_to_json(geohash_code: str) -> List[List[float]]:
+    """
+    Geo哈希码字符串转换为Json对象。
+
+    :param geohash_code: Geo哈希码字符串。
+    :return:
+    """
     p = geohash.bbox(geohash_code)
     return [
         [p.get("w"), p.get("n")],
@@ -2718,7 +2891,15 @@ class DeckGeoJson(BaseDeckGLViz):
 
 
 class DeckArc(BaseDeckGLViz):
-    """deck.gl's Arc Layer"""
+    """deck.gl's Arc Layer
+
+    deck.gl是Uber开发并开源的基于WebGL的地理大数据可视化框架，根据其官网的介绍其有以下三点优势：
+    第一点由于是基于WebGL开发的可视化框架，前端大数据渲染的性能自然没的说，明显优于那些基于canvas 2D或者SVG的可视化库。
+    第二点是其GPU渲染的高精度。
+    第三点是该框架能与前端主流的React很好的集成。
+    Uber的这个框架最吸引我的还是基于图层的可视化设计理念，相信这个理念可以让所有的GISer眼前一亮，这将使客户端的数据可视化更加灵活易用。
+
+    """
 
     viz_type = "deck_arc"
     verbose_name = _("Deck.gl - Arc")
@@ -3038,8 +3219,16 @@ class PartitionViz(NVD3TimeSeriesViz):
         ]
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        """
+        返回可视化数据 VizData。
+
+        :param df: 数据帧。
+        :return: 可视化数据 VizData。
+        """
+
         if df.empty:
             return None
+
         fd = self.form_data
         groups = fd.get("groupby", [])
         time_op = fd.get("time_series_option", "not_time")
@@ -3060,6 +3249,13 @@ class PartitionViz(NVD3TimeSeriesViz):
 
 
 def get_subclasses(cls: Type[BaseViz]) -> Set[Type[BaseViz]]:
+    """
+    返回指定可视类型的直接子类型集合。
+
+    :param cls: 类型 BaseViz。
+    :return:
+    """
+
     return set(cls.__subclasses__()).union(
         [sc for c in cls.__subclasses__() for sc in get_subclasses(c)]
     )
@@ -3070,3 +3266,4 @@ viz_types = {
     for o in get_subclasses(BaseViz)
     if o.viz_type not in config["VIZ_TYPE_DENYLIST"]
 }
+"""可视化类型及其可视化对象的字典"""

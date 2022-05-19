@@ -19,6 +19,8 @@ JSON_KEYS = {"params", "template_params"}
 
 
 class ExportDatasetsCommand(ExportModelsCommand):
+    """导出数据集命令，将数据集输出到文件：datasets/{database_slug}/{dataset_slug}.yaml。
+    执行命令生成：file_name, file_content。"""
 
     dao = DatasetDAO
     not_found = DatasetNotFoundError
@@ -35,14 +37,14 @@ class ExportDatasetsCommand(ExportModelsCommand):
             include_defaults=True,
             export_uuids=True,
         )
-        # TODO (betodealmeida): move this logic to export_to_dict once this
-        # becomes the default export endpoint
+
         for key in JSON_KEYS:
             if payload.get(key):
                 try:
                     payload[key] = json.loads(payload[key])
                 except json.decoder.JSONDecodeError:
                     logger.info("Unable to decode `%s` field: %s", key, payload[key])
+
         for metric in payload.get("metrics", []):
             if metric.get("extra"):
                 try:
@@ -65,8 +67,7 @@ class ExportDatasetsCommand(ExportModelsCommand):
             include_defaults=True,
             export_uuids=True,
         )
-        # TODO (betodealmeida): move this logic to export_to_dict once this
-        # becomes the default export endpoint
+
         if payload.get("extra"):
             try:
                 payload["extra"] = json.loads(payload["extra"])
@@ -76,4 +77,5 @@ class ExportDatasetsCommand(ExportModelsCommand):
         payload["version"] = EXPORT_VERSION
 
         file_content = yaml.safe_dump(payload, sort_keys=False)
+
         yield file_name, file_content

@@ -48,6 +48,8 @@ logger = logging.getLogger(__name__)
 
 
 class CachedTimeOffset(TypedDict):
+    """缓存的时间位移类型，df、queries、cache_keys"""
+
     df: pd.DataFrame
     queries: List[str]
     cache_keys: List[Optional[str]]
@@ -55,23 +57,29 @@ class CachedTimeOffset(TypedDict):
 
 class QueryContext:
     """
-    The query context contains the query object and additional fields necessary
-    to retrieve the data payload for a given viz.
+    查询上下文包含查询对象和检索给定可视对象的数据有效负载所需的其他字段。
+
+    主要字段：
+
+    - cache_type: ClassVar[str] = "df"：缓存类型，默认：df
+    - enforce_numerical_metrics: ClassVar[bool] = True：是否强制数字指标，默认：True
+    - datasource: BaseDatasource：数据源对象模型
+    - queries: List[QueryObject]：查询对象的列表
+    - force: bool：是否强制。
+    - custom_cache_timeout: Optional[int]：自定义缓存超时
+    - result_type: ChartDataResultType：结果类型
+    - result_format: ChartDataResultFormat：结果格式，CSV或Json
+    - cache_type: ClassVar[str] = "df"：缓存类型，默认：df
+    - enforce_numerical_metrics: ClassVar[bool] = True：是否强制数字指标，默认：True
+    - datasource: BaseDatasource：数据源对象模型
+    - queries: List[QueryObject]：查询对象的列表
+    - force: bool：是否强制。
+    - custom_cache_timeout: Optional[int]：自定义缓存超时
+    - result_type: ChartDataResultType：结果类型
+    - result_format: ChartDataResultFormat：结果格式，CSV或Json。
+
     """
 
-    cache_type: ClassVar[str] = "df"
-    enforce_numerical_metrics: ClassVar[bool] = True
-
-    datasource: BaseDatasource
-    queries: List[QueryObject]
-    force: bool
-    custom_cache_timeout: Optional[int]
-    result_type: ChartDataResultType
-    result_format: ChartDataResultFormat
-
-    # TODO: Type datasource and query_object dictionary with TypedDict when it becomes
-    #  a vanilla python type https://github.com/python/mypy/issues/5288
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         datasource: DatasourceDict,
@@ -97,16 +105,28 @@ class QueryContext:
         }
 
     @staticmethod
-    def left_join_on_dttm(
-        left_df: pd.DataFrame, right_df: pd.DataFrame
-    ) -> pd.DataFrame:
+    def left_join_on_dttm(left_df: pd.DataFrame, right_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        基于时间列（__timestamp）进行左关联。
+
+        :param left_df: 左数据帧。
+        :param right_df: 右数据帧。
+        :return:
+        """
+
         df = left_df.set_index(DTTM_ALIAS).join(right_df.set_index(DTTM_ALIAS))
         df.reset_index(level=0, inplace=True)
         return df
 
-    def processing_time_offsets(
-        self, df: pd.DataFrame, query_object: QueryObject,
-    ) -> CachedTimeOffset:
+    def processing_time_offsets(self, df: pd.DataFrame, query_object: QueryObject,) -> CachedTimeOffset:
+        """
+        处理时间位移。
+
+        :param df: 数据帧。
+        :param query_object: 查询对象。
+        :return:
+        """
+
         # ensure query_object is immutable
         query_object_clone = copy.copy(query_object)
         queries = []
@@ -203,6 +223,14 @@ class QueryContext:
         return CachedTimeOffset(df=df, queries=queries, cache_keys=cache_keys)
 
     def normalize_df(self, df: pd.DataFrame, query_object: QueryObject) -> pd.DataFrame:
+        """
+        正规化指定数据帧。
+
+        :param df: 数据帧。
+        :param query_object: 查询对象。
+        :return:
+        """
+
         timestamp_format = None
         if self.datasource.type == "table":
             dttm_col = self.datasource.get_column(query_object.granularity)
@@ -224,22 +252,23 @@ class QueryContext:
         return df
 
     def get_query_result(self, query_object: QueryObject) -> QueryResult:
-        """Returns a pandas dataframe based on the query object"""
+        """
+        依据指定查询对象进行查询返回查询结果。
 
-        # Here, we assume that all the queries will use the same datasource, which is
-        # a valid assumption for current setting. In the long term, we may
-        # support multiple queries from different data sources.
+        :param query_object: 查询对象。
+        :return: 查询结果 QueryResult。
+        """
 
-        # The datasource here can be different backend but the interface is common
+        # 这里，我们假设所有查询将使用相同的数据源，这对于当前设置是一个有效的假设。
+        # 从长远来看，我们可能支持来自不同数据源的多个查询。
+
+        # 这里的数据源可以是不同的后端，但接口是通用的
         result = self.datasource.query(query_object.to_dict())
         query = result.query + ";\n\n"
 
         df = result.df
-        # Transform the timestamp we received from database to pandas supported
-        # datetime format. If no python_date_format is specified, the pattern will
-        # be considered as the default ISO date format
-        # If the datetime format is unix, the parse will use the corresponding
-        # parsing logic
+        # 将从数据库接收到的时间戳转换为支持的日期时间格式。如果未指定python_date_format，则该模式将被视为默认的ISO日期格式。
+        # 如果datetime格式为unix，则解析将使用相应的解析逻辑
         if not df.empty:
             df = self.normalize_df(df, query_object)
 
@@ -255,11 +284,19 @@ class QueryContext:
 
         result.df = df
         result.query = query
+
         return result
 
     @staticmethod
     def df_metrics_to_num(df: pd.DataFrame, query_object: QueryObject) -> None:
-        """Converting metrics to numeric when pandas.read_sql cannot"""
+        """
+        转换指定数据帧中的指标为数值。
+
+        :param df: 数据帧。
+        :param query_object: 查询对象。
+        :return:
+        """
+
         for col, dtype in df.dtypes.items():
             if dtype.type == np.object_ and col in query_object.metric_names:
                 # soft-convert a metric column to numeric
@@ -267,6 +304,13 @@ class QueryContext:
                 df[col] = df[col].infer_objects()
 
     def get_data(self, df: pd.DataFrame,) -> Union[str, List[Dict[str, Any]]]:
+        """
+        转换指定数据帧为字典形式。
+
+        :param df:
+        :return:
+        """
+
         if self.result_format == ChartDataResultFormat.CSV:
             include_index = not isinstance(df.index, pd.RangeIndex)
             result = csv.df_to_escaped_csv(
@@ -276,10 +320,14 @@ class QueryContext:
 
         return df.to_dict(orient="records")
 
-    def get_payload(
-        self, cache_query_context: Optional[bool] = False, force_cached: bool = False,
-    ) -> Dict[str, Any]:
-        """Returns the query results with both metadata and data"""
+    def get_payload(self, cache_query_context: Optional[bool] = False, force_cached: bool = False,) -> Dict[str, Any]:
+        """
+        返回包含元数据和数据的查询结果。
+
+        :param cache_query_context: 是否缓存查询上下文。
+        :param force_cached: 是否强制缓存。
+        :return:
+        """
 
         # Get all the payloads from the QueryObjects
         query_results = [
@@ -304,6 +352,8 @@ class QueryContext:
 
     @property
     def cache_timeout(self) -> int:
+        """获取缓存超时。"""
+
         if self.custom_cache_timeout is not None:
             return self.custom_cache_timeout
         if self.datasource.cache_timeout is not None:
@@ -321,6 +371,7 @@ class QueryContext:
         self.cached_values, plus any other key/values in `extra`. It includes only data
         required to rehydrate a QueryContext object.
         """
+
         key_prefix = "qc-"
         cache_dict = self.cache_values.copy()
         cache_dict.update(extra)
@@ -351,6 +402,13 @@ class QueryContext:
 
     @staticmethod
     def get_native_annotation_data(query_obj: QueryObject) -> Dict[str, Any]:
+        """
+        获取原生注释数据。
+
+        :param query_obj: 查询对象。
+        :return:
+        """
+
         annotation_data = {}
         annotation_layers = [
             layer
@@ -384,9 +442,15 @@ class QueryContext:
         return annotation_data
 
     @staticmethod
-    def get_viz_annotation_data(
-        annotation_layer: Dict[str, Any], force: bool
-    ) -> Dict[str, Any]:
+    def get_viz_annotation_data(annotation_layer: Dict[str, Any], force: bool) -> Dict[str, Any]:
+        """
+        获取可视化注释数据。
+
+        :param annotation_layer: 注释层字典数据。
+        :param force:
+        :return:
+        """
+
         chart = ChartDAO.find_by_id(annotation_layer["value"])
         form_data = chart.form_data.copy()
         if not chart:
@@ -405,10 +469,12 @@ class QueryContext:
 
     def get_annotation_data(self, query_obj: QueryObject) -> Dict[str, Any]:
         """
+        依据指定查询对象，获取注释数据。
 
-        :param query_obj:
+        :param query_obj: 查询对象。
         :return:
         """
+
         annotation_data: Dict[str, Any] = self.get_native_annotation_data(query_obj)
         for annotation_layer in [
             layer
@@ -421,14 +487,18 @@ class QueryContext:
             )
         return annotation_data
 
-    def get_df_payload(
-        self, query_obj: QueryObject, force_cached: Optional[bool] = False,
-    ) -> Dict[str, Any]:
-        """Handles caching around the df payload retrieval"""
+    def get_df_payload(self, query_obj: QueryObject, force_cached: Optional[bool] = False,) -> Dict[str, Any]:
+        """
+        依据指定查询对象，从缓存中提取数据（字典）。
+
+        :param query_obj: 查询对象。
+        :param force_cached: 是否强制缓存。
+        :return:
+        """
+
+        # 从缓存中获取
         cache_key = self.query_cache_key(query_obj)
-        cache = QueryCacheManager.get(
-            cache_key, CacheRegion.DATA, self.force, force_cached,
-        )
+        cache = QueryCacheManager.get(cache_key, CacheRegion.DATA, self.force, force_cached,)
 
         if query_obj and cache_key and not cache.is_loaded:
             try:

@@ -74,6 +74,11 @@ def on_security_exception(self: Any, ex: Exception) -> Response:
 def check_dashboard_access(
     on_error: Callable[..., Any] = on_security_exception
 ) -> Callable[..., Any]:
+    """
+
+    :param on_error:
+    :return:
+    """
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
         def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:

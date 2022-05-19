@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 
-"""Compatibility layer for different database engines
+"""不同数据库引擎的兼容层
 
-This modules stores logic specific to different database engines. Things
-like time-related functions that are similar but not identical, or
-information as to expose certain features or not and how to expose them.
+此模块存储特定于不同数据库引擎的逻辑。
+类似但不完全相同的与时间相关的函数，或者关于是否公开某些功能以及如何公开这些功能的信息。
 
-For instance, Hive/Presto supports partitions and have a specific API to
-list partitions. Other databases like Vertica also support partitions but
-have different API to get to them. Other databases don't support partitions
-at all. The classes here will use a common interface to specify all this.
+例如，Hive/Presto支持分区，并且有一个特定的API来列出分区。
+其他数据库（如Vertica）也支持分区，但使用不同的API访问分区。
+其他数据库根本不支持分区。这里的类将使用一个公共接口来指定所有这些。
 
-The general idea is to use static classes and an inheritance scheme.
+一般的想法是使用静态类和继承方案。
 """
 
 import inspect
@@ -33,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 def is_engine_spec(attr: Any) -> bool:
+    """是否引擎规范，即是否 BaseEngineSpec 的派生类。"""
+
     return (
         inspect.isclass(attr)
         and issubclass(attr, BaseEngineSpec)
@@ -41,11 +41,12 @@ def is_engine_spec(attr: Any) -> bool:
 
 
 def load_engine_specs() -> List[Type[BaseEngineSpec]]:
-    """加载并返回该模块定义的数据库引擎规范。"""
+    """加载并返回该模块定义的数据库引擎规范，即该文件所在目录下（rabbitai）的各模块，以及外部定义的模块。"""
 
     engine_specs: List[Type[BaseEngineSpec]] = []
+    """引擎规范列表，即 BaseEngineSpec 及其派生类型实例的列表"""
 
-    # load standard engines
+    # 加载该应用定义的数据库引擎规范
     db_engine_spec_dir = str(Path(__file__).parent)
     for module_info in pkgutil.iter_modules([db_engine_spec_dir], prefix="."):
         module = import_module(module_info.name, package=__name__)
@@ -55,7 +56,7 @@ def load_engine_specs() -> List[Type[BaseEngineSpec]]:
             if is_engine_spec(getattr(module, attr))
         )
 
-    # load additional engines from external modules
+    # 加载外部定义的数据库引擎
     for ep in iter_entry_points("rabbitai.db_engine_specs"):
         try:
             engine_spec = ep.load()
@@ -87,7 +88,7 @@ def get_engine_specs() -> Dict[str, Type[BaseEngineSpec]]:
 
 def get_available_engine_specs() -> Dict[Type[BaseEngineSpec], Set[str]]:
     """
-    Return available engine specs and installed drivers for them.
+    返回可用的引擎规格和安装的驱动程序。
     """
 
     drivers: Dict[str, Set[str]] = defaultdict(set)

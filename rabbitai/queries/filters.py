@@ -11,6 +11,8 @@ from rabbitai.views.base import BaseFilter
 
 
 class QueryFilter(BaseFilter):
+    """查询过滤器。"""
+
     def apply(self, query: BaseQuery, value: Any) -> BaseQuery:
         """
         Filter queries to only those owned by current user. If
@@ -20,4 +22,5 @@ class QueryFilter(BaseFilter):
         """
         if not security_manager.can_access_all_queries():
             query = query.filter(Query.user_id == g.user.get_user_id())
+
         return query

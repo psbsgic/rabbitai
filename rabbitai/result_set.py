@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Rabbitai wrapper around pyarrow.Table."""
+""" RabbitAI 对 pyarrow.Table 的封装。"""
 
 import datetime
 import json
@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 def dedup(l: List[str], suffix: str = "__", case_sensitive: bool = True) -> List[str]:
-    """De-duplicates a list of string by suffixing a counter
+    """
+    通过添加计数后缀去掉指定列表的重复项。
 
-    Always returns the same number of entries as provided, and always returns
-    unique values. Case sensitive comparison by default.
+    总是返回相同条目树和唯一值，默认大小写敏感。
 
     >>> print(','.join(dedup(['foo', 'bar', 'bar', 'bar', 'Bar'])))
     foo,bar,bar__1,bar__2,Bar
@@ -30,7 +30,13 @@ def dedup(l: List[str], suffix: str = "__", case_sensitive: bool = True) -> List
         ','.join(dedup(['foo', 'bar', 'bar', 'bar', 'Bar'], case_sensitive=False))
     )
     foo,bar,bar__1,bar__2,Bar__3
+
+    :param l: 要去掉重复项的列表。
+    :param suffix: 后缀，默认：__
+    :param case_sensitive: 是否区分大小写，默认区分大小写。
+    :return:
     """
+
     new_l: List[str] = []
     seen: Dict[str, int] = {}
     for item in l:
@@ -45,15 +51,34 @@ def dedup(l: List[str], suffix: str = "__", case_sensitive: bool = True) -> List
 
 
 def stringify(obj: Any) -> str:
+    """
+    序列化指定对象为Json字符串。
+
+    :param obj: 对象。
+    :return:
+    """
     return json.dumps(obj, default=utils.json_iso_dttm_ser)
 
 
 def stringify_values(array: np.ndarray) -> np.ndarray:
+    """
+    序列化指定多维数组为Json字符串。
+
+    :param array: 多维数组。
+    :return:
+    """
+
     vstringify = np.vectorize(stringify)
     return vstringify(array)
 
 
 def destringify(obj: str) -> Any:
+    """
+    反序列化指定Json字符串为对象。
+
+    :param obj: Json字符串。
+    :return:
+    """
     return json.loads(obj)
 
 
@@ -156,6 +181,11 @@ class RabbitaiResultSet:
 
     @staticmethod
     def convert_pa_dtype(pa_dtype: pa.DataType) -> Optional[str]:
+        """
+        转换指定PyArrow数据类型为类型名称。
+        :param pa_dtype:
+        :return:
+        """
         if pa.types.is_boolean(pa_dtype):
             return "BOOL"
         if pa.types.is_integer(pa_dtype):
@@ -170,21 +200,43 @@ class RabbitaiResultSet:
 
     @staticmethod
     def convert_table_to_df(table: pa.Table) -> pd.DataFrame:
-        """转换数据表为数据帧。"""
+        """
+        转换指定 PyArrow 数据表为数据帧。
+        :param table: PyArrow 数据表。
+        :return:
+        """
         return table.to_pandas(integer_object_nulls=True)
 
     @staticmethod
     def first_nonempty(items: List[Any]) -> Any:
+        """
+        返回指定列表中第一个非空项。
+
+        :param items: 列表
+        :return:
+        """
         return next((i for i in items if i), None)
 
     def is_temporal(self, db_type_str: Optional[str]) -> bool:
+        """
+        是否时间类型。
+
+        :param db_type_str: 类型名称。
+        :return:
+        """
         column_spec = self.db_engine_spec.get_column_spec(db_type_str)
         if column_spec is None:
             return False
         return column_spec.is_dttm
 
     def data_type(self, col_name: str, pa_dtype: pa.DataType) -> Optional[str]:
-        """Given a pyarrow data type, Returns a generic database type"""
+        """
+        给定 pyarrow 数据类型，返回通用数据库类型。
+
+        :param col_name: 列名称。
+        :param pa_dtype: pyarrow 数据类型。
+        :return:
+        """
         set_type = self._type_dict.get(col_name)
         if set_type:
             return set_type
@@ -196,18 +248,22 @@ class RabbitaiResultSet:
         return None
 
     def to_pandas_df(self) -> pd.DataFrame:
+        """将当前 PyArrow 数据表转换为数据帧。"""
         return self.convert_table_to_df(self.table)
 
     @property
     def pa_table(self) -> pa.Table:
+        """返回当前 PyArrow 数据表"""
         return self.table
 
     @property
     def size(self) -> int:
+        """返回数据行数。"""
         return self.table.num_rows
 
     @property
     def columns(self) -> List[Dict[str, Any]]:
+        """获取列对象（包括属性：name、type、is_date）的列表。"""
         if not self.table.column_names:
             return []
 

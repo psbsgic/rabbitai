@@ -15,11 +15,14 @@ from rabbitai.extensions import db, security_manager
 
 def populate_owners(user: User, owner_ids: Optional[List[int]] = None) -> List[User]:
     """
-    Helper function for commands, will fetch all users from owners id's
-    Can raise ValidationError
-    :param user: The current user
-    :param owner_ids: A List of owners by id's
+    依据指定拥有者标识列表，返回所有相应的用户模型对象。
+
+    可能引发异常 ValidationError
+
+    :param user: 当前用户对象。
+    :param owner_ids: 拥有者标识列表。
     """
+
     owners = list()
     if not owner_ids:
         return [user]
@@ -35,10 +38,11 @@ def populate_owners(user: User, owner_ids: Optional[List[int]] = None) -> List[U
 
 def populate_roles(role_ids: Optional[List[int]] = None) -> List[Role]:
     """
-    Helper function for commands, will fetch all roles from roles id's
-     :raises RolesNotFoundValidationError: If a role in the input list is not found
-    :param role_ids: A List of roles by id's
+    返回指定角色标识列表对应的角色对象列表。
+     :raises RolesNotFoundValidationError: 如果没有找到角色标识列表中对应的角色对象。
+    :param role_ids: 角色标识列表。
     """
+
     roles: List[Role] = []
     if role_ids:
         roles = security_manager.find_roles_by_id(role_ids)
@@ -48,6 +52,14 @@ def populate_roles(role_ids: Optional[List[int]] = None) -> List[Role]:
 
 
 def get_datasource_by_id(datasource_id: int, datasource_type: str) -> BaseDatasource:
+    """
+    依据指定数据源标识和类型，从 ConnectorRegistry 返回数据源模型对象实例。
+
+    :param datasource_id: 数据源标识。
+    :param datasource_type: 数据源类型。
+    :return: 数据源模型对象实例。
+    """
+
     try:
         return ConnectorRegistry.get_datasource(
             datasource_type, datasource_id, db.session

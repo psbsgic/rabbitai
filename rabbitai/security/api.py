@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class SecurityRestApi(BaseApi):
-    """安全管理API。"""
+    """安全管理API，提供生成 CSRF 的API。"""
 
     resource_name = "security"
     allow_browser_login = True

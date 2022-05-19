@@ -3,37 +3,37 @@ from rabbitai.exceptions import RabbitaiException
 
 class DAOException(RabbitaiException):
     """
-    Base DAO exception class
+    DAO 错误基类
     """
 
 
 class DAOCreateFailedError(DAOException):
     """
-    DAO Create failed
+    DAO 创建失败错误
     """
 
-    message = "Create failed"
+    message = "创建失败"
 
 
 class DAOUpdateFailedError(DAOException):
     """
-    DAO Update failed
+    DAO 更新失败错误
     """
 
-    message = "Updated failed"
+    message = "更新失败"
 
 
 class DAODeleteFailedError(DAOException):
     """
-    DAO Delete failed
+    DAO 删除失败错误
     """
 
-    message = "Delete failed"
+    message = "删除失败"
 
 
 class DAOConfigError(DAOException):
     """
-    DAO is miss configured
+    DAO 缺失配置失败错误
     """
 
-    message = "DAO is not configured correctly missing model definition"
+    message = "DAO 配置错误，缺失模型定义"

@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class DeleteDatasetColumnCommand(BaseCommand):
+    """删除数据集列命令。"""
+
     def __init__(self, user: User, dataset_id: int, model_id: int):
         self._actor = user
         self._dataset_id = dataset_id

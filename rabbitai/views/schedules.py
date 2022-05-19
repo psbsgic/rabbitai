@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-DEPRECATION NOTICE: this module is deprecated and will be removed on 2.0.
-"""
-
 import enum
 from typing import Type, Union
 

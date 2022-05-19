@@ -14,6 +14,8 @@ from rabbitai.views.base_api import BaseFavoriteFilter
 
 
 class SavedQueryAllTextFilter(BaseFilter):
+    """保存的查询全文检索过滤器。"""
+
     name = _("All Text")
     arg_name = "all_text"
 
@@ -33,8 +35,7 @@ class SavedQueryAllTextFilter(BaseFilter):
 
 class SavedQueryFavoriteFilter(BaseFavoriteFilter):
     """
-    Custom filter for the GET list that filters all saved queries that a user has
-    favored
+    返回用户关注的保存的查询过滤器。
     """
 
     arg_name = "saved_query_is_fav"
@@ -43,6 +44,8 @@ class SavedQueryFavoriteFilter(BaseFavoriteFilter):
 
 
 class SavedQueryFilter(BaseFilter):
+    """保存的查询过滤器，返回当前用户创建的查询对象。"""
+
     def apply(self, query: BaseQuery, value: Any) -> BaseQuery:
         """
         Filter saved queries to only those created by current user.

@@ -16,7 +16,7 @@ from rabbitai.queries.saved_queries.schemas import ImportV1SavedQuerySchema
 
 
 class ImportSavedQueriesCommand(ImportModelsCommand):
-    """Import Saved Queries"""
+    """导入保存的查询命令。"""
 
     dao = SavedQueryDAO
     model_name = "saved_queries"

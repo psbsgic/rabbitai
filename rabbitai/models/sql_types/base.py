@@ -17,12 +17,12 @@ def literal_dttm_type_factory(
     col_type: str,
 ) -> Type[types.TypeEngine]:
     """
-    创建支持datetime文字绑定的自定义SQLAlchemy类型。
+    创建支持 datetime 文字绑定的自定义SQLAlchemy类型。
 
-    :param sqla_type: Base type to extend
-    :param db_engine_spec: Database engine spec which supports `convert_dttm` method
-    :param col_type: native column type as defined in table metadata
-    :return: SQLAlchemy type that supports using datetima as literal bind
+    :param sqla_type: 要扩展的 SQL类型。
+    :param db_engine_spec: 支持 `convert_dttm` 方法的数据库引擎规范。
+    :param col_type: 在数据表元数据中定义的原生列类型。
+    :return: 支持 datetime 文字绑定的自定义SQLAlchemy类型。
     """
 
     class TemporalWrapperType(sqla_type):

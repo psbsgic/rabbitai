@@ -2,7 +2,7 @@
 
 set -e
 
-# We need at least 3GB of free mem...
+# 需要至少 3GB 的可用内存 ...
 MIN_MEM_FREE_GB=3
 MIN_MEM_FREE_KB=$(($MIN_MEM_FREE_GB*1000000))
 

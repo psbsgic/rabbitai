@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 from datetime import datetime
@@ -62,7 +64,12 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseRestApi(BaseRabbitaiModelRestApi):
+    """数据库REST API 视图模型。"""
+
+    # region 字段
+
     datamodel = SQLAInterface(Database)
+    """数据库Database数据模型访问接口"""
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
         RouteMethod.EXPORT,
@@ -175,6 +182,10 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         SchemasResponseSchema,
     )
 
+    # endregion
+
+    # region 路由
+
     @expose("/", methods=["POST"])
     @protect()
     @safe
@@ -184,13 +195,14 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         log_to_statsd=False,
     )
     def post(self) -> Response:
-        """Creates a new Database
+        """创建一个新数据库对象。
+
         ---
         post:
           description: >-
-            Create a new Database.
+            创建一个新数据库对象。
           requestBody:
-            description: Database schema
+            description: 数据库模式
             required: true
             content:
               application/json:
@@ -222,6 +234,7 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
 
         if not request.is_json:
             return self.response_400(message="Request is not JSON")
+
         try:
             item = self.add_model_schema.load(request.json)
         # This validates custom Schema with custom validations
@@ -259,10 +272,9 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.put",
         log_to_statsd=False,
     )
-    def put(  # pylint: disable=too-many-return-statements, arguments-differ
-        self, pk: int
-    ) -> Response:
-        """Changes a Database
+    def put(self, pk: int) -> Response:
+        """更改数据库对象。
+
         ---
         put:
           description: >-
@@ -304,8 +316,10 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+
         if not request.is_json:
             return self.response_400(message="Request is not JSON")
+
         try:
             item = self.edit_model_schema.load(request.json)
         # This validates custom Schema with custom validations
@@ -339,8 +353,9 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         action=lambda self, *args, **kwargs: f"{self.__class__.__name__}" f".delete",
         log_to_statsd=False,
     )
-    def delete(self, pk: int) -> Response:  # pylint: disable=arguments-differ
-        """Deletes a Database
+    def delete(self, pk: int) -> Response:
+        """删除一个数据库对象。
+
         ---
         delete:
           description: >-
@@ -397,7 +412,8 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         log_to_statsd=False,
     )
     def schemas(self, pk: int, **kwargs: Any) -> FlaskResponse:
-        """Get all schemas from a database
+        """从一个数据库获取所有模式。
+
         ---
         get:
           description: Get all schemas from a database
@@ -429,6 +445,7 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+
         database = self.datamodel.get(pk, self._base_filters)
         if not database:
             return self.response_404()
@@ -496,6 +513,7 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+
         self.incr_stats("init", self.table_metadata.__name__)
         try:
             table_info = get_table_metadata(database, table_name, schema_name)
@@ -575,9 +593,7 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         f".test_connection",
         log_to_statsd=False,
     )
-    def test_connection(  # pylint: disable=too-many-return-statements
-        self,
-    ) -> FlaskResponse:
+    def test_connection(self,) -> FlaskResponse:
         """Tests a database connection
         ---
         post:
@@ -961,9 +977,7 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         f".validate_parameters",
         log_to_statsd=False,
     )
-    def validate_parameters(  # pylint: disable=too-many-return-statements
-        self,
-    ) -> FlaskResponse:
+    def validate_parameters(self,) -> FlaskResponse:
         """validates database connection parameters
         ---
         post:
@@ -1013,3 +1027,5 @@ class DatabaseRestApi(BaseRabbitaiModelRestApi):
         command = ValidateDatabaseParametersCommand(g.user, payload)
         command.run()
         return self.response(200, message="OK")
+
+    # endregion

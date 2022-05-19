@@ -20,14 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 class ChartDataCommand(BaseCommand):
+    """图表数据命令。"""
+
     def __init__(self) -> None:
         self._form_data: Dict[str, Any]
         self._query_context: QueryContext
         self._async_channel_id: str
 
     def run(self, **kwargs: Any) -> Dict[str, Any]:
-        # caching is handled in query_context.get_df_payload
-        # (also evals `force` property)
+        # caching is handled in query_context.get_df_payload(also evals `force` property)
         cache_query_context = kwargs.get("cache", False)
         force_cached = kwargs.get("force_cached", False)
         try:
@@ -37,7 +38,6 @@ class ChartDataCommand(BaseCommand):
         except CacheLoadError as exc:
             raise ChartDataCacheLoadError(exc.message)
 
-        # TODO: QueryContext should support SIP-40 style errors
         for query in payload["queries"]:
             if query.get("error"):
                 raise ChartDataQueryFailedError(f"Error: {query['error']}")
@@ -75,9 +75,7 @@ class ChartDataCommand(BaseCommand):
         jwt_data = async_query_manager.parse_jwt_from_request(request)
         self._async_channel_id = jwt_data["channel"]
 
-    def load_query_context_from_cache(  # pylint: disable=no-self-use
-        self, cache_key: str
-    ) -> Dict[str, Any]:
+    def load_query_context_from_cache(self, cache_key: str) -> Dict[str, Any]:
         cache_value = cache.get(cache_key)
         if not cache_value:
             raise ChartDataCacheLoadError("Cached data not found")

@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncEventsRestApi(BaseApi):
+    """异步事件 REST API。"""
+
     resource_name = "async_event"
     allow_browser_login = True
     include_route_methods = {
@@ -25,7 +27,7 @@ class AsyncEventsRestApi(BaseApi):
     @permission_name("list")
     def events(self) -> Response:
         """
-        Reads off of the Redis async events stream, using the user's JWT token and
+        Reads of the Redis async events stream, using the user's JWT token and
         optional query params for last event received.
         ---
         get:

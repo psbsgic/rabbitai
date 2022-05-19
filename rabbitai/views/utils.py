@@ -49,8 +49,17 @@ if not app.config["ENABLE_JAVASCRIPT_CONTROLS"]:
 
 def bootstrap_user_data(user: User, include_perms: bool = False) -> Dict[str, Any]:
     """
-    返回与指定用户相关的引导数据(username/firstName/lastName/userId/isActive/createdOn/email/roles/permissions)，
-    并指定是否包括权限，默认不包括。
+    返回与指定用户相关的数据，并指定是否包括权限，默认不包括，这些数据将传递到客户端。
+
+    - username
+    - firstName
+    - lastName
+    - userId
+    - isActive
+    - createdOn
+    - email
+    - roles
+    - permissions
 
     :param user: 用户对象。
     :param include_perms: 是否包括权限，默认False。
@@ -111,7 +120,10 @@ def get_viz(
     force_cached: bool = False,
 ) -> BaseViz:
     """
-    获取可视类型（BaseViz派生类型实例）。
+    获取可视类型（BaseViz派生类型实例），
+    首先，从表单数据中获取 viz_type 的值（即可视类型），据此获取可视类型，
+    再依据数据源类型和标识（datasource_type, datasource_id）从数据库中获取数据源对象关系模型实例，
+    构建可视类型新实例。
 
     :param form_data: 表单数据。
     :param datasource_type: 数据源类型。
@@ -122,9 +134,7 @@ def get_viz(
     """
 
     viz_type = form_data.get("viz_type", "table")
-    datasource = ConnectorRegistry.get_datasource(
-        datasource_type, datasource_id, db.session
-    )
+    datasource = ConnectorRegistry.get_datasource(datasource_type, datasource_id, db.session)
     viz_obj = viz.viz_types[viz_type](
         datasource, form_data=form_data, force=force, force_cached=force_cached
     )
@@ -145,19 +155,20 @@ def loads_request_json(request_json_data: str) -> Dict[Any, Any]:
         return {}
 
 
-def get_form_data(  # pylint: disable=too-many-locals
+def get_form_data(
     slice_id: Optional[int] = None, use_slice_data: bool = False
 ) -> Tuple[Dict[str, Any], Optional[Slice]]:
     """
-    获取指定切片的表单数据。
+    从Web请求（request对象）中，获取指定切片的表单数据。
+    这些数据来自 request.json["queries"]，request.form.["form_data"]，request.args.["form_data"]
 
     :param slice_id: 切片标识。
     :param use_slice_data: 是否使用切片数据。
-    :return:
+    :return: 表单数据和切片模型实例，Tuple[Dict[str, Any], Optional[Slice]]。
     """
 
     form_data: Dict[str, Any] = {}
-    # chart data API requests are JSON
+    # 图表数据 API 请求是 JSON
     request_json_data = (
         request.json["queries"][0]
         if request.is_json and "queries" in request.json
@@ -170,15 +181,17 @@ def get_form_data(  # pylint: disable=too-many-locals
     request_args_data = request.args.get("form_data")
     if request_json_data:
         form_data.update(request_json_data)
+
     if request_form_data:
         parsed_form_data = loads_request_json(request_form_data)
-        # some chart data api requests are form_data
+        # 有些图表数据 API 请求是 form_data
         queries = parsed_form_data.get("queries")
         if isinstance(queries, list):
             form_data.update(queries[0])
         else:
             form_data.update(parsed_form_data)
-    # request params can overwrite the body
+
+    # 请求参数可以重写 body
     if request_args_data:
         form_data.update(loads_request_json(request_args_data))
 
@@ -230,9 +243,10 @@ def get_form_data(  # pylint: disable=too-many-locals
 
 def add_sqllab_custom_filters(form_data: Dict[Any, Any]) -> Any:
     """
-    SQLLab can include a "filters" attribute in the templateParams.
-    The filters attribute is a list of filters to include in the
-    request. Useful for testing templates in SQLLab.
+    将 request.data 中的过滤器列表添加 SQLLab 自定义过滤器列表到指定表单数据。
+
+    SQLLab 可以在 templateParams 中包括一个 "filters" 属性。
+    该属性是要包括在请求中的过滤器列表。用于在SQLLab中测试模板。
     """
 
     try:
@@ -253,17 +267,20 @@ def get_datasource_info(
     datasource_id: Optional[int], datasource_type: Optional[str], form_data: FormData
 ) -> Tuple[int, Optional[str]]:
     """
-    Compatibility layer for handling of datasource info
+    获取数据源信息（数据源标识和类型）。
 
-    datasource_id & datasource_type used to be passed in the URL
-    directory, now they should come as part of the form_data,
+    用于处理数据源信息的兼容层
 
-    This function allows supporting both without duplicating code
+    datasource_id & datasource_type 过去是在URL目录中传递的，现在它们应该是表单数据form_data的一部分，
 
-    :param datasource_id: The datasource ID
-    :param datasource_type: The datasource type, i.e., 'druid' or 'table'
-    :param form_data: The URL form data
-    :returns: The datasource ID and type
+    此函数允许在不复制代码的情况下同时支持这两种功能
+
+    :param datasource_id: 数据源 ID，可选。
+    :param datasource_type: 数据源类型，即 'druid' 或 'table'，可选。
+    :param form_data: 表单数据
+
+    :returns: 数据源 ID 和类型。
+
     :raises RabbitaiException: If the datasource no longer exists
     """
 
@@ -281,6 +298,7 @@ def get_datasource_info(
         )
 
     datasource_id = int(datasource_id)
+
     return datasource_id, datasource_type
 
 
@@ -288,14 +306,13 @@ def apply_display_max_row_limit(
     sql_results: Dict[str, Any], rows: Optional[int] = None
 ) -> Dict[str, Any]:
     """
-    Given a `sql_results` nested structure, applies a limit to the number of rows
+    给定 `sql_results` 嵌套结构, 对行数进行限制
 
-    `sql_results` here is the nested structure coming out of sql_lab.get_sql_results, it
-    contains metadata about the query, as well as the data set returned by the query.
-    This method limits the number of rows adds a `displayLimitReached: True` flag to the
-    metadata.
+    `sql_results` 是 来自sql_lab.get_sql_results 的嵌套结构，
+    它包含查询相关元数据，以及由查询返回的数据集。
+    该方法限制方法结果的行数，添加 `displayLimitReached: True` 标志到元数据中。
 
-    :param sql_results: The results of a sql query from sql_lab.get_sql_results
+    :param sql_results: 来自 sql_lab.get_sql_results 的 SQL 查询结果。
     :returns: The mutated sql_results structure
     """
 
@@ -364,19 +381,16 @@ def get_time_range_endpoints(
     return (TimeRangeEndpoint.INCLUSIVE, TimeRangeEndpoint.EXCLUSIVE)
 
 
-# see all dashboard components type in
-# /rabbitai-frontend/src/dashboard/util/componentTypes.js
+# /rabbitai-frontend/src/dashboard/util/componentTypes.js 中定义了所有组件类型。
 CONTAINER_TYPES = ["COLUMN", "GRID", "TABS", "TAB", "ROW"]
 
 
-def get_dashboard_extra_filters(
-    slice_id: int, dashboard_id: int
-) -> List[Dict[str, Any]]:
+def get_dashboard_extra_filters(slice_id: int, dashboard_id: int) -> List[Dict[str, Any]]:
     """
     获取仪表盘提供的额外过滤器。
 
-    :param slice_id:
-    :param dashboard_id:
+    :param slice_id: 切片标识。
+    :param dashboard_id: 仪表盘标识。
     :return:
     """
 
@@ -399,7 +413,7 @@ def get_dashboard_extra_filters(
         if not default_filters:
             return []
 
-        # are default filters applicable to the given slice?
+        # 是否默认过滤器可应用于给定切片
         filter_scopes = json_metadata.get("filter_scopes", {})
         layout = json.loads(dashboard.position_json or "{}")
 
@@ -421,9 +435,20 @@ def build_extra_filters(
     default_filters: Dict[str, Dict[str, List[Any]]],
     slice_id: int,
 ) -> List[Dict[str, Any]]:
+    """
+    依据指定布局、过滤器范围、默认过滤器和切片标识，构建额外过滤器。
+
+    :param layout: 布局，字典的字典。
+    :param filter_scopes: 过滤器范围，字典的字典。
+    :param default_filters: 默认过滤器，字典的字典。
+    :param slice_id: 切片标识。
+
+    :return: 字典的列表。
+    """
+
     extra_filters = []
 
-    # do not apply filters if chart is not in filter's scope or chart is immune to the filter.
+    # 如果图表不在过滤器范围内或图表不受过滤器影响，则不要应用过滤器。
     for filter_id, columns in default_filters.items():
         filter_slice = db.session.query(Slice).filter_by(id=filter_id).one_or_none()
 
@@ -446,8 +471,7 @@ def build_extra_filters(
                 if slice_id not in immune_slice_ids and is_slice_in_container(
                     layout, container_id, slice_id
                 ):
-                    # Ensure that the filter value encoding adheres to the filter select
-                    # type.
+                    # Ensure that the filter value encoding adheres to the filter select type.
                     for filter_config in filter_configs:
                         if filter_config["column"] == col:
                             is_multiple = filter_config["multiple"]
@@ -472,6 +496,15 @@ def build_extra_filters(
 def is_slice_in_container(
     layout: Dict[str, Dict[str, Any]], container_id: str, slice_id: int
 ) -> bool:
+    """
+    指定切片是否在指定容器中。
+
+    :param layout: 布局，容器标识和节点的字典。
+    :param container_id: 容器标识。
+    :param slice_id: 切片标识。
+    :return:
+    """
+
     if container_id == "ROOT_ID":
         return True
 
@@ -495,9 +528,7 @@ def is_owner(obj: Union[Dashboard, Slice], user: User) -> bool:
 
 
 def check_resource_permissions(check_perms: Callable[..., Any],) -> Callable[..., Any]:
-    """
-    A decorator for checking permissions on a request using the passed-in function.
-    """
+    """用于使用传入函数检查请求权限的装饰程序。"""
 
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
@@ -519,6 +550,7 @@ def check_explore_cache_perms(_self: Any, cache_key: str) -> None:
     :param cache_key: the cache key passed into /explore_json/data/
     :raises RabbitaiSecurityException: If the user cannot access the resource
     """
+
     cached = cache_manager.cache.get(cache_key)
     if not cached:
         raise CacheLoadError("Cached data not found")
@@ -655,9 +687,20 @@ def _deserialize_results_payload(
 def get_cta_schema_name(
     database: Database, user: ab_models.User, schema: str, sql: str
 ) -> Optional[str]:
+    """
+    基于应用的配置对象 SQLLAB_CTAS_SCHEMA_NAME_FUNC 属性提供的函数返回模式名称。
+
+    :param database: 数据库对象模型
+    :param user: 用户对象模型
+    :param schema: 模式
+    :param sql: SQL字符串。
+    :return:
+    """
+
     func: Optional[Callable[[Database, ab_models.User, str, str], str]] = app.config[
         "SQLLAB_CTAS_SCHEMA_NAME_FUNC"
     ]
     if not func:
         return None
+
     return func(database, user, schema, sql)

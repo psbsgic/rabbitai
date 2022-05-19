@@ -1,9 +1,13 @@
-from sqlalchemy import Metadata
+# -*- coding: utf-8 -*-
+
+from flask_appbuilder import Model  # from sqlalchemy import Metadata
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import and_, func, functions, join, literal, select
 
 from rabbitai.models.tags import ObjectTypes, TagTypes
+
+Metadata = Model.metadata
 
 
 def add_types(engine: Engine, metadata: Metadata) -> None:

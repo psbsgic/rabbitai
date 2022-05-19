@@ -210,14 +210,14 @@ msgid ""
 "CTAS (create table as select) can only be run with a query where the last "
 "statement is a SELECT. Please make sure your query has a SELECT as its last "
 "statement. Then, try running your query again."
-msgstr "CTA（create table as select）只能与最后一条语句为SELECT的查询一起运行。请确保查询的最后一个语句是SELECT。然后再次尝试运行查询。"
+msgstr "CTA（将查询结果插入数据表）只能与最后一条语句为SELECT的查询一起运行。请确保查询的最后一个语句是SELECT。然后再次尝试运行查询。"
 
 #: rabbitai/sql_lab.py:353
 msgid ""
 "CVAS (create view as select) can only be run with a query with a single "
 "SELECT statement. Please make sure your query has only a SELECT statement. "
 "Then, try running your query again."
-msgstr "CVAS（createview as select）只能与带有单个SELECT语句的查询一起运行。请确保您的查询只有SELECT语句。然后再次尝试运行查询。"
+msgstr "CVAS（将查询结果插入视图）只能与带有单个SELECT语句的查询一起运行。请确保您的查询只有SELECT语句。然后再次尝试运行查询。"
 
 #: rabbitai/viz.py:125 rabbitai/viz_sip38.py:126
 msgid "Viz is missing a datasource"
@@ -251,7 +251,7 @@ msgstr "表视图"
 msgid ""
 "You cannot use [Columns] in combination with [Group By]/[Metrics]/"
 "[Percentage Metrics]. Please choose one or the other."
-msgstr "不能将 [列] 与 [分组]/[指标]/[百分比度量] 结合使用。请选择其中一个。"
+msgstr "不能将 [列] 与 [分组]/[指标]/[百分比指标] 结合使用。请选择其中一个。"
 
 #: rabbitai/viz.py:713 rabbitai/viz_sip38.py:611
 msgid "Pick a granularity in the Time section or uncheck 'Include Time'"
@@ -268,7 +268,7 @@ msgstr "选择至少一个指标"
 
 #: rabbitai/viz.py:799 rabbitai/viz_sip38.py:726
 msgid "When using 'Group By' you are limited to use a single metric"
-msgstr "当使用“Group by”时，只限于使用单个度量。"
+msgstr "当使用“Group by”时，只限于使用单个指标。"
 
 #: rabbitai/viz.py:828 rabbitai/viz_sip38.py:755
 msgid "Pivot Table"
@@ -292,7 +292,7 @@ msgstr "树状图"
 
 #: rabbitai/viz.py:986 rabbitai/viz_sip38.py:869
 msgid "Calendar Heatmap"
-msgstr "时间热力图"
+msgstr "日历热力图"
 
 #: rabbitai/viz.py:1066 rabbitai/viz_sip38.py:1030
 msgid "Bubble Chart"
@@ -404,7 +404,7 @@ msgstr "环状层次图"
 
 #: rabbitai/viz.py:1748 rabbitai/viz_sip38.py:1703
 msgid "Sankey"
-msgstr "蛇形图"
+msgstr "桑基图"
 
 #: rabbitai/viz.py:1756
 msgid "Pick exactly 2 columns as [Source / Target]"
@@ -457,7 +457,7 @@ msgstr "水平图"
 
 #: rabbitai/viz.py:2108 rabbitai/viz_sip38.py:2029
 msgid "Mapbox"
-msgstr "箱图"
+msgstr "地图"
 
 #: rabbitai/viz.py:2120 rabbitai/viz_sip38.py:2041
 msgid "[Longitude] and [Latitude] must be set"
@@ -622,7 +622,7 @@ msgstr "注释层仍在加载。"
 
 #: rabbitai/annotation_layers/commands/exceptions.py:33
 msgid "Annotation layer could not be deleted."
-msgstr "注释层仍在加载。"
+msgstr "不能删除注释层。"
 
 #: rabbitai/annotation_layers/commands/exceptions.py:37
 msgid "Annotation layer could not be created."
@@ -638,12 +638,12 @@ msgstr "注释层仍在加载。"
 
 #: rabbitai/annotation_layers/commands/exceptions.py:49
 msgid "Annotation layer delete failed."
-msgstr "注释层仍在加载。"
+msgstr "删除注释层失败。"
 
 #: rabbitai/annotation_layers/commands/exceptions.py:53
 #: rabbitai/annotation_layers/commands/exceptions.py:57
 msgid "Annotation layer has associated annotations."
-msgstr "注释层仍在加载。"
+msgstr "注释层关联注释。"
 
 #: rabbitai/annotation_layers/commands/exceptions.py:66
 #: rabbitai/reports/commands/exceptions.py:133
@@ -710,7 +710,7 @@ msgstr "数据库不存在"
 
 #: rabbitai/charts/commands/exceptions.py:46
 msgid "Dashboards do not exist"
-msgstr "看板"
+msgstr "看板不存在"
 
 #: rabbitai/charts/commands/exceptions.py:56
 msgid "Datasource type is required when datasource_id is given"
@@ -730,7 +730,7 @@ msgstr "您的查询无法保存。"
 
 #: rabbitai/charts/commands/exceptions.py:78
 msgid "Chart could not be deleted."
-msgstr "这个查询无法被加载。"
+msgstr "无法删除图表。"
 
 #: rabbitai/charts/commands/exceptions.py:82
 #: rabbitai/charts/commands/exceptions.py:102
@@ -746,7 +746,7 @@ msgstr "禁止更改此图表"
 
 #: rabbitai/charts/commands/exceptions.py:90
 msgid "Charts could not be deleted."
-msgstr "这个查询无法被加载"
+msgstr "无法删除图表"
 
 #: rabbitai/charts/commands/exceptions.py:106
 msgid "Import chart failed for an unknown reason"
@@ -780,7 +780,7 @@ msgstr "刷新数据源 [{}]"
 
 #: rabbitai/connectors/druid/models.py:1054
 msgid "Metric(s) {} must be aggregations."
-msgstr "度量(s) {} 必须是聚合。"
+msgstr "指标(s) {} 必须是聚合。"
 
 #: rabbitai/connectors/druid/models.py:1476
 msgid "Unsupported extraction function: "
@@ -918,7 +918,7 @@ msgstr "编辑 Druid 集群"
 
 #: rabbitai/connectors/druid/views.py:214
 msgid "Cluster Name"
-msgstr "群集名称"
+msgstr "集群名称"
 
 #: rabbitai/connectors/druid/views.py:215
 msgid "Broker Host"
@@ -1314,7 +1314,7 @@ msgstr "从句"
 #: rabbitai/views/dashboard/mixin.py:78 rabbitai/views/dashboard/views.py:147
 #: rabbitai/views/database/mixins.py:191
 msgid "Creator"
-msgstr "作者"
+msgstr "创建者"
 
 #: rabbitai/connectors/sqla/views.py:358
 msgid "Show Table"
@@ -1741,7 +1741,7 @@ msgstr "保存的查询未找到"
 #, python-format
 msgid "Deleted %(num)d report schedule"
 msgid_plural "Deleted %(num)d report schedules"
-msgstr[0] "已经删除了 %(num)d 个报告时间表"
+msgstr[0] "已经删除了 %(num)d 个报告计划"
 
 #: rabbitai/reports/commands/alert.py:74
 #, python-format
@@ -2006,7 +2006,7 @@ msgstr "没有找到任何记录"
 
 #: rabbitai/templates/appbuilder/general/widgets/search.html:24
 msgid "Filter List"
-msgstr "过滤"
+msgstr "过滤列表"
 
 #: rabbitai-frontend/src/SqlLab/components/QuerySearch.jsx:296
 #: rabbitai-frontend/src/explore/components/DataTableControl.tsx:73
@@ -2606,7 +2606,7 @@ msgstr "管理看板的电子邮件报告"
 
 #: rabbitai/views/schedules.py:225 rabbitai/views/schedules.py:288
 msgid "Changed On"
-msgstr "改变为"
+msgstr "更改时间"
 
 #: rabbitai-frontend/src/views/CRUD/alert/AlertList.tsx:275
 #: rabbitai/views/schedules.py:227 rabbitai/views/schedules.py:290
@@ -2615,7 +2615,7 @@ msgstr "激活"
 
 #: rabbitai/views/schedules.py:228 rabbitai/views/schedules.py:291
 msgid "Crontab"
-msgstr ""
+msgstr "定时任务"
 
 #: rabbitai/views/schedules.py:229 rabbitai/views/schedules.py:292
 msgid "Recipients"
@@ -2671,7 +2671,7 @@ msgstr "流行标签链接"
 
 #: rabbitai/views/sql_lab.py:77
 msgid "Changed on"
-msgstr "改变为"
+msgstr "更改时间"
 
 #: rabbitai/views/utils.py:492
 msgid "Could not determine datasource type"
@@ -2800,7 +2800,7 @@ msgstr "CSS"
 
 #: rabbitai/views/dashboard/mixin.py:83
 msgid "Underlying Tables"
-msgstr "底层表"
+msgstr "基础表"
 
 #: rabbitai-frontend/src/views/CRUD/chart/ChartCard.tsx:110
 #: rabbitai-frontend/src/views/CRUD/chart/ChartList.tsx:327
@@ -2849,7 +2849,7 @@ msgstr "CSV文件使用的分隔符　(空白请使用 \\s+)"
 
 #: rabbitai/views/database/forms.py:130 rabbitai/views/database/forms.py:321
 msgid "Table Exists"
-msgstr "表已存在处理"
+msgstr "表已存在"
 
 #: rabbitai/views/database/forms.py:131 rabbitai/views/database/forms.py:322
 msgid ""
@@ -2957,11 +2957,11 @@ msgstr "将字符解释为小数点的字符。"
 
 #: rabbitai/views/database/forms.py:204 rabbitai/views/database/forms.py:384
 msgid "Dataframe Index"
-msgstr "Dataframe索引"
+msgstr "数据帧索引"
 
 #: rabbitai/views/database/forms.py:204 rabbitai/views/database/forms.py:384
 msgid "Write dataframe index as a column."
-msgstr "将dataframe index 作为列."
+msgstr "将数据帧索引作为列。"
 
 #: rabbitai/views/database/forms.py:207 rabbitai/views/database/forms.py:387
 msgid "Column Label(s)"

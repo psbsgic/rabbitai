@@ -15,7 +15,7 @@ RUN mkdir /app \
             libecpg-dev \
         && rm -rf /var/lib/apt/lists/*
 
-# 首先。我们安装必须的软件包，允许我们利用缓存，以便仅当且仅当需求发生变化时构建
+# 首先，我们安装必须的软件包，允许我们利用缓存，以便当且仅当需求发生变化时构建
 COPY ./requirements/*.txt  /app/requirements/
 COPY setup.py MANIFEST.in README.md /app/
 COPY rabbitai-frontend/package.json /app/rabbitai-frontend/
@@ -38,7 +38,7 @@ ENV BUILD_CMD=${NPM_BUILD_CMD}
 
 # 首先使用 npm ci 安装依赖软件
 RUN mkdir -p /app/rabbitai-frontend
-RUN mkdir -p /app/rabbitai/assets
+RUN mkdir -p /app/rabbitai/static/assets
 COPY ./docker/frontend-mem-nag.sh /
 COPY ./rabbitai-frontend/package* /app/rabbitai-frontend/
 RUN /frontend-mem-nag.sh \

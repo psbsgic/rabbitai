@@ -34,9 +34,7 @@ class DatasetMetricRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("delete")
-    def delete(  # pylint: disable=arguments-differ
-        self, pk: int, metric_id: int
-    ) -> Response:
+    def delete(self, pk: int, metric_id: int) -> Response:
         """Deletes a Dataset metric
         ---
         delete:

@@ -37,7 +37,6 @@ ColumnInfo = TypedDict(
     },
 )
 
-
 example_column = {
     "name": "id",
     "type": sqlalchemy.sql.sqltypes.INTEGER(),
@@ -46,7 +45,6 @@ example_column = {
     "autoincrement": "auto",
     "primary_key": 1,
 }
-
 
 MINIMUM_DATE = date(1900, 1, 1)
 MAXIMUM_DATE = date.today()

@@ -1,3 +1,4 @@
+# 用&定义锚点，用 *引用锚点
 x-rabbitai-image: &rabbitai-image rabbitai:latest-dev
 x-rabbitai-user: &rabbitai-user root
 x-rabbitai-depends-on: &rabbitai-depends-on

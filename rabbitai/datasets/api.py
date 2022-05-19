@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 from datetime import datetime
@@ -57,6 +59,8 @@ logger = logging.getLogger(__name__)
 
 
 class DatasetRestApi(BaseRabbitaiModelRestApi):
+    """数据集REST API，这里的数据集是指：SqlaTable。"""
+
     datamodel = SQLAInterface(SqlaTable)
     base_filters = [["id", DatasourceFilter, lambda: []]]
 

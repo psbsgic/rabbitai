@@ -45,6 +45,8 @@ logger = logging.getLogger(__name__)
 
 
 class SavedQueryRestApi(BaseRabbitaiModelRestApi):
+    """保存的查询 REST API。"""
+
     datamodel = SQLAInterface(SavedQuery)
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {

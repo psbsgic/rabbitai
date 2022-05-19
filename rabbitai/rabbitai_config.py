@@ -31,8 +31,8 @@ LANGUAGES = {
 # SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
 
 # 连接到 postgresql 数据库
-# 用户名:密码@localhost:端口（5432）/数据库名（rabbitai_db）
-SQLALCHEMY_DATABASE_URI = 'postgresql://rabbitai:rabbitai@localhost:5432/rabbitai_db'
+# 用户名:密码@localhost:端口（5432）/数据库名（rabbitaidb）
+SQLALCHEMY_DATABASE_URI = 'postgresql://rabbitai:rabbitai@localhost:5432/rabbitaidb'
 """数据库连接地址字符串。"""
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))

@@ -1,10 +1,9 @@
 openapi_spec_methods_override = {
-    "get": {"get": {"description": "Get query detail information."}},
+    "get": {"get": {"description": "获取查询详细信息。"}},
     "get_list": {
         "get": {
-            "description": "Get a list of queries, use Rison or JSON query "
-            "parameters for filtering, sorting, pagination and "
-            " for selecting specific columns and metadata.",
+            "description": "获取查询列表，使用Rison或JSON查询参数进行过滤、排序、分页，以及选择特定的列和元数据。",
         }
     },
 }
+"""开放API规范方法架构"""

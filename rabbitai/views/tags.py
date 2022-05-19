@@ -25,6 +25,12 @@ from .base import BaseRabbitaiView, json_success
 
 
 def process_template(content: str) -> str:
+    """
+    使用 current_user_id、current_username 参数渲染指定模板内容。
+
+    :param content: 要渲染的模板内容。
+    :return:
+    """
     env = SandboxedEnvironment()
     template = env.from_string(content)
     context = {
@@ -35,6 +41,8 @@ def process_template(content: str) -> str:
 
 
 class TagView(BaseRabbitaiView):
+    """标签视图。"""
+
     @staticmethod
     def is_enabled() -> bool:
         return is_feature_enabled("TAGGING_SYSTEM")
@@ -46,7 +54,7 @@ class TagView(BaseRabbitaiView):
 
     @has_access_api
     @expose("/tags/suggestions/", methods=["GET"])
-    def suggestions(self) -> FlaskResponse:  # pylint: disable=no-self-use
+    def suggestions(self) -> FlaskResponse:
         query = (
             db.session.query(TaggedObject)
             .join(Tag)
@@ -123,7 +131,7 @@ class TagView(BaseRabbitaiView):
 
     @has_access_api
     @expose("/tagged_objects/", methods=["GET", "POST"])
-    def tagged_objects(self) -> FlaskResponse:  # pylint: disable=no-self-use
+    def tagged_objects(self) -> FlaskResponse:
         tags = [
             process_template(tag)
             for tag in request.args.get("tags", "").split(",")

@@ -14,7 +14,7 @@ from rabbitai.typing import FlaskResponse
 from rabbitai.views.base import RabbitaiModelView
 
 
-class StartEndDttmValidator:  # pylint: disable=too-few-public-methods
+class StartEndDttmValidator:
     """
     Validates dttm fields.
     """
@@ -32,9 +32,9 @@ class StartEndDttmValidator:  # pylint: disable=too-few-public-methods
             )
 
 
-class AnnotationModelView(
-    RabbitaiModelView, CompactCRUDMixin
-):  # pylint: disable=too-many-ancestors
+class AnnotationModelView(RabbitaiModelView, CompactCRUDMixin):
+    """注释模型视图，提供关于注释层 Annotation 访问操作相关功能和路由。"""
+
     datamodel = SQLAInterface(Annotation)
     include_route_methods = RouteMethod.CRUD_SET | {"annotation"}
 
@@ -68,31 +68,34 @@ class AnnotationModelView(
     }
 
     description_columns = {
-        "json_metadata": "This JSON represents any additional metadata this \
-         annotation needs to add more context."
+        "json_metadata": "此JSON表示此注释需要添加更多上下文的任何附加元数据。"
     }
 
     validators_columns = {"start_dttm": [StartEndDttmValidator()]}
 
     def pre_add(self, item: "AnnotationModelView") -> None:
+        """添加前回调"""
         if not item.start_dttm:
             item.start_dttm = item.end_dttm
         elif not item.end_dttm:
             item.end_dttm = item.start_dttm
 
     def pre_update(self, item: "AnnotationModelView") -> None:
+        """更新回调"""
         self.pre_add(item)
 
     @expose("/<pk>/annotation/", methods=["GET"])
     @has_access
-    def annotation(self, pk: int) -> FlaskResponse:  # pylint: disable=unused-argument
+    def annotation(self, pk: int) -> FlaskResponse:
         if not is_feature_enabled("ENABLE_REACT_CRUD_VIEWS"):
             return super().list()
 
         return super().render_app_template()
 
 
-class AnnotationLayerModelView(RabbitaiModelView):  # pylint: disable=too-many-ancestors
+class AnnotationLayerModelView(RabbitaiModelView):
+    """注释层模型视图，提供关于注释层 AnnotationLayer 访问操作相关功能和路由。"""
+
     datamodel = SQLAInterface(AnnotationLayer)
     include_route_methods = RouteMethod.CRUD_SET | {RouteMethod.API_READ}
     related_views = [AnnotationModelView]

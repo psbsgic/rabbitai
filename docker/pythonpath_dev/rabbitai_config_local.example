@@ -1,10 +1,8 @@
 #
-# This is an example "local" configuration file. In order to set/override config
-# options that ONLY apply to your local environment, simply copy/rename this file
-# to docker/pythonpath/rabbitai_config_docker.py
-# It ends up being imported by docker/rabbitai_config.py which is loaded by
-# rabbitai/config.py
+# 这是本地配置文件的示例。为了设置/重写配置选项仅应用于您的本地环境，
+# 简单的复制/重命名该文件为 docker/pythonpath/rabbitai_config_docker.py
+# 它最终由 docker/rabbitai_config.py 导入，而它又是通过 rabbitai/config.py 加载的。
 #
 
-SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://rabbitai:rabbitai@localhost:5432/rabbitai_db"
+SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://rabbitai:rabbitai@localhost:5432/rabbitaidb"
 SQLALCHEMY_ECHO = True

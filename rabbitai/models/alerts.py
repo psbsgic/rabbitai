@@ -38,7 +38,7 @@ alert_owner = Table(
 
 
 class Alert(Model, AuditMixinNullable):
-    """更改提醒对象关系模型，通过电子邮件发送切片/仪表板的调度。"""
+    """通告对象关系模型，通过电子邮件向用户发送切片/仪表板的调度。"""
 
     __tablename__ = "alerts"
 
@@ -108,7 +108,7 @@ class Alert(Model, AuditMixinNullable):
 
     @property
     def pretty_config(self) -> str:
-        """ String representing the comparison that will trigger a validator """
+        """ 表示将触发验证器的比较的字符串 """
         config = json.loads(self.validator_config)
 
         if self.validator_type.lower() == "operator":
@@ -121,7 +121,7 @@ class Alert(Model, AuditMixinNullable):
 
 
 class AlertLog(Model):
-    """更改提醒日志对象关系模型，跟踪与警报相关的操作"""
+    """通告日志对象关系模型，跟踪与警报相关的操作"""
 
     __tablename__ = "alert_logs"
 
@@ -139,7 +139,7 @@ class AlertLog(Model):
 
 
 class SQLObservation(Model):
-    """跟踪收集的警报观察结果。"""
+    """观察对象关系模型，跟踪收集的警报观察结果。"""
 
     __tablename__ = "sql_observations"
 

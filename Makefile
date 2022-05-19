@@ -9,7 +9,7 @@ rabbitai:
 	# Install external dependencies
 	pip install -r requirements/local.txt
 
-	# Install Superset in editable (development) mode
+	# Install Rabbitai in editable (development) mode
 	pip install -e .
 
 	# Create an admin user in your metadata database

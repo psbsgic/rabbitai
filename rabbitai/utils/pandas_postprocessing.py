@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+该模块提供 Pandas 数据帧进行后续处理的常量和方法
+"""
+
 import logging
 from decimal import Decimal
 from functools import partial
@@ -46,6 +50,7 @@ NUMPY_FUNCTIONS = {
     "sum": np.sum,
     "var": np.var,
 }
+"""numpy函数字典，函数名称和np函数实例。"""
 
 DENYLIST_ROLLING_FUNCTIONS = (
     "count",
@@ -62,6 +67,7 @@ DENYLIST_ROLLING_FUNCTIONS = (
     "var",
     "quantile",
 )
+"""rolling计算不支持的函数名称列表"""
 
 ALLOWLIST_CUMULATIVE_FUNCTIONS = (
     "cummax",
@@ -69,6 +75,7 @@ ALLOWLIST_CUMULATIVE_FUNCTIONS = (
     "cumprod",
     "cumsum",
 )
+"""允许的累计函数名称列表"""
 
 PROPHET_TIME_GRAIN_MAP = {
     "PT1S": "S",
@@ -88,6 +95,7 @@ PROPHET_TIME_GRAIN_MAP = {
     "P1W/1970-01-03T00:00:00Z": "W",
     "P1W/1970-01-04T00:00:00Z": "W",
 }
+"""时间单位映射，名称和单位的字典，如：'PT1S': 'S'。"""
 
 
 def _flatten_column_after_pivot(
@@ -105,16 +113,25 @@ def _flatten_column_after_pivot(
     :param aggregates: aggregates
     :return:
     """
+
     if not isinstance(column, tuple):
         column = (column,)
     if len(aggregates) == 1 and len(column) > 1:
         # drop aggregate for single aggregate pivots with multiple groupings
         # from column name (aggregates always come first in column name)
         column = column[1:]
+
     return ", ".join([str(col) for col in column])
 
 
 def validate_column_args(*argnames: str) -> Callable[..., Any]:
+    """
+    一个验证列参数是否都是数据帧的列名称的装饰器。
+
+    :param argnames: 参数名称列表。
+    :return:
+    """
+
     def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         def wrapped(df: DataFrame, **options: Any) -> Any:
             columns = df.columns.tolist()
@@ -132,9 +149,7 @@ def validate_column_args(*argnames: str) -> Callable[..., Any]:
     return wrapper
 
 
-def _get_aggregate_funcs(
-    df: DataFrame, aggregates: Dict[str, Dict[str, Any]],
-) -> Dict[str, NamedAgg]:
+def _get_aggregate_funcs(df: DataFrame, aggregates: Dict[str, Dict[str, Any]],) -> Dict[str, NamedAgg]:
     """
     Converts a set of aggregate config objects into functions that pandas can use as
     aggregators. Currently only numpy aggregators are supported.
@@ -143,6 +158,7 @@ def _get_aggregate_funcs(
     :param aggregates: Mapping from column name to aggregate config.
     :return: Mapping from metric name to function that takes a single input argument.
     """
+
     agg_funcs: Dict[str, NamedAgg] = {}
     for name, agg_obj in aggregates.items():
         column = agg_obj.get("column", name)
@@ -173,9 +189,7 @@ def _get_aggregate_funcs(
     return agg_funcs
 
 
-def _append_columns(
-    base_df: DataFrame, append_df: DataFrame, columns: Dict[str, str]
-) -> DataFrame:
+def _append_columns(base_df: DataFrame, append_df: DataFrame, columns: Dict[str, str]) -> DataFrame:
     """
     Function for adding columns from one DataFrame to another DataFrame. Calls the
     assign method, which overwrites the original column in `base_df` if the column
@@ -191,6 +205,7 @@ def _append_columns(
            in `base_df` unchanged.
     :return: new DataFrame with combined data from `base_df` and `append_df`
     """
+
     return base_df.assign(
         **{target: append_df[source] for source, target in columns.items()}
     )
@@ -211,16 +226,14 @@ def pivot(
     flatten_columns: bool = True,
 ) -> DataFrame:
     """
-    Perform a pivot operation on a DataFrame.
+    对指定数据帧实施透视表运算，返回透视表的数据帧对象。
 
-    :param df: Object on which pivot operation will be performed
-    :param index: Columns to group by on the table index (=rows)
-    :param columns: Columns to group by on the table columns
-    :param metric_fill_value: Value to replace missing values with
-    :param column_fill_value: Value to replace missing pivot columns with. By default
-           replaces missing values with "<NULL>". Set to `None` to remove columns
-           with missing values.
-    :param drop_missing_columns: Do not include columns whose entries are all missing
+    :param df: 要对其进行透视表运算的数据帧。
+    :param index: 分组列名称的列表(=rows)。
+    :param columns: 列分组的列名称列表。
+    :param metric_fill_value: 指标填充缺失值的值。
+    :param column_fill_value: 列缺失值填充值，默认："<NULL>"，设置为：`None` 则移除缺失值列。
+    :param drop_missing_columns: 是否删除所有缺失值列。
     :param combine_value_with_metric: Display metrics side by side within each column,
            as opposed to each column being displayed side by side for each metric.
     :param aggregates: A mapping from aggregate column name to the the aggregate
@@ -232,6 +245,7 @@ def pivot(
     :return: A pivot table
     :raises QueryObjectValidationError: If the request in incorrect
     """
+
     if not index:
         raise QueryObjectValidationError(
             _("Pivot operation requires at least one index")
@@ -246,7 +260,7 @@ def pivot(
 
     aggregate_funcs = _get_aggregate_funcs(df, aggregates)
 
-    # TODO (villebro): Pandas 1.0.3 doesn't yet support NamedAgg in pivot_table.
+    # TODO: Pandas 1.0.3 doesn't yet support NamedAgg in pivot_table.
     #  Remove once/if support is added.
     aggfunc = {na.column: na.aggfunc for na in aggregate_funcs.values()}
 
@@ -291,9 +305,7 @@ def pivot(
 
 
 @validate_column_args("groupby")
-def aggregate(
-    df: DataFrame, groupby: List[str], aggregates: Dict[str, Dict[str, Any]]
-) -> DataFrame:
+def aggregate(df: DataFrame, groupby: List[str], aggregates: Dict[str, Dict[str, Any]]) -> DataFrame:
     """
     Apply aggregations to a DataFrame.
 
@@ -303,6 +315,7 @@ def aggregate(
            aggregate values.
     :raises QueryObjectValidationError: If the request in incorrect
     """
+
     aggregates = aggregates or {}
     aggregate_funcs = _get_aggregate_funcs(df, aggregates)
     if groupby:
@@ -358,6 +371,7 @@ def rolling(
     :return: DataFrame with the rolling columns
     :raises QueryObjectValidationError: If the request in incorrect
     """
+
     rolling_type_options = rolling_type_options or {}
     df_rolling = df[columns.keys()]
     kwargs: Dict[str, Union[str, int]] = {}
@@ -535,9 +549,7 @@ def cum(df: DataFrame, columns: Dict[str, str], operator: str) -> DataFrame:
     return _append_columns(df, getattr(df_cum, operation)(), columns)
 
 
-def geohash_decode(
-    df: DataFrame, geohash: str, longitude: str, latitude: str
-) -> DataFrame:
+def geohash_decode(df: DataFrame, geohash: str, longitude: str, latitude: str) -> DataFrame:
     """
     Decode a geohash column into longitude and latitude
 
@@ -559,9 +571,7 @@ def geohash_decode(
         raise QueryObjectValidationError(_("Invalid geohash string"))
 
 
-def geohash_encode(
-    df: DataFrame, geohash: str, longitude: str, latitude: str,
-) -> DataFrame:
+def geohash_encode(df: DataFrame, geohash: str, longitude: str, latitude: str,) -> DataFrame:
     """
     Encode longitude and latitude into geohash
 
@@ -571,6 +581,7 @@ def geohash_encode(
     :param latitude: Name of source column containing latitude.
     :return: DataFrame with decoded longitudes and latitudes
     """
+
     try:
         encode_df = df[[latitude, longitude]]
         encode_df.columns = ["latitude", "longitude"]
@@ -674,9 +685,7 @@ def contribution(
     return contribution_df
 
 
-def _prophet_parse_seasonality(
-    input_value: Optional[Union[bool, int]]
-) -> Union[bool, str, int]:
+def _prophet_parse_seasonality(input_value: Optional[Union[bool, int]]) -> Union[bool, str, int]:
     if input_value is None:
         return "auto"
     if isinstance(input_value, bool):
@@ -697,8 +706,18 @@ def _prophet_fit_and_predict(  # pylint: disable=too-many-arguments
     freq: str,
 ) -> DataFrame:
     """
-    Fit a prophet model and return a DataFrame with predicted results.
+    拟合一个 Prophet 模型，返回预测结果的数据帧。
+
+    :param df: 数据帧。
+    :param confidence_interval: 可信区间。
+    :param yearly_seasonality: 年度季节性。
+    :param weekly_seasonality: 周季节性。
+    :param daily_seasonality: 日季节性。
+    :param periods: 周期。
+    :param freq: 频率。
+    :return:
     """
+
     try:
         prophet_logger = logging.getLogger("prophet.plot")
 
@@ -739,7 +758,6 @@ def prophet(  # pylint: disable=too-many-arguments
     - `__yhat`: the forecast for the given date
     - `__yhat_lower`: the lower bound of the forecast for the given date
     - `__yhat_upper`: the upper bound of the forecast for the given date
-    - `__yhat_upper`: the upper bound of the forecast for the given date
 
 
     :param df: DataFrame containing all-numeric data (temporal column ignored)
@@ -756,6 +774,7 @@ def prophet(  # pylint: disable=too-many-arguments
            automatically detect seasonality.
     :return: DataFrame with contributions, with temporal column at beginning if present
     """
+
     # validate inputs
     if not time_grain:
         raise QueryObjectValidationError(_("Time grain missing"))
@@ -764,8 +783,7 @@ def prophet(  # pylint: disable=too-many-arguments
             _("Unsupported time grain: %(time_grain)s", time_grain=time_grain, )
         )
     freq = PROPHET_TIME_GRAIN_MAP[time_grain]
-    # check type at runtime due to marhsmallow schema not being able to handle
-    # union types
+    # check type at runtime due to marhsmallow schema not being able to handle union types
     if not periods or periods < 0 or not isinstance(periods, int):
         raise QueryObjectValidationError(_("Periods must be a positive integer value"))
     if not confidence_interval or confidence_interval <= 0 or confidence_interval >= 1:
@@ -832,6 +850,8 @@ def boxplot(
     :param groupby: The categories to group by (x-axis)
     :param metrics: The metrics for which to calculate the distribution
     :param whisker_type: The confidence level type
+    :param percentiles: percentiles
+
     :return: DataFrame with boxplot statistics per groupby
     """
 

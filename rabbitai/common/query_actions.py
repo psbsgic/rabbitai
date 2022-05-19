@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import copy
 import math
 from typing import Any, Callable, cast, Dict, List, Optional, TYPE_CHECKING
@@ -22,16 +24,31 @@ if TYPE_CHECKING:
 config = app.config
 
 
-def _get_datasource(
-    query_context: "QueryContext", query_obj: "QueryObject"
-) -> BaseDatasource:
+def _get_datasource(query_context: "QueryContext", query_obj: "QueryObject") -> BaseDatasource:
+    """
+    获取数据源对象。
+
+    :param query_context:
+    :param query_obj:
+    :return:
+    """
     return query_obj.datasource or query_context.datasource
 
 
 def _get_columns(
     query_context: "QueryContext", query_obj: "QueryObject", _: bool
 ) -> Dict[str, Any]:
+    """
+    获取列元数据，{column_name：<列名称>、verbose_name：<显示名称>、dtype：<数据类型>} 的列表。
+
+    :param query_context: 查询上下文。
+    :param query_obj: 查询对象。
+    :param _:
+    :return:
+    """
+
     datasource = _get_datasource(query_context, query_obj)
+
     return {
         "data": [
             {
@@ -47,6 +64,14 @@ def _get_columns(
 def _get_timegrains(
     query_context: "QueryContext", query_obj: "QueryObject", _: bool
 ) -> Dict[str, Any]:
+    """
+    获取时间粒度数据。
+
+    :param query_context:
+    :param query_obj:
+    :param _:
+    :return:
+    """
     datasource = _get_datasource(query_context, query_obj)
     return {
         "data": [
@@ -63,6 +88,14 @@ def _get_timegrains(
 def _get_query(
     query_context: "QueryContext", query_obj: "QueryObject", _: bool,
 ) -> Dict[str, Any]:
+    """
+    获取查询。
+
+    :param query_context:
+    :param query_obj:
+    :param _:
+    :return:
+    """
     datasource = _get_datasource(query_context, query_obj)
     result = {"language": datasource.query_language}
     try:
@@ -146,6 +179,7 @@ _result_type_functions: Dict[
     # post-processing is unique to each visualization type
     ChartDataResultType.POST_PROCESSED: _get_full,
 }
+"""图表数据结果类型（COLUMNS、TIMEGRAINS、QUERY、SAMPLES、FULL、RESULTS、POST_PROCESSED）及其结果获取函数的字典。"""
 
 
 def get_query_results(
@@ -155,18 +189,20 @@ def get_query_results(
     force_cached: bool,
 ) -> Dict[str, Any]:
     """
-    Return result payload for a chart data request.
+    基于图表数据请求，返回查询结果。
 
-    :param result_type: the type of result to return
-    :param query_context: query context to which the query object belongs
-    :param query_obj: query object for which to retrieve the results
-    :param force_cached: should results be forcefully retrieved from cache
-    :raises QueryObjectValidationError: if an unsupported result type is requested
-    :return: JSON serializable result payload
+    :param result_type: 要返回结果的类型。
+    :param query_context: 查询上下文对象。
+    :param query_obj: 用于提取查询结果的查询对象。
+    :param force_cached: 是否强制从缓存获取查询结果。
+    :raises QueryObjectValidationError: 如果不支持的结果类型。
+    :return: JSON 结果。
     """
+
     result_func = _result_type_functions.get(result_type)
     if result_func:
         return result_func(query_context, query_obj, force_cached)
+
     raise QueryObjectValidationError(
         _("Invalid result type: %(result_type)s", result_type=result_type)
     )

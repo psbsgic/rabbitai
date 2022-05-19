@@ -17,10 +17,9 @@ command_versions = [
 
 class ImportSavedQueriesCommand(BaseCommand):
     """
-    Import Saved Queries
+    导入保存的查询命令。
 
-    This command dispatches the import to different versions of the command
-    until it finds one that matches.
+    此命令将导入分派到命令的不同版本，直到找到一个匹配的版本。
     """
 
     # pylint: disable=unused-argument
@@ -30,8 +29,7 @@ class ImportSavedQueriesCommand(BaseCommand):
         self.kwargs = kwargs
 
     def run(self) -> None:
-        # iterate over all commands until we find a version that can
-        # handle the contents
+        # 迭代所有命令，直到找到可以处理内容的版本
         for version in command_versions:
             command = version(self.contents, *self.args, **self.kwargs)
             try:

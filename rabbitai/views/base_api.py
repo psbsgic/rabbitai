@@ -60,15 +60,17 @@ class DistinctResultResponseSchema(Schema):
 
 
 class DistincResponseSchema(Schema):
+    """不同值响应结构。"""
+
     count = fields.Integer(description="不同值的总数")
     result = fields.List(fields.Nested(DistinctResultResponseSchema))
 
 
 def statsd_metrics(f: Callable[..., Any]) -> Callable[..., Any]:
     """
-    处理从REST API发送所有 statsd 指标。
+    性能统计装饰器，装饰一个函数记录函数调用耗费时间，并发送发送所有 statsd 指标。
 
-    :param f:
+    :param f: 可调用对象。
     :return:
     """
 
@@ -86,28 +88,43 @@ def statsd_metrics(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class RelatedFieldFilter:
-    """关联字段过滤器，用于过滤过滤字段，包括：field_name、filter_class。"""
+    """关联字段过滤器，用于过滤关联字段，包括：field_name、filter_class。"""
 
-    # 数据类，用于指定在/相关端点上使用的筛选器
+    # 数据类，用于指定在/相关端点上使用的过滤器
     def __init__(self, field_name: str, filter_class: Type[BaseFilter]):
+        """
+        使用指定字段名称、过滤器类（BaseFilter及其派生类），初始化新实例。
+
+        :param field_name: 字段名称。
+        :param filter_class: 过滤器类（BaseFilter及其派生类）。
+        """
         self.field_name = field_name
         self.filter_class = filter_class
 
 
 class BaseFavoriteFilter(BaseFilter):
-    """获取列表的基本自定义筛选器，用于筛选用户喜欢或不喜欢的所有仪表板、数据片"""
+    """获取列表的基本自定义筛选器，用于筛选用户喜欢或不喜欢的所有仪表板、数据切片、SQL查询等。"""
 
     name = _("Is favorite")
     arg_name = ""
     class_name = ""
-    """ The FavStar class_name to user """
+    """ 类名称 """
     model: Type[Union[Dashboard, Slice, SqllabQuery]] = Dashboard
-    """ The SQLAlchemy model """
+    """ 对象关系模型，可以是 Dashboard, Slice, SqllabQuery 之一 """
 
     def apply(self, query: Query, value: Any) -> Query:
+        """
+        应用该过滤器到指定查询对象。
+
+        :param query: 查询对象。
+        :param value: 过滤值。
+        :return:
+        """
+
         # If anonymous user filter nothing
         if security_manager.current_user is None:
             return query
+
         users_favorite_query = db.session.query(FavStar.obj_id).filter(
             and_(
                 FavStar.user_id == g.user.get_id(),
@@ -116,17 +133,22 @@ class BaseFavoriteFilter(BaseFilter):
         )
         if value:
             return query.filter(and_(self.model.id.in_(users_favorite_query)))
+
         return query.filter(and_(~self.model.id.in_(users_favorite_query)))
 
 
 class BaseRabbitaiModelRestApi(ModelRestApi):
     """
-    扩展 FAB 的 ModelResApi 以实现特定于 rabbitai 的一般功能。
+    RabbitAI 模型 RestAPI 基类，扩展 FAB 的 ModelResApi 以实现特定于 RabbitAI 的一般功能。
+    对 API 调用进行耗时统计。
 
-    /related/<column_name>
+    新增以下 API：
 
-    /distinct/<column_name>
+    - /related/<column_name>
+    - /distinct/<column_name>
     """
+
+    # region 字段
 
     csrf_exempt = False
     method_permission_name = {
@@ -187,7 +209,7 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
 
     text_field_rel_fields: Dict[str, str] = {}
     """
-    Declare an alternative for the human readable representation of the Model object::
+    声明模型对象的人类可读表示形式的备选方案::
 
         text_field_rel_fields = {
             "<RELATED_FIELD>": "<RELATED_OBJECT_FIELD>"
@@ -195,28 +217,32 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
     """
 
     allowed_distinct_fields: Set[str] = set()
-
+    """允许的不同值字段名称集合。"""
     openapi_spec_component_schemas: Tuple[Type[Schema], ...] = tuple()
-    """
-    Add extra schemas to the OpenAPI component schemas section
-    """
+    """添加额外架构到 OpenAPI 组件架构节。"""
 
     add_columns: List[str]
+    """添加操作可用列名称的列表"""
     edit_columns: List[str]
+    """编辑操作可用列名称的列表"""
     list_columns: List[str]
+    """列表操作可用列名称的列表"""
     show_columns: List[str]
+    """显示对象操作可用列名称的列表"""
 
     responses = {
-        "400": {"description": "Bad request", "content": error_payload_content},
-        "401": {"description": "Unauthorized", "content": error_payload_content},
-        "403": {"description": "Forbidden", "content": error_payload_content},
-        "404": {"description": "Not found", "content": error_payload_content},
+        "400": {"description": "请求无效", "content": error_payload_content},
+        "401": {"description": "未授权", "content": error_payload_content},
+        "403": {"description": "禁止", "content": error_payload_content},
+        "404": {"description": "未找到", "content": error_payload_content},
         "422": {
-            "description": "Could not process entity",
+            "description": "不能处理实体",
             "content": error_payload_content,
         },
-        "500": {"description": "Fatal error", "content": error_payload_content},
+        "500": {"description": "致命错误", "content": error_payload_content},
     }
+
+    # endregion
 
     def __init__(self) -> None:
         # Setup statsd
@@ -240,16 +266,21 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         """
         for schema in self.openapi_spec_component_schemas:
             try:
-                api_spec.components.schema(
-                    schema.__name__, schema=schema,
-                )
+                api_spec.components.schema(schema.__name__, schema=schema,)
             except DuplicateComponentNameError:
                 pass
         super().add_apispec_components(api_spec)
 
-    def create_blueprint(
-        self, appbuilder: AppBuilder, *args: Any, **kwargs: Any
-    ) -> Blueprint:
+    def create_blueprint(self, appbuilder: AppBuilder, *args: Any, **kwargs: Any) -> Blueprint:
+        """
+        创建蓝图。
+
+        :param appbuilder: 应用构建者。
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
         self.stats_logger = self.appbuilder.get_app.config["STATS_LOGGER"]
         return super().create_blueprint(appbuilder, *args, **kwargs)
 
@@ -265,9 +296,16 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
             self.add_columns = [model_id]
         super()._init_properties()
 
-    def _get_related_filter(
-        self, datamodel: SQLAInterface, column_name: str, value: str
-    ) -> Filters:
+    def _get_related_filter(self, datamodel: SQLAInterface, column_name: str, value: str) -> Filters:
+        """
+        获取关联过滤器。
+
+        :param datamodel:
+        :param column_name:
+        :param value:
+        :return:
+        """
+
         filter_field = self.related_field_filters.get(column_name)
         if isinstance(filter_field, str):
             filter_field = RelatedFieldFilter(cast(str, filter_field), FilterStartsWith)
@@ -360,6 +398,7 @@ class BaseRabbitaiModelRestApi(ModelRestApi):
         :param key: The function name
         :param time_delta: Optional time it took for the endpoint to execute
         """
+
         if 200 <= response.status_code < 400:
             self.incr_stats("success", key)
         else:

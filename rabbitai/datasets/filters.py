@@ -6,7 +6,9 @@ from rabbitai.connectors.sqla.models import SqlaTable
 from rabbitai.views.base import BaseFilter
 
 
-class DatasetIsNullOrEmptyFilter(BaseFilter):  # pylint: disable=too-few-public-methods
+class DatasetIsNullOrEmptyFilter(BaseFilter):
+    """数据集是否为Null或空过滤器。"""
+
     name = _("Null or Empty")
     arg_name = "dataset_is_null_or_empty"
 

@@ -49,85 +49,73 @@ get_fav_star_ids_schema = {"type": "array", "items": {"type": "integer"}}
 #
 # Column schema descriptions
 #
-slice_name_description = "The name of the chart."
-description_description = "A description of the chart propose."
-viz_type_description = "The type of chart visualization used."
+slice_name_description = "图表的名称。"
+description_description = "图表的描述。"
+viz_type_description = "图表可视化的类型。"
 owners_description = (
-    "Owner are users ids allowed to delete or change this chart. "
-    "If left empty you will be one of the owners of the chart."
+    "所有者是允许删除或更改此图表的用户ID。"
+    "如果留空，您将成为图表的所有者之一。"
 )
 params_description = (
-    "Parameters are generated dynamically when clicking the save "
-    "or overwrite button in the explore view. "
-    "This JSON object for power users who may want to alter specific parameters."
+    "在浏览视图中单击“保存”或“覆盖”按钮时，会动态生成参数。"
+    "此JSON对象适用于可能希望更改特定参数的高级用户。"
 )
 query_context_description = (
-    "The query context represents the queries that need to run "
-    "in order to generate the data the visualization, and in what "
-    "format the data should be returned."
+    "查询上下文表示为生成可视化数据而需要运行的查询，以及应以何种格式返回数据。"
 )
 query_context_generation_description = (
-    "The query context generation represents whether the query_context"
-    "is user generated or not so that it does not update user modfied"
-    "state."
+    "查询上下文生成表示 query_context 是否由用户生成，以便它不会更新用户修改状态。"
 )
 cache_timeout_description = (
-    "Duration (in seconds) of the caching timeout "
-    "for this chart. Note this defaults to the datasource/table"
-    " timeout if undefined."
+    "此图表的缓存超时持续时间（秒）。注意：如果未定义，则默认为数据源/表超时。"
 )
 datasource_id_description = (
-    "The id of the dataset/datasource this new chart will use. "
-    "A complete datasource identification needs `datasouce_id` "
-    "and `datasource_type`."
+    "此新图表将使用的数据集/数据源的id。"
+    "完整的数据源标识需要 `datasouce_id`  和 `datasource_type`。"
 )
 datasource_uid_description = (
-    "The uid of the dataset/datasource this new chart will use. "
-    "A complete datasource identification needs `datasouce_uid` "
+    "此新图表将使用的数据集/数据源的全局唯一标识（uid）。"
+    "完整的数据源标识需要 `datasouce_uid` "
 )
 datasource_type_description = (
-    "The type of dataset/datasource identified on `datasource_id`."
+    "数据集/数据源的类型。"
 )
-datasource_name_description = "The datasource name."
-dashboards_description = "A list of dashboards to include this new chart to."
-changed_on_description = "The ISO date that the chart was last changed."
-slice_url_description = "The URL of the chart."
+datasource_name_description = "数据源名称。"
+dashboards_description = "要包含此新图表的仪表板列表。"
+changed_on_description = "上次更改图表的ISO日期。"
+slice_url_description = "图表的访问地址 URL。"
 form_data_description = (
-    "Form data from the Explore controls used to form the chart's data query."
+    "来自用于形成图表数据查询的浏览控件的表单数据。"
 )
-description_markeddown_description = "Sanitized HTML version of the chart description."
-owners_name_description = "Name of an owner of the chart."
+description_markeddown_description = "图表说明的净化HTML版本。"
+owners_name_description = "图表所有者的名称。"
 
 #
 # OpenAPI method specification overrides
 #
 openapi_spec_methods_override = {
-    "get": {"get": {"description": "Get a chart detail information."}},
+    "get": {"get": {"description": "获取图表详细信息。"}},
     "get_list": {
         "get": {
-            "description": "Get a list of charts, use Rison or JSON query "
-            "parameters for filtering, sorting, pagination and "
-            " for selecting specific columns and metadata.",
+            "description": "获取图表列表，使用Rison或JSON查询参数进行筛选、排序、分页以及选择特定列和元数据。",
         }
     },
     "info": {
         "get": {
-            "description": "Several metadata information about chart API endpoints.",
+            "description": "有关图表API端点的若干元数据信息。",
         }
     },
     "related": {
         "get": {
-            "description": "Get a list of all possible owners for a chart. "
-            "Use `owners` has the `column_name` parameter"
+            "description": "获取图表所有可能所有者的列表。"
+            "使用有 `column_name` 的 `owners` 参数。"
         }
     },
 }
 
 
 class ChartEntityResponseSchema(Schema):
-    """
-    Schema for a chart object
-    """
+    """图表对象响应结构。"""
 
     slice_id = fields.Integer()
     slice_name = fields.String(description=slice_name_description)
@@ -136,17 +124,13 @@ class ChartEntityResponseSchema(Schema):
     modified = fields.String()
     datasource = fields.String(description=datasource_name_description)
     description = fields.String(description=description_description)
-    description_markeddown = fields.String(
-        description=description_markeddown_description
-    )
+    description_markeddown = fields.String(description=description_markeddown_description)
     form_data = fields.Dict(description=form_data_description)
     slice_url = fields.String(description=slice_url_description)
 
 
 class ChartPostSchema(Schema):
-    """
-    Schema to add a new chart.
-    """
+    """添加新图表的结构。"""
 
     slice_name = fields.String(
         description=slice_name_description, required=True, validate=Length(1, 250)
@@ -185,9 +169,7 @@ class ChartPostSchema(Schema):
 
 
 class ChartPutSchema(Schema):
-    """
-    Schema to update or patch a chart
-    """
+    """更新图表的结构。"""
 
     slice_name = fields.String(
         description=slice_name_description, allow_none=True, validate=Length(0, 250)
@@ -222,31 +204,31 @@ class ChartPutSchema(Schema):
 
 
 class ChartGetDatasourceObjectDataResponseSchema(Schema):
-    datasource_id = fields.Integer(description="The datasource identifier")
-    datasource_type = fields.Integer(description="The datasource type")
+    datasource_id = fields.Integer(description="数据源标识符")
+    datasource_type = fields.Integer(description="数据源类型")
 
 
 class ChartGetDatasourceObjectResponseSchema(Schema):
-    label = fields.String(description="The name of the datasource")
+    label = fields.String(description="数据源的名称")
     value = fields.Nested(ChartGetDatasourceObjectDataResponseSchema)
 
 
 class ChartGetDatasourceResponseSchema(Schema):
-    count = fields.Integer(description="The total number of datasources")
+    count = fields.Integer(description="数据源的总数")
     result = fields.Nested(ChartGetDatasourceObjectResponseSchema)
 
 
 class ChartCacheScreenshotResponseSchema(Schema):
-    cache_key = fields.String(description="The cache key")
-    chart_url = fields.String(description="The url to render the chart")
-    image_url = fields.String(description="The url to fetch the screenshot")
+    cache_key = fields.String(description="缓存键")
+    chart_url = fields.String(description="用于呈现图表的url")
+    image_url = fields.String(description="获取屏幕截图的url")
 
 
 class ChartDataColumnSchema(Schema):
     column_name = fields.String(
-        description="The name of the target column", example="mycol",
+        description="目标列的名称", example="mycol",
     )
-    type = fields.String(description="Type of target column", example="BIGINT")
+    type = fields.String(description="目标列的类型", example="BIGINT")
 
 
 class ChartDataAdhocMetricSchema(Schema):
@@ -255,64 +237,53 @@ class ChartDataAdhocMetricSchema(Schema):
     """
 
     expressionType = fields.String(
-        description="Simple or SQL metric",
+        description="简单或 SQL指标",
         required=True,
         validate=validate.OneOf(choices=("SIMPLE", "SQL")),
         example="SQL",
     )
     aggregate = fields.String(
-        description="Aggregation operator. Only required for simple expression types.",
+        description="聚合运算符。仅对于简单表达式类型是必需的。",
         validate=validate.OneOf(
             choices=("AVG", "COUNT", "COUNT_DISTINCT", "MAX", "MIN", "SUM")
         ),
     )
     column = fields.Nested(ChartDataColumnSchema)
     sqlExpression = fields.String(
-        description="The metric as defined by a SQL aggregate expression. "
-        "Only required for SQL expression type.",
+        description="由SQL聚合表达式定义的指标。仅SQL表达式类型需要。",
         example="SUM(weight * observations) / SUM(weight)",
     )
     label = fields.String(
-        description="Label for the metric. Is automatically generated unless "
-        "hasCustomLabel is true, in which case label must be defined.",
+        description="指标的标签。除非hasCustomLabel为true，否则将自动生成，在这种情况下，必须定义标签。",
         example="Weighted observations",
     )
     hasCustomLabel = fields.Boolean(
-        description="When false, the label will be automatically generated based on "
-        "the aggregate expression. When true, a custom label has to be "
-        "specified.",
+        description="如果为false，将根据聚合表达式自动生成标签。如果为true，则必须指定自定义标签。",
         example=True,
     )
     optionName = fields.String(
-        description="Unique identifier. Can be any string value, as long as all "
-        "metrics have a unique identifier. If undefined, a random name "
-        "will be generated.",
+        description="唯一标识符。可以是任何字符串值，只要所有指标都具有唯一标识符。如果未定义，将生成一个随机名称。",
         example="metric_aec60732-fac0-4b17-b736-93f1a5c93e30",
     )
     timeGrain = fields.String(
-        description="Optional time grain for temporal filters", example="PT1M",
+        description="时间过滤器的可选时间粒度", example="PT1M",
     )
     isExtra = fields.Boolean(
-        description="Indicates if the filter has been added by a filter component as "
-        "opposed to being a part of the original query."
+        description="指示过滤器是否由过滤器组件添加，而不是作为原始查询的一部分。"
     )
 
 
 class ChartDataAggregateConfigField(fields.Dict):
     def __init__(self) -> None:
         super().__init__(
-            description="The keys are the name of the aggregate column to be created, "
-            "and the values specify the details of how to apply the "
-            "aggregation. If an operator requires additional options, "
-            "these can be passed here to be unpacked in the operator call. The "
-            "following numpy operators are supported: average, argmin, argmax, cumsum, "
+            description="键是要创建的聚合列的名称，值指定如何应用聚合的详细信息。"
+            "如果运算符需要其他选项，可以将这些选项传递到此处，以便在运算符调用中解包。"
+            "支持以下numpy运算符：average, argmin, argmax, cumsum, "
             "cumprod, max, mean, median, nansum, nanmin, nanmax, nanmean, nanmedian, "
-            "min, percentile, prod, product, std, sum, var. Any options required by "
-            "the operator can be passed to the `options` object.\n"
+            "min, percentile, prod, product, std, sum, var。"
+            "运算符所需的任何选项都可以传递给 `options` 对象。\n"
             "\n"
-            "In the example, a new column `first_quantile` is created based on values "
-            "in the column `my_col` using the `percentile` operator with "
-            "the `q=0.25` parameter.",
+            "在本例中，使用带有'q=0.25'参数的'percentile'运算符，基于'my_col'列中的值创建了一个新列'first_quantile'。",
             example={
                 "first_quantile": {
                     "operator": "percentile",
@@ -351,16 +322,14 @@ class ChartDataRollingOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
 
     columns = (
         fields.Dict(
-            description="columns on which to perform rolling, mapping source column to "
-            "target column. For instance, `{'y': 'y'}` will replace the "
-            "column `y` with the rolling value in `y`, while `{'y': 'y2'}` "
-            "will add a column `y2` based on rolling values calculated "
-            "from `y`, leaving the original column `y` unchanged.",
+            description="要对其执行滚动的列，将源列映射到目标列。"
+            "例如，`{'y': 'y'}` 将用 `y` 中的滚动值替换列 `y`，"
+            "而 `{'y': 'y2'}` 将根据从`y`计算的滚动值添加一列 `y2` ，保留原始列`y`不变。",
             example={"weekly_rolling_sales": "sales"},
         ),
     )
     rolling_type = fields.String(
-        description="Type of rolling window. Any numpy function will work.",
+        description="滚动窗口的类型。任何numpy函数都可以工作。",
         validate=validate.OneOf(
             choices=(
                 "average",
@@ -390,24 +359,23 @@ class ChartDataRollingOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
         example="percentile",
     )
     window = fields.Integer(
-        description="Size of the rolling window in days.", required=True, example=7,
+        description="滚动窗口的大小（以天为单位）。", required=True, example=7,
     )
     rolling_type_options = fields.Dict(
-        desctiption="Optional options to pass to rolling method. Needed for "
-        "e.g. quantile operation.",
+        desctiption="传递到滚动方法的可选选项。例如分位数运算所需。",
         example={},
     )
     center = fields.Boolean(
-        description="Should the label be at the center of the window. Default: `false`",
+        description="标签应该在窗口的中心。默认：`false`",
         example=False,
     )
     win_type = fields.String(
-        description="Type of window function. See "
+        description="窗口函数的类型。详见"
         "[SciPy window functions](https://docs.scipy.org/doc/scipy/reference"
-        "/signal.windows.html#module-scipy.signal.windows) "
-        "for more details. Some window functions require passing "
-        "additional parameters to `rolling_type_options`. For instance, "
-        "to use `gaussian`, the parameter `std` needs to be provided.",
+        "/signal.windows.html#module-scipy.signal.windows) ，"
+        "有些窗口函数需要传递 "
+        "附加参数到 `rolling_type_options`。例如，"
+        "为了使用 `gaussian`, 需要提供参数 `std` 。",
         validate=validate.OneOf(
             choices=(
                 "boxcar",
@@ -429,8 +397,7 @@ class ChartDataRollingOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
         ),
     )
     min_periods = fields.Integer(
-        description="The minimum amount of periods required for a row to be included "
-        "in the result set.",
+        description="在结果集中包含的行所需的最小周期。",
         example=7,
     )
 
@@ -442,20 +409,18 @@ class ChartDataSelectOptionsSchema(ChartDataPostProcessingOperationOptionsSchema
 
     columns = fields.List(
         fields.String(),
-        description="Columns which to select from the input data, in the desired "
-        "order. If columns are renamed, the original column name should be "
-        "referenced here.",
+        description="按所需顺序从输入数据中选择的列。如果重命名了列，则应在此处引用原始列名。",
         example=["country", "gender", "age"],
     )
     exclude = fields.List(
         fields.String(),
-        description="Columns to exclude from selection.",
+        description="要从选择中排除的列。",
         example=["my_temp_column"],
     )
     rename = fields.List(
         fields.Dict(),
-        description="columns which to rename, mapping source column to target column. "
-        "For instance, `{'y': 'y2'}` will rename the column `y` to `y2`.",
+        description="要重命名的列，将源列映射到目标列。"
+        "例如，`{'y': 'y2'}` 将命名列 `y` 为 `y2`。",
         example=[{"age": "average_age"}],
     )
 
@@ -466,8 +431,7 @@ class ChartDataSortOptionsSchema(ChartDataPostProcessingOperationOptionsSchema):
     """
 
     columns = fields.Dict(
-        description="columns by by which to sort. The key specifies the column name, "
-        "value specifies if sorting in ascending order.",
+        description="要按其排序的列。键指定列名，值指定是否按升序排序。",
         example={"country": True, "gender": False},
         required=True,
     )
@@ -480,7 +444,7 @@ class ChartDataContributionOptionsSchema(ChartDataPostProcessingOperationOptions
     """
 
     orientation = fields.String(
-        description="Should cell values be calculated across the row or column.",
+        description="应跨行或列计算单元格值。",
         required=True,
         validate=validate.OneOf(
             choices=[val.value for val in PostProcessingContributionOrientation]
@@ -495,9 +459,9 @@ class ChartDataProphetOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
     """
 
     time_grain = fields.String(
-        description="Time grain used to specify time period increments in prediction. "
-        "Supports [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) "
-        "durations.",
+        description="用于在预测中指定时间段增量的时间粒度。"
+        "支持 [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) "
+        "持续时间。",
         validate=validate.OneOf(
             choices=[
                 i
@@ -509,13 +473,13 @@ class ChartDataProphetOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
         required=True,
     )
     periods = fields.Integer(
-        descrption="Time periods (in units of `time_grain`) to predict into the future",
+        descrption="预测未来的时间段（以 `time_grain` 为单位）",
         min=1,
         example=7,
         required=True,
     )
     confidence_interval = fields.Float(
-        description="Width of predicted confidence interval",
+        description="预测置信区间宽度",
         validate=[
             Range(
                 min=0,
@@ -530,23 +494,20 @@ class ChartDataProphetOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
     )
     yearly_seasonality = fields.Raw(
         # TODO: add correct union type once supported by Marshmallow
-        description="Should yearly seasonality be applied. "
-        "An integer value will specify Fourier order of seasonality, `None` will "
-        "automatically detect seasonality.",
+        description="是否应采用年度季节性。"
+        "整数值将指定季节性的傅立叶顺序，`None`将自动检测季节性。",
         example=False,
     )
     weekly_seasonality = fields.Raw(
         # TODO: add correct union type once supported by Marshmallow
-        description="Should weekly seasonality be applied. "
-        "An integer value will specify Fourier order of seasonality, `None` will "
-        "automatically detect seasonality.",
+        description="是否应采用周季节性。"
+        "整数值将指定季节性的傅立叶顺序，`None`将自动检测季节性。",
         example=False,
     )
     monthly_seasonality = fields.Raw(
         # TODO: add correct union type once supported by Marshmallow
-        description="Should monthly seasonality be applied. "
-        "An integer value will specify Fourier order of seasonality, `None` will "
-        "automatically detect seasonality.",
+        description="是否应采用月季节性。"
+        "整数值将指定季节性的傅立叶顺序，`None`将自动检测季节性。",
         example=False,
     )
 
@@ -557,20 +518,18 @@ class ChartDataBoxplotOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
     """
 
     groupby = fields.List(
-        fields.String(description="Columns by which to group the query.",),
+        fields.String(description="用于对查询进行分组的列。",),
         allow_none=True,
     )
 
     metrics = fields.List(
         fields.Raw(),
-        description="Aggregate expressions. Metrics can be passed as both "
-        "references to datasource metrics (strings), or ad-hoc metrics"
-        "which are defined only within the query object. See "
-        "`ChartDataAdhocMetricSchema` for the structure of ad-hoc metrics.",
+        description="聚合表达式。指标可以作为对数据源指标（字符串）的引用或仅在查询对象中定义的特殊指标传递。"
+                    "有关特殊指标的结构，请参见 `ChartDataAdhocMetricSchema`",
     )
 
     whisker_type = fields.String(
-        description="Whisker type. Any numpy function will work.",
+        description="Whisker 类型，任何numpy函数都可以工作。",
         validate=validate.OneOf(
             choices=([val.value for val in PostProcessingBoxplotWhiskerType])
         ),
@@ -581,7 +540,7 @@ class ChartDataBoxplotOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
     percentiles = fields.Tuple(
         (
             fields.Float(
-                description="Lower percentile",
+                description="下百分位",
                 validate=[
                     Range(
                         min=0,
@@ -596,7 +555,7 @@ class ChartDataBoxplotOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
                 ],
             ),
             fields.Float(
-                description="Upper percentile",
+                description="上百分位",
                 validate=[
                     Range(
                         min=0,
@@ -611,7 +570,7 @@ class ChartDataBoxplotOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
                 ],
             ),
         ),
-        description="Upper and lower percentiles for percentile whisker type.",
+        description="百分位类型的上百分位和下百分位。",
         example=[1, 99],
     )
 
@@ -625,7 +584,7 @@ class ChartDataPivotOptionsSchema(ChartDataPostProcessingOperationOptionsSchema)
         fields.List(
             fields.String(
                 allow_none=False,
-                description="Columns to group by on the table index (=rows)",
+                description="表索引上要分组的列（=行）",
             ),
             minLength=1,
             required=True,
@@ -633,24 +592,23 @@ class ChartDataPivotOptionsSchema(ChartDataPostProcessingOperationOptionsSchema)
     )
     columns = fields.List(
         fields.String(
-            allow_none=False, description="Columns to group by on the table columns",
+            allow_none=False, description="表列上要分组的列",
         ),
     )
     metric_fill_value = fields.Number(
-        description="Value to replace missing values with in aggregate calculations.",
+        description="用于将缺失值替换为聚合计算中的值。",
     )
     column_fill_value = fields.String(
-        description="Value to replace missing pivot columns names with."
+        description="替换缺失透视表列名称的值。"
     )
     drop_missing_columns = fields.Boolean(
-        description="Do not include columns whose entries are all missing "
-        "(default: `true`).",
+        description="不要包括其条目全部丢失的列(默认: `true`)。",
     )
     marginal_distributions = fields.Boolean(
-        description="Add totals for row/column. (default: `false`)",
+        description="添加行/列的总计。(默认: `false`)",
     )
     marginal_distribution_name = fields.String(
-        description="Name of marginal distribution row/column. (default: `All`)",
+        description="边际分布行/列的名称。(默认: `All`)",
     )
     aggregates = ChartDataAggregateConfigField()
 
@@ -663,13 +621,13 @@ class ChartDataGeohashDecodeOptionsSchema(
     """
 
     geohash = fields.String(
-        description="Name of source column containing geohash string", required=True,
+        description="包含geohash字符串的源列的名称", required=True,
     )
     latitude = fields.String(
-        description="Name of target column for decoded latitude", required=True,
+        description="解码纬度的目标列的名称", required=True,
     )
     longitude = fields.String(
-        description="Name of target column for decoded longitude", required=True,
+        description="解码经度的目标列的名称", required=True,
     )
 
 
@@ -681,13 +639,13 @@ class ChartDataGeohashEncodeOptionsSchema(
     """
 
     latitude = fields.String(
-        description="Name of source latitude column", required=True,
+        description="源纬度列的名称", required=True,
     )
     longitude = fields.String(
-        description="Name of source longitude column", required=True,
+        description="源经度列的名称", required=True,
     )
     geohash = fields.String(
-        description="Name of target column for encoded geohash string", required=True,
+        description="编码的geohash字符串的目标列的名称", required=True,
     )
 
 
@@ -699,24 +657,25 @@ class ChartDataGeodeticParseOptionsSchema(
     """
 
     geodetic = fields.String(
-        description="Name of source column containing geodetic point strings",
+        description="包含大地测量点字符串的源列的名称",
         required=True,
     )
     latitude = fields.String(
-        description="Name of target column for decoded latitude", required=True,
+        description="解码纬度的目标列的名称", required=True,
     )
     longitude = fields.String(
-        description="Name of target column for decoded longitude", required=True,
+        description="解码经度的目标列的名称", required=True,
     )
     altitude = fields.String(
-        description="Name of target column for decoded altitude. If omitted, "
-        "altitude information in geodetic string is ignored.",
+        description="解码高度的目标列的名称。如果省略，则忽略大地测量字符串中的高度信息。",
     )
 
 
 class ChartDataPostProcessingOperationSchema(Schema):
+    """图表数据后处理操作结构。"""
+
     operation = fields.String(
-        description="Post processing operation type",
+        description="后处理操作类型",
         required=True,
         validate=validate.OneOf(
             choices=(
@@ -739,10 +698,8 @@ class ChartDataPostProcessingOperationSchema(Schema):
         example="aggregate",
     )
     options = fields.Dict(
-        description="Options specifying how to perform the operation. Please refer "
-        "to the respective post processing operation option schemas. "
-        "For example, `ChartDataPostProcessingOperationOptions` specifies "
-        "the required options for the pivot operation.",
+        description="指定如何执行操作的选项。请参考相应的后处理操作选项架构。"
+        "例如, `ChartDataPostProcessingOperationOptions` 指定透视表操作所需的选项。",
         example={
             "groupby": ["country", "gender"],
             "aggregates": {
@@ -759,10 +716,10 @@ class ChartDataPostProcessingOperationSchema(Schema):
 
 class ChartDataFilterSchema(Schema):
     col = fields.String(
-        description="The column to filter.", required=True, example="country"
+        description="要过滤的列。", required=True, example="country"
     )
     op = fields.String(  # pylint: disable=invalid-name
-        description="The comparison operator.",
+        description="比较运算符。",
         validate=utils.OneOfCaseInsensitive(
             choices=[filter_op.value for filter_op in FilterOperator]
         ),
@@ -770,16 +727,14 @@ class ChartDataFilterSchema(Schema):
         example="IN",
     )
     val = fields.Raw(
-        description="The value or values to compare against. Can be a string, "
-        "integer, decimal or list, depending on the operator.",
+        description="要比较的一个或多个值。可以是字符串、整数、十进制或列表，具体取决于运算符。",
         example=["China", "France", "Japan"],
     )
     grain = fields.String(
-        description="Optional time grain for temporal filters", example="PT1M",
+        description="时间过滤器的可选时间粒度", example="PT1M",
     )
     isExtra = fields.Boolean(
-        description="Indicates if the filter has been added by a filter component as "
-        "opposed to being a part of the original query."
+        description="指示过滤器是否由过滤器组件添加，而不是作为原始查询的一部分。"
     )
 
 
@@ -787,30 +742,28 @@ class ChartDataExtrasSchema(Schema):
 
     time_range_endpoints = fields.List(EnumField(TimeRangeEndpoint, by_value=True))
     relative_start = fields.String(
-        description="Start time for relative time deltas. "
-        'Default: `config["DEFAULT_RELATIVE_START_TIME"]`',
+        description="相对时间增量的开始时间。"
+        '默认: `config["DEFAULT_RELATIVE_START_TIME"]`',
         validate=validate.OneOf(choices=("today", "now")),
     )
     relative_end = fields.String(
-        description="End time for relative time deltas. "
-        'Default: `config["DEFAULT_RELATIVE_START_TIME"]`',
+        description="相对时间增量的结束时间。"
+        '默认: `config["DEFAULT_RELATIVE_START_TIME"]`',
         validate=validate.OneOf(choices=("today", "now")),
     )
     where = fields.String(
-        description="WHERE clause to be added to queries using AND operator.",
+        description="要使用AND运算符添加到查询的WHERE子句。",
     )
     having = fields.String(
-        description="HAVING clause to be added to aggregate queries using "
-        "AND operator.",
+        description="要使用AND运算符添加到聚合查询中的 HAVING 子句。",
     )
     having_druid = fields.List(
         fields.Nested(ChartDataFilterSchema),
-        description="HAVING filters to be added to legacy Druid datasource queries.",
+        description="添加到传统的Druid数据源查询中的HAVING过滤器。",
     )
     time_grain_sqla = fields.String(
-        description="To what level of granularity should the temporal column be "
-        "aggregated. Supports "
-        "[ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) durations.",
+        description="时间列应该聚合到什么粒度级别。支持"
+        "[ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations)。",
         validate=validate.OneOf(
             choices=[
                 i
@@ -822,36 +775,34 @@ class ChartDataExtrasSchema(Schema):
         allow_none=True,
     )
     druid_time_origin = fields.String(
-        description="Starting point for time grain counting on legacy Druid "
-        "datasources. Used to change e.g. Monday/Sunday first-day-of-week.",
+        description="传统Druid数据源上时间粒度计数的起点。用于更改，例如：一周的第一天，周一/周日。",
         allow_none=True,
     )
 
 
 class AnnotationLayerSchema(Schema):
     annotationType = fields.String(
-        description="Type of annotation layer",
+        description="注释层的类型",
         validate=validate.OneOf(choices=[ann.value for ann in AnnotationType]),
     )
-    color = fields.String(description="Layer color", allow_none=True,)
+    color = fields.String(description="层颜色", allow_none=True,)
     descriptionColumns = fields.List(
         fields.String(),
-        description="Columns to use as the description. If none are provided, "
-        "all will be shown.",
+        description="要用作说明的列。如果没有提供，将显示所有。",
     )
     hideLine = fields.Boolean(
-        description="Should line be hidden. Only applies to line annotations",
+        description="这条线应该是隐藏的。仅适用于线条批注",
         allow_none=True,
     )
     intervalEndColumn = fields.String(
         description=(
-            "Column containing end of interval. Only applies to interval layers"
+            "包含间隔结束的列。仅适用于间隔层"
         ),
         allow_none=True,
     )
-    name = fields.String(description="Name of layer", required=True)
+    name = fields.String(description="层名称", required=True)
     opacity = fields.String(
-        description="Opacity of layer",
+        description="图层不透明度",
         validate=validate.OneOf(
             choices=("", "opacityLow", "opacityMedium", "opacityHigh"),
         ),
@@ -860,34 +811,34 @@ class AnnotationLayerSchema(Schema):
     )
     overrides = fields.Dict(
         keys=fields.String(
-            desciption="Name of property to be overridden",
+            desciption="要重写的属性的名称",
             validate=validate.OneOf(
                 choices=("granularity", "time_grain_sqla", "time_range", "time_shift"),
             ),
         ),
         values=fields.Raw(allow_none=True),
-        description="which properties should be overridable",
+        description="哪些属性应该是可重写的",
         allow_none=True,
     )
-    show = fields.Boolean(description="Should the layer be shown", required=True)
+    show = fields.Boolean(description="是否应该显示图层", required=True)
     showMarkers = fields.Boolean(
-        description="Should markers be shown. Only applies to line annotations.",
+        description="是否应该显示标记。仅适用于线条批注。",
         required=True,
     )
     sourceType = fields.String(
-        description="Type of source for annotation data",
+        description="注释数据的源类型",
         validate=validate.OneOf(choices=("", "line", "NATIVE", "table",)),
     )
     style = fields.String(
-        description="Line style. Only applies to time-series annotations",
+        description="线条风格。仅适用于时间序列注释",
         validate=validate.OneOf(choices=("dashed", "dotted", "solid", "longDashed",)),
     )
     timeColumn = fields.String(
-        description="Column with event date or interval start date", allow_none=True,
+        description="具有事件日期或间隔开始日期的列", allow_none=True,
     )
-    titleColumn = fields.String(description="Column with title", allow_none=True,)
+    titleColumn = fields.String(description="列标题", allow_none=True,)
     width = fields.Float(
-        description="Width of annotation line",
+        description="注释线宽度",
         validate=[
             Range(
                 min=0,
@@ -897,17 +848,16 @@ class AnnotationLayerSchema(Schema):
         ],
     )
     value = fields.Raw(
-        description="For formula annotations, this contains the formula. "
-        "For other types, this is the primary key of the source object.",
+        description="对于公式批注，其中包含公式。对于其他类型，这是源对象的主键。",
         required=True,
     )
 
 
 class ChartDataDatasourceSchema(Schema):
-    description = "Chart datasource"
-    id = fields.Integer(description="Datasource id", required=True,)
+    description = "图表数据源"
+    id = fields.Integer(description="数据源标识", required=True,)
     type = fields.String(
-        description="Datasource type",
+        description="数据源类型",
         validate=validate.OneOf(choices=("druid", "table")),
     )
 
@@ -921,60 +871,52 @@ class ChartDataQueryObjectSchema(Schema):
 
     annotation_layers = fields.List(
         fields.Nested(AnnotationLayerSchema),
-        description="Annotation layers to apply to chart",
+        description="要应用于图表的注释图层",
         allow_none=True,
     )
     applied_time_extras = fields.Dict(
-        description="A mapping of temporal extras that have been applied to the query",
+        description="已应用于查询的临时外部对象的映射",
         allow_none=True,
         example={"__time_range": "1 year ago : now"},
     )
     apply_fetch_values_predicate = fields.Boolean(
-        description="Add fetch values predicate (where clause) to query "
-        "if defined in datasource",
+        description="如果在数据源中定义了fetch values谓词（where子句），则将其添加到查询中",
         allow_none=True,
     )
     filters = fields.List(fields.Nested(ChartDataFilterSchema), allow_none=True)
     granularity = fields.String(
-        description="Name of temporal column used for time filtering. For legacy Druid "
-        "datasources this defines the time grain.",
+        description="用于时间过滤的时间列的名称。对于传统Druid 数据源，这定义了时间粒度。",
         allow_none=True,
     )
     granularity_sqla = fields.String(
-        description="Name of temporal column used for time filtering for SQL "
-        "datasources. This field is deprecated, use `granularity` "
-        "instead.",
+        description="用于SQL数据源时间过滤的时态列的名称。此字段已弃用，请改用 `granularity` 。",
         allow_none=True,
         deprecated=True,
     )
     groupby = fields.List(
-        fields.String(description="Columns by which to group the query.",),
+        fields.String(description="用于对查询进行分组的列。",),
         allow_none=True,
     )
     metrics = fields.List(
         fields.Raw(),
-        description="Aggregate expressions. Metrics can be passed as both "
-        "references to datasource metrics (strings), or ad-hoc metrics"
-        "which are defined only within the query object. See "
-        "`ChartDataAdhocMetricSchema` for the structure of ad-hoc metrics.",
+        description="聚合表达式。指标可以作为对数据源指标（字符串）的引用或仅在查询对象中定义的动态指标。"
+        "动态指标结构详见 `ChartDataAdhocMetricSchema`。",
         allow_none=True,
     )
     post_processing = fields.List(
         fields.Nested(ChartDataPostProcessingOperationSchema, allow_none=True),
         allow_none=True,
-        description="Post processing operations to be applied to the result set. "
-        "Operations are applied to the result set in sequential order.",
+        description="要应用于结果集的后处理操作。操作按顺序应用于结果集。",
     )
     time_range = fields.String(
-        description="A time rage, either expressed as a colon separated string "
-        "`since : until` or human readable freeform. Valid formats for "
-        "`since` and `until` are: \n"
+        description="时间范围，表示为冒号分隔的字符串 `since : until` 或人类可读的自由格式。"
+        "`since` 和 `until` 的有效格式：\n"
         "- ISO 8601\n"
         "- X days/years/hours/day/year/weeks\n"
         "- X days/years/hours/day/year/weeks ago\n"
         "- X days/years/hours/day/year/weeks from now\n"
         "\n"
-        "Additionally, the following freeform can be used:\n"
+        "此外，还可以使用以下自由形式：\n"
         "\n"
         "- Last day\n"
         "- Last week\n"
@@ -988,46 +930,45 @@ class ChartDataQueryObjectSchema(Schema):
         allow_none=True,
     )
     time_shift = fields.String(
-        description="A human-readable date/time string. "
-        "Please refer to [parsdatetime](https://github.com/bear/parsedatetime) "
-        "documentation for details on valid values.",
+        description="人类可读的日期/时间字符串。"
+        "有效值请参考 [parsdatetime](https://github.com/bear/parsedatetime) 。",
         allow_none=True,
     )
     is_timeseries = fields.Boolean(
-        description="Is the `query_object` a timeseries.", allow_none=True,
+        description="`query_object` 是否时间序列。", allow_none=True,
     )
     timeseries_limit = fields.Integer(
-        description="Maximum row count for timeseries queries. Default: `0`",
+        description="时间序列查询的最大行数，默认：`0`",
         allow_none=True,
     )
     timeseries_limit_metric = fields.Raw(
-        description="Metric used to limit timeseries queries by.", allow_none=True,
+        description="用于限制时间序列查询的指标。", allow_none=True,
     )
     row_limit = fields.Integer(
-        description='Maximum row count (0=disabled). Default: `config["ROW_LIMIT"]`',
+        description='最大行数(0=disabled). 默认: `config["ROW_LIMIT"]`',
         allow_none=True,
         validate=[
             Range(min=0, error=_("`row_limit` must be greater than or equal to 0"))
         ],
     )
     row_offset = fields.Integer(
-        description="Number of rows to skip. Default: `0`",
+        description="要跳过的行数。默认：`0`",
         allow_none=True,
         validate=[
             Range(min=0, error=_("`row_offset` must be greater than or equal to 0"))
         ],
     )
     order_desc = fields.Boolean(
-        description="Reverse order. Default: `false`", allow_none=True,
+        description="是否降序。默认: `false`", allow_none=True,
     )
     extras = fields.Nested(
         ChartDataExtrasSchema,
-        description="Extra parameters to add to the query.",
+        description="要添加到查询的其它参数。",
         allow_none=True,
     )
     columns = fields.List(
         fields.String(),
-        description="Columns which to select in the query.",
+        description="要在查询中选择的列。",
         allow_none=True,
     )
     orderby = fields.List(
@@ -1042,115 +983,109 @@ class ChartDataQueryObjectSchema(Schema):
                 fields.Boolean(),
             )
         ),
-        description="Expects a list of lists where the first element is the column "
-        "name which to sort by, and the second element is a boolean.",
+        description="需要一个元组的列表，其中第一个元素是要排序的列名，第二个元素是布尔值。",
         allow_none=True,
         example=[("my_col_1", False), ("my_col_2", True)],
     )
     where = fields.String(
-        description="WHERE clause to be added to queries using AND operator."
-        "This field is deprecated and should be passed to `extras`.",
+        description="要使用AND运算符添加到查询的WHERE子句。"
+        "此字段已弃用，应传递给 `extras`。",
         allow_none=True,
         deprecated=True,
     )
     having = fields.String(
-        description="HAVING clause to be added to aggregate queries using "
-        "AND operator. This field is deprecated and should be passed "
-        "to `extras`.",
+        description="要使用AND运算符添加到聚合查询的HAVING子句。"
+        "此字段已弃用，应传递给 `extras`。",
         allow_none=True,
         deprecated=True,
     )
     having_filters = fields.List(
         fields.Nested(ChartDataFilterSchema),
-        description="HAVING filters to be added to legacy Druid datasource queries. "
-        "This field is deprecated and should be passed to `extras` "
-        "as `having_druid`.",
+        description="要添加到 Druid 数据源查询的 HAVING 过滤。"
+        "此字段已弃用，应传递给 `extras`。",
         allow_none=True,
         deprecated=True,
     )
     druid_time_origin = fields.String(
-        description="Starting point for time grain counting on legacy Druid "
-        "datasources. Used to change e.g. Monday/Sunday first-day-of-week. "
-        "This field is deprecated and should be passed to `extras` "
-        "as `druid_time_origin`.",
+        description="Druid 数据源上时间粒度计数的起点。"
+        "此字段已弃用，应传递给 `extras`。",
         allow_none=True,
     )
     url_params = fields.Dict(
-        description="Optional query parameters passed to a dashboard or Explore view",
-        keys=fields.String(description="The query parameter"),
-        values=fields.String(description="The value of the query parameter"),
+        description="传递到仪表板或浏览视图的可选查询参数",
+        keys=fields.String(description="查询参数"),
+        values=fields.String(description="查询参数的值"),
         allow_none=True,
     )
     is_rowcount = fields.Boolean(
-        description="Should the rowcount of the actual query be returned",
+        description="是否应返回实际查询的行数",
         allow_none=True,
     )
     time_offsets = fields.List(fields.String(), allow_none=True,)
 
 
 class ChartDataQueryContextSchema(Schema):
+    """图表数据查询上下文结构，定义图表数据查询上下文对象的字段和类型。"""
+
     datasource = fields.Nested(ChartDataDatasourceSchema)
     queries = fields.List(fields.Nested(ChartDataQueryObjectSchema))
     force = fields.Boolean(
-        description="Should the queries be forced to load from the source. "
-        "Default: `false`",
+        description="应该强制从源加载查询。默认: `false`",
     )
 
     result_type = EnumField(ChartDataResultType, by_value=True)
     result_format = EnumField(ChartDataResultFormat, by_value=True)
 
-    # pylint: disable=no-self-use,unused-argument
     @post_load
     def make_query_context(self, data: Dict[str, Any], **kwargs: Any) -> QueryContext:
         query_context = QueryContext(**data)
         return query_context
 
-    # pylint: enable=no-self-use,unused-argument
-
 
 class AnnotationDataSchema(Schema):
+    """注释数据结构。"""
     columns = fields.List(
         fields.String(),
-        description="columns available in the annotation result",
+        description="注释结果中可用的列",
         required=True,
     )
     records = fields.List(
         fields.Dict(keys=fields.String(),),
-        description="records mapping the column name to it's value",
+        description="将列名映射到其值的记录",
         required=True,
     )
 
 
 class ChartDataResponseResult(Schema):
+    """图表数据响应结果结构。"""
     annotation_data = fields.List(
         fields.Dict(
-            keys=fields.String(description="Annotation layer name"),
+            keys=fields.String(description="注释层名称"),
             values=fields.String(),
         ),
-        description="All requested annotation data",
+        description="所有请求的注释数据",
         allow_none=True,
     )
     cache_key = fields.String(
-        description="Unique cache key for query object", required=True, allow_none=True,
+        description="查询对象的唯一缓存键", required=True, allow_none=True,
     )
     cached_dttm = fields.String(
-        description="Cache timestamp", required=True, allow_none=True,
+        description="缓存时间戳", required=True, allow_none=True,
     )
     cache_timeout = fields.Integer(
-        description="Cache timeout in following order: custom timeout, datasource "
-        "timeout, default config timeout.",
+        description="缓存超时的顺序如下：自定义超时、数据源超时、默认配置超时。",
         required=True,
         allow_none=True,
     )
-    error = fields.String(description="Error", allow_none=True,)
+    error = fields.String(description="错误", allow_none=True,)
     is_cached = fields.Boolean(
-        description="Is the result cached", required=True, allow_none=None,
+        description="是否缓存结果", required=True, allow_none=None,
     )
     query = fields.String(
-        description="The executed query statement", required=True, allow_none=False,
+        description="已执行的查询语句", required=True, allow_none=False,
     )
     status = fields.String(
-        description="Status of the query",
+        description="查询状态",
         validate=validate.OneOf(
             choices=(
                 "stopped",
@@ -1165,21 +1100,22 @@ class ChartDataResponseResult(Schema):
         allow_none=False,
     )
     stacktrace = fields.String(
-        desciption="Stacktrace if there was an error", allow_none=True,
+        desciption="Stacktrace是否存在错误", allow_none=True,
     )
     rowcount = fields.Integer(
-        description="Amount of rows in result set", allow_none=False,
+        description="结果集中的行数", allow_none=False,
     )
-    data = fields.List(fields.Dict(), description="A list with results")
+    data = fields.List(fields.Dict(), description="结果的列表")
     applied_filters = fields.List(
-        fields.Dict(), description="A list with applied filters"
+        fields.Dict(), description="应用的过滤器列表"
     )
     rejected_filters = fields.List(
-        fields.Dict(), description="A list with rejected filters"
+        fields.Dict(), description="未使用的过滤器列表"
     )
 
 
 class ChartDataResponseSchema(Schema):
+    """图表数据响应结构。"""
     result = fields.List(
         fields.Nested(ChartDataResponseResult),
         description="A list of results for each corresponding query in the request.",
@@ -1188,29 +1124,31 @@ class ChartDataResponseSchema(Schema):
 
 class ChartDataAsyncResponseSchema(Schema):
     channel_id = fields.String(
-        description="Unique session async channel ID", allow_none=False,
+        description="唯一会话异步通道ID", allow_none=False,
     )
-    job_id = fields.String(description="Unique async job ID", allow_none=False,)
-    user_id = fields.String(description="Requesting user ID", allow_none=True,)
-    status = fields.String(description="Status value for async job", allow_none=False,)
+    job_id = fields.String(description="唯一异步作业ID", allow_none=False,)
+    user_id = fields.String(description="请求用户ID", allow_none=True,)
+    status = fields.String(description="异步作业状态", allow_none=False,)
     result_url = fields.String(
-        description="Unique result URL for fetching async query data", allow_none=False,
+        description="用于获取异步查询数据的唯一结果URL", allow_none=False,
     )
 
 
 class ChartFavStarResponseResult(Schema):
-    id = fields.Integer(description="The Chart id")
-    value = fields.Boolean(description="The FaveStar value")
+    id = fields.Integer(description="图表标识")
+    value = fields.Boolean(description="关注值")
 
 
 class GetFavStarIdsSchema(Schema):
     result = fields.List(
         fields.Nested(ChartFavStarResponseResult),
-        description="A list of results for each corresponding chart in the request",
+        description="请求中每个对应图表的结果列表",
     )
 
 
 class ImportV1ChartSchema(Schema):
+    """导入V1图表结构。"""
+
     slice_name = fields.String(required=True)
     viz_type = fields.String(required=True)
     params = fields.Dict()
@@ -1225,9 +1163,6 @@ CHART_SCHEMAS = (
     ChartDataQueryContextSchema,
     ChartDataResponseSchema,
     ChartDataAsyncResponseSchema,
-    # TODO: These should optimally be included in the QueryContext schema as an `anyOf`
-    #  in ChartDataPostPricessingOperation.options, but since `anyOf` is not
-    #  by Marshmallow<3, this is not currently possible.
     ChartDataAdhocMetricSchema,
     ChartDataAggregateOptionsSchema,
     ChartDataContributionOptionsSchema,

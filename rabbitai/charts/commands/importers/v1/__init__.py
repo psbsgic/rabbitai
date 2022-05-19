@@ -16,7 +16,6 @@ from rabbitai.datasets.schemas import ImportV1DatasetSchema
 
 
 class ImportChartsCommand(ImportModelsCommand):
-
     """Import charts"""
 
     dao = ChartDAO

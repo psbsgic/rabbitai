@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 
 from celery.exceptions import SoftTimeLimitExceeded
@@ -21,6 +23,7 @@ def scheduler() -> None:
     """
     Celery beat main scheduler for reports
     """
+
     with session_scope(nullpool=True) as session:
         active_schedules = ReportScheduleDAO.find_active(session)
         for active_schedule in active_schedules:

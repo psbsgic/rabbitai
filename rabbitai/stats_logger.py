@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseStatsLogger:
-    """Base class for logging realtime events"""
+    """基础性能统计日志，用于记录实时事件的基类"""
 
     def __init__(self, prefix: str = "rabbitai") -> None:
         self.prefix = prefix
@@ -36,6 +36,7 @@ class BaseStatsLogger:
 
 
 class DummyStatsLogger(BaseStatsLogger):
+    """输出性能计数到控制台。"""
     def incr(self, key: str) -> None:
         logger.debug(Fore.CYAN + "[stats_logger] (incr) " + key + Style.RESET_ALL)
 
@@ -63,6 +64,8 @@ try:
     from statsd import StatsClient
 
     class StatsdStatsLogger(BaseStatsLogger):
+        """基于 statsd 模块 StatsClient 的性能统计记录器。"""
+
         def __init__(  # pylint: disable=super-init-not-called
             self,
             host: str = "localhost",
@@ -94,5 +97,5 @@ try:
             self.client.gauge(key, value)
 
 
-except Exception:  # pylint: disable=broad-except
+except Exception:
     pass

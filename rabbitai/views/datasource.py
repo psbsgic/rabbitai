@@ -22,7 +22,7 @@ from .base import api, BaseRabbitaiView, handle_api_exception, json_error_respon
 
 
 class Datasource(BaseRabbitaiView):
-    """Datasource-related views"""
+    """数据源模型视图。"""
 
     @expose("/save/", methods=["POST"])
     @event_logger.log_this_with_context(
@@ -95,10 +95,9 @@ class Datasource(BaseRabbitaiView):
     @has_access_api
     @api
     @handle_api_exception
-    def external_metadata(
-        self, datasource_type: str, datasource_id: int
-    ) -> FlaskResponse:
+    def external_metadata(self, datasource_type: str, datasource_id: int) -> FlaskResponse:
         """Gets column info from the source system"""
+
         datasource = ConnectorRegistry.get_datasource(
             datasource_type, datasource_id, db.session
         )
@@ -123,6 +122,7 @@ class Datasource(BaseRabbitaiView):
         table_name: str,
     ) -> FlaskResponse:
         """Gets table metadata from the source system and SQLAlchemy inspector"""
+
         database_name = parse_js_uri_path_item(database_name) or ""
         schema_name = parse_js_uri_path_item(schema_name, eval_undefined=True) or ""
         table_name = parse_js_uri_path_item(table_name) or ""

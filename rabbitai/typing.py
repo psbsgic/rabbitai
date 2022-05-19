@@ -10,24 +10,31 @@ from werkzeug.wrappers import Response
 
 
 class AdhocMetricColumn(TypedDict):
-    """计算指标列类型，定义column_name、type及其数据类型。"""
+    """动态（Adhoc）指标列类型，定义column_name、type及其数据类型。"""
 
     column_name: Optional[str]
+    """列名称"""
     type: str
+    """列数据类型名称"""
 
 
 class AdhocMetric(TypedDict):
-    """计算指标类型，定义：aggregate、column、expressionType、label、sqlExpression及其数据类型。"""
+    """动态（Adhoc）指标类型，定义：aggregate、column、expressionType、label、sqlExpression及其数据类型。"""
 
     aggregate: str
+    """聚合函数名称"""
     column: AdhocMetricColumn
+    """动态指标列"""
     expressionType: str
+    """表达式类型"""
     label: str
+    """标签文本，作为显示名称"""
     sqlExpression: Optional[str]
+    """SQL表达式字符串"""
 
 
 CacheConfig = Union[Callable[[Flask], Cache], Dict[str, Any]]
-"""缓存配置类型，可以是调用对象或字典"""
+"""缓存配置类型，可调用对象或字典"""
 DbapiDescriptionRow = Tuple[
     str, str, Optional[str], Optional[str], Optional[int], Optional[int], bool
 ]
@@ -45,9 +52,9 @@ FormData = Dict[str, Any]
 Granularity = Union[str, Dict[str, Union[str, float]]]
 """时间粒度类型，字符串或字典集合"""
 Metric = Union[AdhocMetric, str]
-"""指标类型，AdhocMetric或str"""
+"""指标类型，动态指标类型AdhocMetric或指标名称str"""
 OrderBy = Tuple[Metric, bool]
-"""排序类型，Metric或bool"""
+"""排序类型，Metric和bool的元组"""
 QueryObjectDict = Dict[str, Any]
 """查询对象字典类型，字符串键和任意值的字典集合"""
 VizData = Optional[Union[List[Any], Dict[Any, Any]]]
@@ -57,7 +64,7 @@ VizPayload = Dict[str, Any]
 
 # Flask response.
 Base = Union[bytes, str]
-"""基本类型，byte或str"""
+"""基本类型，bytes或str"""
 Status = Union[int, str]
 """状态类型，int或str"""
 Headers = Dict[str, Any]
@@ -69,4 +76,4 @@ FlaskResponse = Union[
     Tuple[Base, Status, Headers],
     Tuple[Response, Status],
 ]
-"""Flask响应对象类型，Response、Base、Tuple[Base, Status]、Tuple[Base, Status, Headers]、Tuple[Response, Status]"""
+"""Flask响应对象类型，Response、Base、Tuple[Base, Status]、Tuple[Base, Status, Headers]、Tuple[Response, Status]之一"""

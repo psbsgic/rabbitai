@@ -13,8 +13,7 @@ from rabbitai.datasets.schemas import ImportV1DatasetSchema
 
 
 class ImportDatabasesCommand(ImportModelsCommand):
-
-    """Import databases"""
+    """导入数据库对象模型到数据库的命令。"""
 
     dao = DatabaseDAO
     model_name = "database"

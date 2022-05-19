@@ -3,15 +3,16 @@
 set -eo pipefail
 
 REQUIREMENTS_LOCAL="/app/docker/requirements-local.txt"
-# If Cypress run – overwrite the password for admin and export env variables
+# 如果 Cypress 运行 – 重写管理员密码，导出环境变量
 if [ "$CYPRESS_CONFIG" == "true" ]; then
     export RABBITAI_CONFIG=tests.integration_tests.rabbitai_test_config
     export RABBITAI_TESTENV=true
     export ENABLE_REACT_CRUD_VIEWS=true
-    export RABBITAI__SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://rabbitai:rabbitai@db:5432/rabbitai_db
+    export RABBITAI__SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://rabbitai:rabbitai@db:5432/rabbitaidb
 fi
+
 #
-# Make sure we have dev requirements installed
+# 确保我们已经安装了开发人员依赖软件包
 #
 if [ -f "${REQUIREMENTS_LOCAL}" ]; then
   echo "Installing local overrides at ${REQUIREMENTS_LOCAL}"

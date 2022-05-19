@@ -40,6 +40,8 @@ from rabbitai.utils.core import QueryStatus, user_label
 
 
 class LimitingFactor(str, enum.Enum):
+    """限制因子枚举。"""
+
     QUERY = "QUERY"
     DROPDOWN = "DROPDOWN"
     QUERY_AND_DROPDOWN = "QUERY_AND_DROPDOWN"
@@ -48,15 +50,15 @@ class LimitingFactor(str, enum.Enum):
 
 
 class Query(Model, ExtraJSONMixin):
-    """ORM model for SQL query
+    """SQL查询的对象关系模型。
 
-    Now that SQL Lab support multi-statement execution, an entry in this
-    table may represent multiple SQL statements executed sequentially"""
+    既然SQLLab支持多语句执行，该表中的一个条目可能表示多个按顺序执行的SQL语句。
+    """
 
     __tablename__ = "query"
+
     id = Column(Integer, primary_key=True)
     client_id = Column(String(11), unique=True, nullable=False)
-
     database_id = Column(Integer, ForeignKey("dbs.id"), nullable=False)
 
     # Store the tmp table into the DB only if the user asks for it.
@@ -68,15 +70,12 @@ class Query(Model, ExtraJSONMixin):
     sql_editor_id = Column(String(256))
     schema = Column(String(256))
     sql = Column(Text)
-    # Query to retrieve the results,
-    # used only in case of select_as_cta_used is true.
+    # Query to retrieve the results, used only in case of select_as_cta_used is true.
     select_sql = Column(Text)
     executed_sql = Column(Text)
     # Could be configured in the rabbitai config.
     limit = Column(Integer)
-    limiting_factor = Column(
-        Enum(LimitingFactor), server_default=LimitingFactor.UNKNOWN
-    )
+    limiting_factor = Column(Enum(LimitingFactor), server_default=LimitingFactor.UNKNOWN)
     select_as_cta = Column(Boolean)
     select_as_cta_used = Column(Boolean, default=False)
     ctas_method = Column(String(16), default=CtasMethod.TABLE)
@@ -173,9 +172,10 @@ class Query(Model, ExtraJSONMixin):
 
 
 class SavedQuery(Model, AuditMixinNullable, ExtraJSONMixin, ImportExportMixin):
-    """ORM model for SQL query"""
+    """保存的SQL查询对象关系模型。"""
 
     __tablename__ = "saved_query"
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("ab_user.id"), nullable=True)
     db_id = Column(Integer, ForeignKey("dbs.id"), nullable=True)

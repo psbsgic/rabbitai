@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import enum
 import json
 from operator import eq, ge, gt, le, lt, ne
@@ -12,6 +14,8 @@ OPERATOR_FUNCTIONS = {">=": ge, ">": gt, "<=": le, "<": lt, "==": eq, "!=": ne}
 
 
 class AlertValidatorType(str, enum.Enum):
+    """提醒验证器类型。"""
+
     not_null = "not null"
     operator = "operator"
 

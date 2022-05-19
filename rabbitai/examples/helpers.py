@@ -58,7 +58,13 @@ def get_examples_folder() -> str:
 
 
 def update_slice_ids(layout_dict: Dict[Any, Any], slices: List[Slice]) -> None:
-    """更新图表的标识为切片的标识。"""
+    """
+    更新图表的标识为切片的标识。
+
+    :param layout_dict: 布局字典。
+    :param slices: 切片的列表。
+    :return:
+    """
 
     charts = [
         component
@@ -99,7 +105,7 @@ def get_example_data(filepath: str, is_gzip: bool = True, make_bytes: bool = Fal
 
     :param filepath: 文件路径。
     :param is_gzip: 是否压缩的。
-    :param make_bytes: 字节数据。
+    :param make_bytes: 是否返回字节数据内容。
     :return:
     """
 
@@ -108,11 +114,14 @@ def get_example_data(filepath: str, is_gzip: bool = True, make_bytes: bool = Fal
     if os.path.exists(local_path):
         with io.open(local_path, "rb") as f:
             content = f.read()
-    else:
+    else:   # 从远程加载
         content = request.urlopen(f"{BASE_URL}{filepath}?raw=true").read()
 
+    # 如果是压缩文件
     if is_gzip:
         content = zlib.decompress(content, zlib.MAX_WBITS | 16)
+
+    # 创建字节内容
     if make_bytes:
         content = BytesIO(content)
 

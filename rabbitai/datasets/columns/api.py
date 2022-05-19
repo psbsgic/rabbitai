@@ -34,9 +34,7 @@ class DatasetColumnsRestApi(BaseRabbitaiModelRestApi):
     @safe
     @statsd_metrics
     @permission_name("delete")
-    def delete(  # pylint: disable=arguments-differ
-        self, pk: int, column_id: int
-    ) -> Response:
+    def delete(self, pk: int, column_id: int) -> Response:
         """Deletes a Dataset column
         ---
         delete:

@@ -10,8 +10,7 @@ from rabbitai.datasets.commands.importers import v0, v1
 
 logger = logging.getLogger(__name__)
 
-# list of different import formats supported; v0 should be last because
-# the files are not versioned
+# 支持的不同导入格式列表；v0应该是最后一个，因为文件没有版本控制
 command_versions = [
     v1.ImportDatasetsCommand,
     v0.ImportDatasetsCommand,
@@ -20,10 +19,9 @@ command_versions = [
 
 class ImportDatasetsCommand(BaseCommand):
     """
-    Import datasets.
+    导入数据集命令。
 
-    This command dispatches the import to different versions of the command
-    until it finds one that matches.
+    此命令将导入分派到命令的不同版本，直到找到一个匹配的版本。
     """
 
     # pylint: disable=unused-argument
@@ -33,8 +31,7 @@ class ImportDatasetsCommand(BaseCommand):
         self.kwargs = kwargs
 
     def run(self) -> None:
-        # iterate over all commands until we find a version that can
-        # handle the contents
+        # 迭代所有命令，直到找到可以处理内容的版本
         for version in command_versions:
             command = version(self.contents, *self.args, **self.kwargs)
             try:

@@ -1,8 +1,10 @@
-"""The main config file for Rabbitai
+# -*- coding: utf-8 -*-
 
-All configuration in this file can be overridden by providing a rabbitai_config
-in your PYTHONPATH as there is a ``from rabbitai_config import *``
-at the end of this file.
+"""
+Rabbitai 的主配置文件。
+
+在该文件中的所有配置都可以通过在该文件末尾由  ``from rabbitai_config import *``
+导入 PYTHONPATH 目录下的 rabbitai_config 模块来重写。
 """
 
 import imp
@@ -34,68 +36,68 @@ from rabbitai.utils.encrypt import SQLAlchemyUtilsAdapter
 from rabbitai.utils.log import DBEventLogger
 from rabbitai.utils.logging_configurator import DefaultLoggingConfigurator
 
+# region Log
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from flask_appbuilder.security.sqla import models  # pylint: disable=unused-import
+    from flask_appbuilder.security.sqla import models
 
-    from rabbitai.connectors.sqla.models import (  # pylint: disable=unused-import
-        SqlaTable,
-    )
-    from rabbitai.models.core import Database  # pylint: disable=unused-import
+    from rabbitai.connectors.sqla.models import (SqlaTable, )
+    from rabbitai.models.core import Database
 
-# Realtime stats logger, a StatsD implementation exists
+# 实时性能统计日志，StatsD 模块实现
 STATS_LOGGER = DummyStatsLogger()
+"""基于 StatsD 模块实现的性能统计日志记录器"""
 EVENT_LOGGER = DBEventLogger()
+"""数据库事件日志记录器"""
 
 RABBITAI_LOG_VIEW = True
+"""是否日志视图，默认True。"""
+
+# endregion
+
+# region dir
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+"""基目录，即该配置模块所在目录路径。"""
+
 if "RABBITAI_HOME" in os.environ:
     DATA_DIR = os.environ["RABBITAI_HOME"]
+    """数据目录，即由系统环境变量 RABBITAI_HOME 指定的目录。"""
 else:
     DATA_DIR = os.path.join(os.path.expanduser("~"), ".rabbitai")
+    """数据目录，即用户家目录下的 .rabbitai 子目录。"""
 
-# ---------------------------------------------------------
-# Rabbitai specific config
-# ---------------------------------------------------------
+# endregion
+
+# region Rabbitai specific config
+
+# region 版本
+
 VERSION_INFO_FILE = os.path.join(BASE_DIR, "static", "version_info.json")
 PACKAGE_JSON_FILE = os.path.join(BASE_DIR, "static", "assets", "package.json")
-
-# Multiple favicons can be specified here. The "href" property
-# is mandatory, but "sizes," "type," and "rel" are optional.
-# For example:
-# {
-#     "href":path/to/image.png",
-#     "sizes": "16x16",
-#     "type": "image/png"
-#     "rel": "icon"
-# },
-FAVICONS = [{"href": "/static/assets/images/favicon.png"}]
 
 
 def _try_json_readversion(filepath: str) -> Optional[str]:
     try:
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f).get("version")
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         return None
 
 
 def _try_json_readsha(filepath: str, length: int) -> Optional[str]:
     try:
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f).get("GIT_SHA")[:length]
     except Exception:
         return None
 
 
-# Depending on the context in which this config is loaded, the
-# version_info.json file may or may not be available, as it is
-# generated on install via setup.py. In the event that we're
-# actually running Rabbitai, we will have already installed,
-# therefore it WILL exist. When unit tests are running, however,
-# it WILL NOT exist, so we fall back to reading package.json
+# version_info.json 可用或不可用，依赖于该配置加载的上下文，实际上是由安装程序 setup.py 生成的。
+# 如果我们在运行RabbitAI，我们已经安装了，因此它已经存在。
+# 可是，当进行单元测试时它不存在，所以我们读取 package.json
 VERSION_STRING = _try_json_readversion(VERSION_INFO_FILE) or _try_json_readversion(
     PACKAGE_JSON_FILE
 )
@@ -103,185 +105,236 @@ VERSION_STRING = _try_json_readversion(VERSION_INFO_FILE) or _try_json_readversi
 VERSION_SHA_LENGTH = 8
 VERSION_SHA = _try_json_readsha(VERSION_INFO_FILE, VERSION_SHA_LENGTH)
 
-# default viz used in chart explorer
-DEFAULT_VIZ_TYPE = "table"
+# endregion
 
+FAVICONS = [{"href": "/static/assets/images/favicon.png"}]
+"""
+网站图标，这里可以指定多个 favicon。 "href" 属性是必需的，但 "sizes," "type," 和 "rel" 是可选的。
+例如:
+
+```
+{
+    "href":path/to/image.png",
+    "sizes": "16x16",
+    "type": "image/png"
+    "rel": "icon"
+}
+```
+
+"""
+
+DEFAULT_VIZ_TYPE = "table"
+"""在图表浏览中使用的默认可视类型，table"""
 ROW_LIMIT = 50000
+"""行数限制，默认5万行。"""
 VIZ_ROW_LIMIT = 10000
-# max rows retreieved when requesting samples from datasource in explore view
+"""可视化时行数限制，默认1万行。"""
+
 SAMPLES_ROW_LIMIT = 1000
-# max rows retrieved by filter select auto complete
+"""在“浏览”视图中从数据源请求样本时检索的最大行数，默认1000行。"""
+
 FILTER_SELECT_ROW_LIMIT = 10000
+"""过滤器选择自动完成检索的最大行数，默认1万行。"""
 RABBITAI_WORKERS = 2  # deprecated
 RABBITAI_CELERY_WORKERS = 32  # deprecated
 
 RABBITAI_WEBSERVER_PROTOCOL = "http"
+"""Web服务器协议。"""
 RABBITAI_WEBSERVER_ADDRESS = "0.0.0.0"
+"""Web服务器地址。"""
 RABBITAI_WEBSERVER_PORT = 8088
+"""Web服务器端口号。"""
 
-# This is an important setting, and should be lower than your
-# [load balancer / proxy / envoy / kong / ...] timeout settings.
-# You should also make sure to configure your WSGI server
-# (gunicorn, nginx, apache, ...) timeout setting to be <= to this setting
 RABBITAI_WEBSERVER_TIMEOUT = int(timedelta(minutes=1).total_seconds())
+"""
+Web服务器超时。
 
-# this 2 settings are used by dashboard period force refresh feature
-# When user choose auto force refresh frequency
-# < RABBITAI_DASHBOARD_PERIODICAL_REFRESH_LIMIT
-# they will see warning message in the Refresh Interval Modal.
-# please check PR #9886
+这是一个重要的设置，应该低于[load balancer/proxy/envoy/kong/…]超时设置。
+您还应该确保将WSGI服务器（gunicorn、nginx、apache等）超时设置配置为 <= 此设置
+"""
+
 RABBITAI_DASHBOARD_PERIODICAL_REFRESH_LIMIT = 0
+"""当用户选择自动强制刷新频率时，仪表板周期强制刷新功能将使用这个设置"""
 RABBITAI_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
-
+"""仪表板周期强制刷新警告信息"""
 RABBITAI_DASHBOARD_POSITION_DATA_LIMIT = 65535
+"""仪表盘位置数据限制。"""
 CUSTOM_SECURITY_MANAGER = None
+"""自定义安全管理器。"""
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-# ---------------------------------------------------------
+"""是否让 SQLALCHEMY 跟踪修改。"""
 
-# 秘钥
 SECRET_KEY = "\2\1thisismyscretkey\1\2\\e\\y\\y\\h"
+"""秘钥"""
 
-# SQLAlchemy 连接字符串。
-SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "rabbitai.db")
-# SQLALCHEMY_DATABASE_URI = 'postgresql://rabbitai:rabbitai@localhost:5432/rabbitai_db'
+# endregion
+
+# region SQLAlchemy 连接字符串。
+
+# SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "rabbitai.db")
+SQLALCHEMY_DATABASE_URI = 'postgresql://rabbitai:rabbitai@172.168.5.180:5432/rabbitaidb'
 # SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
-# SQLALCHEMY_DATABASE_URI = 'postgresql://username:password@localhost/rabbitai_db'
+# SQLALCHEMY_DATABASE_URI = 'postgresql://username:password@localhost/rabbitaidb'
+"""SQLAlchemy 连接字符串。"""
 
-# In order to hook up a custom password store for all SQLACHEMY connections
-# implement a function that takes a single argument of type 'sqla.engine.url',
-# returns a password and set SQLALCHEMY_CUSTOM_PASSWORD_STORE.
-#
-# e.g.:
-# def lookup_password(url):
-#     return 'secret'
-# SQLALCHEMY_CUSTOM_PASSWORD_STORE = lookup_password
 SQLALCHEMY_CUSTOM_PASSWORD_STORE = None
+"""SQLAlchemy 自定义密码存储对象
 
-#
-# The EncryptedFieldTypeAdapter is used whenever we're building SqlAlchemy models
-# which include sensitive fields that should be app-encrypted BEFORE sending
-# to the DB.
-#
-# Note: the default impl leverages SqlAlchemyUtils' EncryptedType, which defaults
-#  to AES-128 under the covers using the app's SECRET_KEY as key material.
-#
-# pylint: disable=C0103
+为了为所有SQLACHEMY连接接通一个自定义密码存储，实现一个函数，该函数接受一个类型为 'sqla.engine.url' 的参数，
+返回一个密码并设置SQLALCHEMY_CUSTOM_PASSWORD_STORE。
+
+例如：
+
+def lookup_password(url):
+     return 'secret'
+SQLALCHEMY_CUSTOM_PASSWORD_STORE = lookup_password
+
+"""
+
 SQLALCHEMY_ENCRYPTED_FIELD_TYPE_ADAPTER = SQLAlchemyUtilsAdapter
+"""SQLAlchemy 加密字段适配器。
+EncryptedFieldTypeAdapter在我们构建SqlAlchemy模型时使用，
+该模型包括敏感字段，这些字段在发送到DB之前应该进行应用程序加密。
+"""
 
 # The limit of queries fetched for query search
 QUERY_SEARCH_LIMIT = 1000
+"""查询搜索限制，默认1000行。"""
 
-# Flask-WTF flag for CSRF
+# endregion
+
+# region 网站相关
+
 WTF_CSRF_ENABLED = True
-
-# Add endpoints that need to be exempt from CSRF protection
+"""Flask-WTF是否启用 CSRF """
 WTF_CSRF_EXEMPT_LIST = ["rabbitai.views.core.log", "rabbitai.charts.api.data"]
-
-# Whether to run the web server in debug mode or not
+"""添加需要免除CSRF保护的端点"""
 DEBUG = os.environ.get("FLASK_ENV") == "development"
+"""是否在调试模式下运行web服务器."""
 FLASK_USE_RELOAD = True
-
-# Rabbitai allows server-side python stacktraces to be surfaced to the
-# user when this feature is on. This may has security implications
-# and it's more secure to turn it off in production settings.
+"""Flask是否使用重载，默认True"""
 SHOW_STACKTRACE = True
+"""RabbitAI 允许在启用此功能时向用户显示服务器端python堆栈跟踪。这可能会带来安全隐患，在生产环境中关闭它更安全。"""
 
-# Use all X-Forwarded headers when ENABLE_PROXY_FIX is True.
-# When proxying to a different port, set "x_port" to 0 to avoid downstream issues.
 ENABLE_PROXY_FIX = False
+"""当 ENABLE_PROXY_FIX 为 True 时，使用所有 X-Forwarded 标头。"""
 PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 1, "x_prefix": 1}
+"""当代理到不同端口时，设置 "x_port" 为 0 以避免避免下游问题。"""
 
-# ------------------------------
-# GLOBALS FOR APP Builder
-# ------------------------------
-# Uncomment to setup Your App name
-APP_NAME = "Rabbitai"
+# endregion
 
-# Specify the App icon
+# region 关于 APP 构建者相关全局变量
+
+APP_NAME = "RabbitAI"
+"""应用程序名称。"""
 APP_ICON = "/static/assets/images/rabbitai-logo-horiz.png"
+"""应用图标文件路径。"""
 APP_ICON_WIDTH = 126
-
-# Specify where clicking the logo would take the user
-# e.g. setting it to '/' would take the user to '/rabbitai/welcome/'
+"""应用图标宽度。"""
 LOGO_TARGET_PATH = None
-
-# Specify tooltip that should appear when hovering over the App Icon/Logo
+"""指定单击徽标会将用户带到的位置。例如：设置 '/' 导航到'/rabbitai/welcome/'。"""
 LOGO_TOOLTIP = ""
+"""指定将鼠标悬停在应用程序图标/徽标上时应显示的工具提示"""
 
-# Specify any text that should appear to the right of the logo
 LOGO_RIGHT_TEXT: Union[Callable[[], str], str] = ""
+"""指定应显示在徽标右侧的任何文本"""
 
-# Enables SWAGGER UI for rabbitai openapi spec
-# ex: http://localhost:8080/swagger/v1
 FAB_API_SWAGGER_UI = True
+"""为rabbitai openapi规范启用SWAGGER UI,ex: http://localhost:8080/swagger/v1"""
 
-# Druid query timezone
-# tz.tzutc() : Using utc timezone
-# tz.tzlocal() : Using local timezone
-# tz.gettz('Asia/Shanghai') : Using the time zone with specific name
-# [TimeZone List]
-# See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-# other tz can be overridden by providing a local_config
+# endregion
+
+# region Druid
+
+"""
+什么是druid
+
+    druid是一个为OLAP查询需求而设计的开源大数据系统，druid提供低延时的数据插入，实时的数据查询druid使用Java开发，
+    基于Jetty提供http rest服务，也提供了Java/Python等语言的工具包druid是一个集群系统，使用zookeeper做节点管理和事件监控
+
+druid的特点
+
+    druid的核心是时间序列，把数据按照时间序列分批存储，十分适合用于对按时间进行统计分析的场景，druid把数据列分为三类：
+    时间戳、维度列、指标列druid不支持多表Join，druid中的数据一般是使用其他计算框架(Spark等)预计算好的低层次统计数据druid执行其擅长的查询类型时，
+    从数十亿条记录中过滤、汇聚只有亚秒级延迟druid支持水平扩展，
+    查询节点越多、所支持的查询数据量越大、响应越快druid完美支持的查询类型比较简单，查询场景限制较多，
+    一些常用的SQL(groupby等)语句在druid里运行速度一般druid支持低延时的数据插入，数据实时可查，不支持行级别的数据更新
+
+druid为什么快
+
+    druid在数据插入时按照时间序列将数据分为若干segment，支持低延时地按照时间序列上卷，所以按时间做聚合效率很高druid数据按列存储，
+    每个维度列都建立索引，所以按列过滤取值效率很高druid用以查询的Broker和Historical支持多级缓存，每个segment启动一个线程并发执行查询，
+    查询支持多Historical内部的线程级并发及Historical之间的进程间并发，Broker将各Historical的查询结果做合并
+
+druid的高可用性
+
+    MetaStore挂掉：无法感知新的Segment生成，不影响老数据
+    Indexing Service挂掉：无法执行新的任务，新数据无法摄入，不影响查询
+    Broker挂掉：本Broker节点不能查询，其他节点Broker继续服务，不影响数据摄入
+    Historical挂掉：Coordinator Node重分配该节点上segment到其它节点
+    Coordinator挂掉：Segment不会被加载和删除，选举新leader
+    Zookeeper挂掉：无法执行新的任务，新数据进不来；Broker有缓存
+    
+"""
+
 DRUID_TZ = tz.tzutc()
+"""Druid查询时区
+
+- tz.tzutc() : 使用 utc 时区
+- tz.tzlocal() : 使用本地时区
+- tz.gettz('Asia/Shanghai') : 使用指定名称的时区
+"""
+
 DRUID_ANALYSIS_TYPES = ["cardinality"]
 
-# Legacy Druid NoSQL (native) connector
-# Druid supports a SQL interface in its newer versions.
-# Setting this flag to True enables the deprecated, API-based Druid
-# connector. This feature may be removed at a future date.
 DRUID_IS_ACTIVE = False
+"""旧式Druid NoSQL（原生）连接器 Druid 在其较新版本中支持SQL接口。
+将此标志设置为True将启用不推荐使用的基于API的Druid连接器。此功能可能会在将来删除。"""
 
-# If Druid is active whether to include the links to scan/refresh Druid datasources.
-# This should be disabled if you are trying to wean yourself off of the Druid NoSQL
-# connector.
 DRUID_METADATA_LINKS_ENABLED = True
+"""如果Druid处于活动状态，是否包含扫描/刷新Druid数据源的链接。如果您试图断开与Druid NoSQL连接器的连接，则应禁用此选项。"""
 
+# endregion
+
+# region AUTHENTICATION CONFIG
 # ----------------------------------------------------
-# AUTHENTICATION CONFIG
-# ----------------------------------------------------
-# The authentication type
-# AUTH_OID : Is for OpenID
-# AUTH_DB : Is for database (username/password)
-# AUTH_LDAP : Is for LDAP
-# AUTH_REMOTE_USER : Is for using REMOTE_USER from web server
 AUTH_TYPE = AUTH_DB
-
+"""授权类型，支持：AUTH_OID、AUTH_DB、AUTH_LDAP、AUTH_REMOTE_USER"""
 # Uncomment to setup Full admin role name
 # AUTH_ROLE_ADMIN = 'Admin'
-
+"""设置完整管理员角色名"""
 # Uncomment to setup Public role name, no authentication needed
 # AUTH_ROLE_PUBLIC = 'Public'
-
+"""公共角色名称，不需要认证"""
 # Will allow user self registration
 # AUTH_USER_REGISTRATION = True
-
+"""是否允许注册用户"""
 # The default user self registration role
 # AUTH_USER_REGISTRATION_ROLE = "Public"
-
+"""默认用户注册角色"""
 # When using LDAP Auth, setup the LDAP server
 # AUTH_LDAP_SERVER = "ldap://ldapserver.new"
-
+"""LDAP 服务器地址"""
 # Uncomment to setup OpenID providers example for OpenID authentication
 # OPENID_PROVIDERS = [
 #    { 'name': 'Yahoo', 'url': 'https://open.login.yahoo.com/' },
 #    { 'name': 'Flickr', 'url': 'https://www.flickr.com/<username>' },
-
+"""OpenID 提供者"""
 # ---------------------------------------------------
 # Roles config
 # ---------------------------------------------------
-# Grant public role the same set of permissions as for a selected builtin role.
-# This is useful if one wants to enable anonymous users to view
-# dashboards. Explicit grant on specific datasets is still required.
 PUBLIC_ROLE_LIKE: Optional[str] = None
+"""为公共角色授予与所选内置角色相同的权限集。如果希望匿名用户能够查看仪表盘，这将非常有用。仍然需要对特定数据集进行显式授权。"""
 
-# ---------------------------------------------------
-# Babel config for translations
-# ---------------------------------------------------
-# Setup default language
+# endregion
+
+# region Babel 配置
+
+# 设置默认语言代码
 BABEL_DEFAULT_LOCALE = "zh"
-# Your application default translation path
+# 存储翻译文件的路径
 BABEL_DEFAULT_FOLDER = "rabbitai/translations"
-# The allowed translation for you app
+# 应用允许的翻译
 LANGUAGES = {
     "en": {"flag": "us", "name": "English"},
     "es": {"flag": "es", "name": "Spanish"},
@@ -296,43 +349,37 @@ LANGUAGES = {
     "ko": {"flag": "kr", "name": "Korean"},
     "sl": {"flag": "si", "name": "Slovenian"},
 }
-# Turning off i18n by default as translation in most languages are
-# incomplete and not well maintained.
-# LANGUAGES = {}
 
+# endregion
+
+# region Feature flags
 # ---------------------------------------------------
-# Feature flags
-# ---------------------------------------------------
-# Feature flags that are set by default go here. Their values can be
-# overwritten by those specified under FEATURE_FLAGS in rabbitai_config.py
-# For example, DEFAULT_FEATURE_FLAGS = { 'FOO': True, 'BAR': False } here
-# and FEATURE_FLAGS = { 'BAR': True, 'BAZ': True } in rabbitai_config.py
-# will result in combined feature flags of { 'FOO': True, 'BAR': True, 'BAZ': True }
+# 默认功能标志（Feature flags）。
+# 这些值可以通过 rabbitai_config.py 中的 FEATURE_FLAGS 字段重写。
+# 例如, DEFAULT_FEATURE_FLAGS = { 'FOO': True, 'BAR': False }，
+# 在 rabbitai_config.py 中 FEATURE_FLAGS = { 'BAR': True, 'BAZ': True }，
+# 那么组合后为 { 'FOO': True, 'BAR': True, 'BAZ': True }
 DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
-    # allow dashboard to use sub-domains to send chart request
-    # you also need ENABLE_CORS and
-    # RABBITAI_WEBSERVER_DOMAINS for list of domains
+    # 允许仪表盘使用子域名发送请求，对于每个域名也需要 ENABLE_CORS 和 RABBITAI_WEBSERVER_DOMAINS
     "ALLOW_DASHBOARD_DOMAIN_SHARDING": True,
-    # Experimental feature introducing a client (browser) cache
+    # 是否引入客户端（浏览器）缓存的实验性功能
     "CLIENT_CACHE": False,
     "DISABLE_DATASET_SOURCE_EDIT": False,
     "DYNAMIC_PLUGINS": False,
-    # For some security concerns, you may need to enforce CSRF protection on
-    # all query request to explore_json endpoint. In Rabbitai, we use
-    # `flask-csrf <https://sjl.bitbucket.io/flask-csrf/>`_ add csrf protection
-    # for all POST requests, but this protection doesn't apply to GET method.
-    # When ENABLE_EXPLORE_JSON_CSRF_PROTECTION is set to true, your users cannot
-    # make GET request to explore_json. explore_json accepts both GET and POST request.
-    # See `PR 7935 <https://github.com/apache/rabbitai/pull/7935>`_ for more details.
+    # 出于某些安全考虑，可能需要对 explore_json 端点的所有查询请求实施CSRF保护。
+    # 在 RabbitAI 中，对所有 POST 请求我们使用 `flask-csrf <https://sjl.bitbucket.io/flask-csrf/>`_ 添加CSRF保护，
+    # 但是，这种保护不能用于 GET 方法。
+    # 当 ENABLE_EXPLORE_JSON_CSRF_PROTECTION 设置为 true 时，用户不能对 explore_json 发送 GET请求。
+    # explore_json 接受 GET 和 POST 请求。
+    # 详见： `PR 7935 <https://github.com/apache/rabbitai/pull/7935>`_
     "ENABLE_EXPLORE_JSON_CSRF_PROTECTION": False,
     "ENABLE_TEMPLATE_PROCESSING": False,
     "ENABLE_TEMPLATE_REMOVE_FILTERS": False,
     "KV_STORE": False,
-    # When this feature is enabled, nested types in Presto will be
-    # expanded into extra columns and/or arrays. This is experimental,
-    # and doesn't work with all nested types.
+    # 当启用该标志时，Presto 中的嵌套类型将展开到额外列/数组。
+    # 这是实验性的，并不适用于所有嵌套类型。
     "PRESTO_EXPAND_DATA": False,
-    # Exposes API endpoint to compute thumbnails
+    # 是否公开API端点以计算缩略图
     "THUMBNAILS": False,
     "DASHBOARD_CACHE": False,
     "REMOVE_SLICE_LEVEL_LABEL_COLORS": False,
@@ -340,14 +387,12 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     "TAGGING_SYSTEM": False,
     "SQLLAB_BACKEND_PERSISTENCE": False,
     "LISTVIEWS_DEFAULT_CARD_VIEW": False,
-    # Enables the replacement React views for all the FAB views (list, edit, show) with
-    # designs introduced in https://github.com/apache/rabbitai/issues/8976
-    # (SIP-34). This is a work in progress so not all features available in FAB have
-    # been implemented.
+    # 是否启用 React 视图替换 FAB 视图 (list, edit, show)。
+    # 这是一项正在进行的工作，因此并非FAB中的所有可用功能都已实现。
     "ENABLE_REACT_CRUD_VIEWS": True,
-    # When True, this flag allows display of HTML tags in Markdown components
+    # 如果为True，则此标志允许在 Markdown 组件中显示HTML标记
     "DISPLAY_MARKDOWN_HTML": True,
-    # When True, this escapes HTML (rather than rendering it) in Markdown components
+    # 如果为True，则在 Markdown 组件中转义HTML（而不是呈现它）
     "ESCAPE_MARKDOWN_HTML": False,
     "DASHBOARD_NATIVE_FILTERS": False,
     "DASHBOARD_CROSS_FILTERS": False,
@@ -363,46 +408,41 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # a custom security config could potentially give access to setting filters on
     # tables that users do not have access to.
     "ROW_LEVEL_SECURITY": True,
-    # Enables Alerts and reports new implementation
+    # 是否启用更改提示和报告
     "ALERT_REPORTS": False,
-    # Enable experimental feature to search for other dashboards
+    # 启用实验功能以搜索其他仪表板
     "OMNIBAR": False,
     "DASHBOARD_RBAC": False,
     "ENABLE_EXPLORE_DRAG_AND_DROP": False,
-    # Enabling ALERTS_ATTACH_REPORTS, the system sends email and slack message
-    # with screenshot and link
-    # Disables ALERTS_ATTACH_REPORTS, the system DOES NOT generate screenshot
-    # for report with type 'alert' and sends email and slack message with only link;
-    # for report with type 'report' still send with email and slack message with
-    # screenshot and link
+    # 启用 ALERTS_ATTACH_REPORTS 后，系统会发送电子邮件和带有屏幕截图和链接的松弛消息，
+    # 禁用 ALERTS_ATTACH_REPORTS 时，系统不生成屏幕截图
+    # 对于 'alert' 类型报告，发送发送电子邮件和带有链接的松弛消息;
+    # 对于 'report' 类型报告，发送电子邮件和带有屏幕截图和链接的松弛消息
     "ALERTS_ATTACH_REPORTS": True,
-    # FORCE_DATABASE_CONNECTIONS_SSL is depreciated.
+    # FORCE_DATABASE_CONNECTIONS_SSL 已弃用
     "FORCE_DATABASE_CONNECTIONS_SSL": False,
-    # Enabling ENFORCE_DB_ENCRYPTION_UI forces all database connections to be
-    # encrypted before being saved into rabbitai metastore.
+    # 启用 ENFORCE_DB_ENCRYPTION_UI 强制所有数据库连接在存储数据时进行加密。
     "ENFORCE_DB_ENCRYPTION_UI": False,
-    # Allow users to export full CSV of table viz type.
-    # This could cause the server to run out of memory or compute.
+    # 允许用户导出表格viz类型的完整CSV。
+    # 这可能会导致服务器内存或计算量不足。
     "ALLOW_FULL_CSV_EXPORT": False,
     "UX_BETA": False,
 }
 
-# Feature flags may also be set via 'RABBITAI_FEATURE_' prefixed environment vars.
+# 功能标志也可以通过 'RABBITAI_FEATURE_' 前缀的环境变量设置。
 DEFAULT_FEATURE_FLAGS.update(
     {
-        k[len("RABBITAI_FEATURE_") :]: parse_boolean_string(v)
+        k[len("RABBITAI_FEATURE_"):]: parse_boolean_string(v)
         for k, v in os.environ.items()
         if re.search(r"^RABBITAI_FEATURE_\w+", k)
     }
 )
 
-# This is merely a default.
+# 功能标志
 FEATURE_FLAGS: Dict[str, bool] = {}
 
-# A function that receives a dict of all feature flags
-# (DEFAULT_FEATURE_FLAGS merged with FEATURE_FLAGS)
-# can alter it, and returns a similar dict. Note the dict of feature
-# flags passed to the function is a deepcopy of the dict in the config,
+# 接收所有特征标志的dict的函数(DEFAULT_FEATURE_FLAGS 与 FEATURE_FLAGS合并)
+# Note the dict of feature flags passed to the function is a deepcopy of the dict in the config,
 # and can therefore be mutated without side-effect
 #
 # GET_FEATURE_FLAGS_FUNC can be used to implement progressive rollouts,
@@ -414,6 +454,9 @@ FEATURE_FLAGS: Dict[str, bool] = {}
 #         feature_flags_dict['some_feature'] = g.user and g.user.get_id() == 5
 #     return feature_flags_dict
 GET_FEATURE_FLAGS_FUNC: Optional[Callable[[Dict[str, bool]], Dict[str, bool]]] = None
+# endregion
+
+# region Schemes
 
 # EXTRA_CATEGORICAL_COLOR_SCHEMES is used for adding custom categorical color schemes
 # example code for "My custom warm to hot" color scheme
@@ -426,11 +469,9 @@ GET_FEATURE_FLAGS_FUNC: Optional[Callable[[Dict[str, bool]], Dict[str, bool]]] =
 #          ['#006699', '#009DD9', '#5AAA46', '#44AAAA', '#DDAA77', '#7799BB', '#88AA77',
 #          '#552288', '#5AAA46', '#CC7788', '#EEDD55', '#9977BB', '#BBAA44', '#DDCCDD']
 #     }]
-
-# This is merely a default
 EXTRA_CATEGORICAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
 
-# THEME_OVERRIDES is used for adding custom theme to rabbitai
+# THEME_OVERRIDES is used for adding custom theme to RabbitAI
 # example code for "My theme" custom scheme
 # THEME_OVERRIDES = {
 #   "borderRadius": 4,
@@ -446,7 +487,6 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
 #     }
 #   }
 # }
-
 THEME_OVERRIDES: Dict[str, Any] = {}
 
 # EXTRA_SEQUENTIAL_COLOR_SCHEMES is used for adding custom sequential color schemes
@@ -460,19 +500,15 @@ THEME_OVERRIDES: Dict[str, Any] = {}
 #          ['#552288', '#5AAA46', '#CC7788', '#EEDD55', '#9977BB', '#BBAA44', '#DDCCDD',
 #          '#006699', '#009DD9', '#5AAA46', '#44AAAA', '#DDAA77', '#7799BB', '#88AA77']
 #     }]
-
-# This is merely a default
 EXTRA_SEQUENTIAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
 
-# ---------------------------------------------------
-# Thumbnail config (behind feature flag)
+# endregion
+
+# region Thumbnail config (behind feature flag)
 # Also used by Alerts & Reports
 # ---------------------------------------------------
 THUMBNAIL_SELENIUM_USER = "admin"
-THUMBNAIL_CACHE_CONFIG: CacheConfig = {
-    "CACHE_TYPE": "null",
-    "CACHE_NO_NULL_WARNING": True,
-}
+THUMBNAIL_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null", "CACHE_NO_NULL_WARNING": True}
 
 # Time before selenium times out after trying to locate an element on the page and wait
 # for that element to load for a screenshot.
@@ -487,8 +523,9 @@ SCREENSHOT_SELENIUM_HEADSTART = 3
 # Wait for the chart animation, in seconds
 SCREENSHOT_SELENIUM_ANIMATION_WAIT = 5
 
-# ---------------------------------------------------
-# Image and file configuration
+# endregion
+
+# region Image and file configuration
 # ---------------------------------------------------
 # The file upload folder, when using models with files
 UPLOAD_FOLDER = BASE_DIR + "/app/static/uploads/"
@@ -502,46 +539,46 @@ IMG_UPLOAD_URL = "/static/uploads/"
 # Setup image size default is (300, 200, True)
 # IMG_SIZE = (300, 200, True)
 
-# Default cache timeout, applies to all cache backends unless specifically overridden in
-# each cache config.
+# endregion
+
+# region cache
+
+# 默认缓存超时，适用于所有缓存后端，除非在每个缓存配置中特别重写。
 CACHE_DEFAULT_TIMEOUT = int(timedelta(days=1).total_seconds())
 
-# Default cache for Rabbitai objects
-CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+# RabbitAI 的默认缓存配置
+CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null", "CACHE_NO_NULL_WARNING": True}
 
-# Cache for datasource metadata and query results
-DATA_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+# 数据源元数据和查询结果的缓存
+DATA_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null", "CACHE_NO_NULL_WARNING": True}
 
-# store cache keys by datasource UID (via CacheKey) for custom processing/invalidation
+# 按数据源UID（通过CacheKey）存储缓存键，以进行自定义处理/失效
 STORE_CACHE_KEYS_IN_METADATA_DB = False
 
-# CORS Options
+# endregion
+
+# CORS 选项
 ENABLE_CORS = False
 CORS_OPTIONS: Dict[Any, Any] = {}
 
-# Chrome allows up to 6 open connections per domain at a time. When there are more
-# than 6 slices in dashboard, a lot of time fetch requests are queued up and wait for
-# next available socket. PR #5039 is trying to allow domain sharding for Rabbitai,
-# and this feature will be enabled by configuration only (by default Rabbitai
-# doesn't allow cross-domain request).
+# Chrome 允许每个域名同时打开6个连接，当仪表盘中有超过 6 各切片时，
+# 很多时间提取请求排队等待下一个可用套接字。
+# PR#5039正试图允许 RabbitAI 域名共享，
+# 此标志仅通过配置启用（默认情况下，RabbitAI不允许跨域请求）。
 RABBITAI_WEBSERVER_DOMAINS = None
 
-# Allowed format types for upload on Database view
+# 允许上传到仪表盘视图的文件格式
 EXCEL_EXTENSIONS = {"xlsx", "xls"}
 CSV_EXTENSIONS = {"csv", "tsv", "txt"}
 ALLOWED_EXTENSIONS = {*EXCEL_EXTENSIONS, *CSV_EXTENSIONS}
 
-# CSV Options: key/value pairs that will be passed as argument to DataFrame.to_csv
-# method.
-# note: index option should not be overridden
+# CSV 选项: 将作为参数传递到 DataFrame.to_csv 方法的 key/value 对。
 CSV_EXPORT = {"encoding": "utf-8"}
 
+# region 时间粒度配置
 # ---------------------------------------------------
-# Time grain configurations
-# ---------------------------------------------------
-# List of time grains to disable in the application (see list of builtin
-# time grains in rabbitai/db_engine_specs.builtin_time_grains).
-# For example: to disable 1 second time grain:
+# 应用程序中要禁用的时间粒度列表 (详见 rabbitai/db_engine_specs.builtin_time_grains 中定义的时间粒度)。
+# 例如: 要禁用 1 秒时间粒度：
 # TIME_GRAIN_DENYLIST = ['PT1S']
 TIME_GRAIN_DENYLIST: List[str] = []
 
@@ -561,23 +598,15 @@ TIME_GRAIN_ADDONS: Dict[str, str] = {}
 # }
 TIME_GRAIN_ADDON_EXPRESSIONS: Dict[str, Dict[str, str]] = {}
 
-# ---------------------------------------------------
-# List of viz_types not allowed in your environment
-# For example: Disable pivot table and treemap:
-#  VIZ_TYPE_DENYLIST = ['pivot_table', 'treemap']
-# ---------------------------------------------------
+# endregion
 
 VIZ_TYPE_DENYLIST: List[str] = []
-
-# ---------------------------------------------------
-# List of data sources not to be refreshed in druid cluster
-# ---------------------------------------------------
-
+"""环境中不允许的 viz_types 列表，例如：禁用透视表和地图树：VIZ_TYPE_DENYLIST = ['pivot_table', 'treemap']"""
 DRUID_DATA_SOURCE_DENYLIST: List[str] = []
+"""druid集群中不允许的数据源列表"""
 
-# --------------------------------------------------
-# Modules, datasources and middleware to be registered
-# --------------------------------------------------
+# region Modules, datasources and middleware to be registered
+
 DEFAULT_MODULE_DS_MAP = OrderedDict(
     [
         ("rabbitai.connectors.sqla.models", ["SqlaTable"]),
@@ -586,6 +615,10 @@ DEFAULT_MODULE_DS_MAP = OrderedDict(
 )
 ADDITIONAL_MODULE_DS_MAP: Dict[str, List[str]] = {}
 ADDITIONAL_MIDDLEWARE: List[Callable[..., Any]] = []
+
+# endregion
+
+# region Log
 
 # 1) https://docs.python-guide.org/writing/logging/
 # 2) https://docs.python.org/2/library/logging.config.html
@@ -625,30 +658,12 @@ BACKUP_COUNT = 30
 #     pass
 QUERY_LOGGER = None
 
+# endregion
+
 # Set this API key to enable Mapbox visualizations
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
-# Maximum number of rows returned from a database
-# in async mode, no more than SQL_MAX_ROW will be returned and stored
-# in the results backend. This also becomes the limit when exporting CSVs
-SQL_MAX_ROW = 100000
-
-# Maximum number of rows displayed in SQL Lab UI
-# Is set to avoid out of memory/localstorage issues in browsers. Does not affect
-# exported CSVs
-DISPLAY_MAX_ROW = 10000
-
-# Default row limit for SQL Lab queries. Is overridden by setting a new limit in
-# the SQL Lab UI
-DEFAULT_SQLLAB_LIMIT = 1000
-
-# Maximum number of tables/views displayed in the dropdown window in SQL Lab.
-MAX_TABLE_NAMES = 3000
-
-# Adds a warning message on sqllab save query and schedule query modals.
-SQLLAB_SAVE_WARNING_MESSAGE = None
-SQLLAB_SCHEDULE_WARNING_MESSAGE = None
-
+# region celery config
 
 # Default celery config is to use SQLA as a broker, in a production setting
 # you'll want to use a proper broker as specified here:
@@ -692,7 +707,9 @@ CELERY_CONFIG = CeleryConfig
 # Set celery config to None to disable all the above configuration
 # CELERY_CONFIG = None
 
-# Additional static HTTP headers to be served by your Rabbitai server. Note
+# endregion
+
+# Additional static HTTP headers to be served by your RabbitAI server. Note
 # Flask-Talisman applies the relevant security HTTP headers.
 #
 # DEFAULT_HTTP_HEADERS: sets default values for HTTP headers. These may be overridden
@@ -702,6 +719,29 @@ CELERY_CONFIG = CeleryConfig
 DEFAULT_HTTP_HEADERS: Dict[str, Any] = {}
 OVERRIDE_HTTP_HEADERS: Dict[str, Any] = {}
 HTTP_HEADERS: Dict[str, Any] = {}
+
+# region SQL Lab
+
+# Maximum number of rows returned from a database
+# in async mode, no more than SQL_MAX_ROW will be returned and stored
+# in the results backend. This also becomes the limit when exporting CSVs
+SQL_MAX_ROW = 100000
+
+# Maximum number of rows displayed in SQL Lab UI
+# Is set to avoid out of memory/localstorage issues in browsers. Does not affect
+# exported CSVs
+DISPLAY_MAX_ROW = 10000
+
+# Default row limit for SQL Lab queries. Is overridden by setting a new limit in
+# the SQL Lab UI
+DEFAULT_SQLLAB_LIMIT = 1000
+
+# Maximum number of tables/views displayed in the dropdown window in SQL Lab.
+MAX_TABLE_NAMES = 3000
+
+# Adds a warning message on sqllab save query and schedule query modals.
+SQLLAB_SAVE_WARNING_MESSAGE = None
+SQLLAB_SCHEDULE_WARNING_MESSAGE = None
 
 # The db id here results in selecting this one as a default in SQL Lab
 DEFAULT_DB_ID = None
@@ -797,6 +837,8 @@ CSV_TO_HIVE_UPLOAD_S3_BUCKET = None
 # The directory within the bucket specified above that will
 # contain all the external tables
 CSV_TO_HIVE_UPLOAD_DIRECTORY = "EXTERNAL_HIVE_TABLES/"
+
+
 # Function that creates upload directory dynamically based on the
 # database used, user and schema provided.
 def CSV_TO_HIVE_UPLOAD_DIRECTORY_FUNC(
@@ -846,15 +888,15 @@ JINJA_CONTEXT_ADDONS: Dict[str, Callable[..., Any]] = {}
 # basis. Example value = `{"presto": CustomPrestoTemplateProcessor}`
 CUSTOM_TEMPLATE_PROCESSORS: Dict[str, Type[BaseTemplateProcessor]] = {}
 
-# Roles that are controlled by the API / Rabbitai and should not be changes
-# by humans.
+# endregion
+
+# 由API/RabbitAI控制且不应由人类更改的角色。
 ROBOT_PERMISSION_ROLES = ["Public", "Gamma", "Alpha", "Admin", "sql_lab"]
 
 CONFIG_PATH_ENV_VAR = "RABBITAI_CONFIG_PATH"
 
-# If a callable is specified, it will be called at app startup while passing
-# a reference to the Flask app. This can be used to alter the Flask app
-# in whatever way.
+# 如果指定了callable，则会在应用程序启动时调用它，同时将引用传递给Flask应用程序。
+# 这可以用于以任何方式更改Flask应用程序。
 # example: FLASK_APP_MUTATOR = lambda x: x.before_request = f
 FLASK_APP_MUTATOR = None
 
@@ -862,8 +904,8 @@ FLASK_APP_MUTATOR = None
 # datasource access requests from/to other users.
 ENABLE_ACCESS_REQUEST = False
 
-# smtp server configuration
-EMAIL_NOTIFICATIONS = False  # all the emails are sent using dryrun
+# region smtp server configuration
+EMAIL_NOTIFICATIONS = False
 SMTP_HOST = "localhost"
 SMTP_STARTTLS = True
 SMTP_SSL = False
@@ -871,8 +913,11 @@ SMTP_USER = "rabbitai"
 SMTP_PORT = 25
 SMTP_PASSWORD = "rabbitai"
 SMTP_MAIL_FROM = "pengsongbo@hotmail.com"
+# endregion
 
 ENABLE_CHUNK_ENCODING = False
+
+# region FAB
 
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
 # Set to False if/when debugging FAB related issues like
@@ -883,6 +928,8 @@ FAB_ADD_SECURITY_VIEWS = True
 FAB_ADD_SECURITY_PERMISSION_VIEW = False
 FAB_ADD_SECURITY_VIEW_MENU_VIEW = False
 FAB_ADD_SECURITY_PERMISSION_VIEWS_VIEW = False
+
+# endregion
 
 # The link to a page containing common errors and their resolutions
 # It will be appended at the bottom of sql_lab errors.
@@ -908,7 +955,7 @@ TRACKING_URL_TRANSFORMER = lambda x: x
 HIVE_POLL_INTERVAL = int(timedelta(seconds=5).total_seconds())
 
 # Interval between consecutive polls when using Presto Engine
-# See here: https://github.com/dropbox/PyHive/blob/8eb0aeab8ca300f3024655419b93dad926c1a351/pyhive/presto.py#L93  # pylint: disable=line-too-long
+# See here: https://github.com/dropbox/PyHive/blob/8eb0aeab8ca300f3024655419b93dad926c1a351/pyhive/presto.py#L93
 PRESTO_POLL_INTERVAL = int(timedelta(seconds=1).total_seconds())
 
 # Allow for javascript controls components
@@ -1113,8 +1160,8 @@ RLS_FORM_QUERY_REL_FIELDS: Optional[Dict[str, List[List[Any]]]] = None
 # See https://flask.palletsprojects.com/en/1.1.x/security/#set-cookie-options
 # for details
 #
-SESSION_COOKIE_HTTPONLY = True   # Prevent cookie from being read by frontend JS?
-SESSION_COOKIE_SECURE = False    # Prevent cookie from being transmitted over non-tls?
+SESSION_COOKIE_HTTPONLY = True  # Prevent cookie from being read by frontend JS?
+SESSION_COOKIE_SECURE = False  # Prevent cookie from being transmitted over non-tls?
 SESSION_COOKIE_SAMESITE = "Lax"  # One of [None, 'None', 'Lax', 'Strict']
 
 # endregion
@@ -1131,8 +1178,6 @@ SQLALCHEMY_EXAMPLES_URI = None
 PREVENT_UNSAFE_DB_CONNECTIONS = True
 """某些sqlalchemy连接字符串可能会使Rabbitai面临安全风险。通常，这些都是不允许的。"""
 
-# Path used to store SSL certificates that are generated when using custom certs. Defaults to temporary directory.
-# Example: SSL_CERT_PATH = "/certs"
 SSL_CERT_PATH: Optional[str] = None
 """用于存储使用自定义证书时生成的SSL证书的路径。默认为临时目录。例如：SSL_CERT_PATH = /certs"""
 
@@ -1255,7 +1300,7 @@ if CONFIG_PATH_ENV_VAR in os.environ:
 elif importlib.util.find_spec("rabbitai_config") and not is_test():
     try:
         import rabbitai_config
-        from rabbitai_config import *
+        from . rabbitai_config import *
 
         print(f"已从 [{rabbitai_config.__file__}] 加载本地配置")
     except Exception:

@@ -112,8 +112,7 @@ def _get_email_to_and_bcc(
             yield (to, bcc)
 
 
-# TODO(bkyryliuk): move email functionality into a separate module.
-def _deliver_email(  # pylint: disable=too-many-arguments
+def _deliver_email(
     recipients: str,
     deliver_as_group: bool,
     subject: str,

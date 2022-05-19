@@ -16,56 +16,47 @@ thumbnail_query_schema = {
     "properties": {"force": {"type": "boolean"}},
 }
 
-dashboard_title_description = "A title for the dashboard."
-slug_description = "Unique identifying part for the web address of the dashboard."
+dashboard_title_description = "仪表盘标题。"
+slug_description = "仪表板网址的唯一标识部分。"
 owners_description = (
-    "Owner are users ids allowed to delete or change this dashboard. "
-    "If left empty you will be one of the owners of the dashboard."
+    "所有者是允许删除或更改此仪表板的用户ID。"
+    "如果留空，您将成为仪表板的所有者之一。"
 )
 roles_description = (
-    "Roles is a list which defines access to the dashboard. "
-    "These roles are always applied in addition to restrictions on dataset "
-    "level access. "
-    "If no roles defined then the dashboard is available to all roles."
+    "角色是定义仪表板访问权限的列表。"
+    "除了对数据集级访问的限制之外，还始终应用这些角色。"
+    "如果未定义任何角色，则仪表板可供所有角色使用。"
 )
 position_json_description = (
-    "This json object describes the positioning of the widgets "
-    "in the dashboard. It is dynamically generated when "
-    "adjusting the widgets size and positions by using "
-    "drag & drop in the dashboard view"
+    "此json对象描述小部件在仪表板中的位置。"
+    "它是通过在仪表板视图中使用拖放来调整小部件大小和位置时动态生成的"
 )
-css_description = "Override CSS for the dashboard."
+css_description = "仪表盘的重写 CSS。"
 json_metadata_description = (
-    "This JSON object is generated dynamically when clicking "
-    "the save or overwrite button in the dashboard view. "
-    "It is exposed here for reference and for power users who may want to alter "
-    " specific parameters."
+    "单击仪表板视图中的保存或覆盖按钮时，动态生成此JSON对象。"
+    "这里公开它是为了供可能想要改变特定参数的超级用户引用。"
 )
 published_description = (
-    "Determines whether or not this dashboard is visible in "
-    "the list of all dashboards."
+    "确定此仪表板在所有仪表板列表中是否可见。"
 )
 charts_description = (
-    "The names of the dashboard's charts. Names are used for legacy reasons."
+    "仪表板图表的名称。名称用于遗留原因。"
 )
 
 openapi_spec_methods_override = {
-    "get": {"get": {"description": "Get a dashboard detail information."}},
+    "get": {"get": {"description": "获取仪表板详细信息。"}},
     "get_list": {
         "get": {
-            "description": "Get a list of dashboards, use Rison or JSON query "
-            "parameters for filtering, sorting, pagination and "
-            " for selecting specific columns and metadata.",
+            "description": "获取仪表板列表，使用Rison或JSON查询参数进行过滤、排序、分页以及选择特定列和元数据。",
         }
     },
     "info": {
         "get": {
-            "description": "Several metadata information about dashboard API "
-            "endpoints.",
+            "description": "有关仪表板API端点的若干元数据信息。",
         }
     },
     "related": {
-        "get": {"description": "Get a list of all possible owners for a dashboard."}
+        "get": {"description": "获取仪表板所有可能拥有者的列表。"}
     },
 }
 
@@ -252,14 +243,14 @@ class DashboardPutSchema(BaseDashboardSchema):
 
 
 class ChartFavStarResponseResult(Schema):
-    id = fields.Integer(description="The Chart id")
-    value = fields.Boolean(description="The FaveStar value")
+    id = fields.Integer(description="图表标识")
+    value = fields.Boolean(description="关注星级")
 
 
 class GetFavStarIdsSchema(Schema):
     result = fields.List(
         fields.Nested(ChartFavStarResponseResult),
-        description="A list of results for each corresponding chart in the request",
+        description="请求中每个对应图表的结果列表",
     )
 
 

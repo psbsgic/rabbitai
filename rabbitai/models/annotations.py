@@ -25,6 +25,7 @@ class Annotation(Model, AuditMixinNullable):
     """注释对象关系模型。"""
 
     __tablename__ = "annotation"
+
     id = Column(Integer, primary_key=True)
     start_dttm = Column(DateTime)
     end_dttm = Column(DateTime)

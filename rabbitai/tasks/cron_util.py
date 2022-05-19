@@ -8,6 +8,14 @@ from rabbitai import app
 
 
 def cron_schedule_window(cron: str, timezone: str) -> Iterator[datetime]:
+    """
+    CRON 调度窗口。
+
+    :param cron:
+    :param timezone:
+    :return:
+    """
+
     window_size = app.config["ALERT_REPORTS_CRON_WINDOW_SIZE"]
     # create a time-aware datetime in utc
     time_now = datetime.now(tz=dt_timezone.utc)

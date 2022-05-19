@@ -24,11 +24,9 @@ Session = sessionmaker(autoflush=False)
 
 class TagTypes(enum.Enum):
     """
-    Types for tags.
+    标签类型枚举。
 
-    Objects (queries, charts and dashboards) will have with implicit tags based
-    on metadata: types, owners and who favorited them. This way, user "alice"
-    can find all their objects by querying for the tag `owner:alice`.
+    对象 (queries, charts，dashboards) 基于元数据具有隐式标签。
     """
 
     # explicit tags, added manually by the owner
@@ -41,7 +39,7 @@ class TagTypes(enum.Enum):
 
 
 class ObjectTypes(enum.Enum):
-    """Object types."""
+    """对象类型枚举，query、chart、dashboard。"""
 
     query = 1
     chart = 2
@@ -49,18 +47,20 @@ class ObjectTypes(enum.Enum):
 
 
 class Tag(Model, AuditMixinNullable):
-    """A tag attached to an object (query, chart or dashboard)."""
+    """标签对象关系模型，一个附加到对象(query, chart or dashboard)的标签。"""
 
     __tablename__ = "tag"
+
     id = Column(Integer, primary_key=True)
     name = Column(String(250), unique=True)
     type = Column(Enum(TagTypes))
 
 
 class TaggedObject(Model, AuditMixinNullable):
-    """An association between an object and a tag."""
+    """标签化对象关系模型，对象和tag的关联。"""
 
     __tablename__ = "tagged_object"
+
     id = Column(Integer, primary_key=True)
     tag_id = Column(Integer, ForeignKey("tag.id"))
     object_id = Column(Integer)
@@ -70,6 +70,15 @@ class TaggedObject(Model, AuditMixinNullable):
 
 
 def get_tag(name: str, session: Session, type_: TagTypes) -> Tag:
+    """
+    获取标签，如果数据库中不存在则创建并存储到数据库。
+
+    :param name: 标签名称。
+    :param session: 数据库会话。
+    :param type_: 标签类型。
+    :return:
+    """
+
     tag = session.query(Tag).filter_by(name=name, type=type_).one_or_none()
     if tag is None:
         tag = Tag(name=name, type=type_)
@@ -79,6 +88,13 @@ def get_tag(name: str, session: Session, type_: TagTypes) -> Tag:
 
 
 def get_object_type(class_name: str) -> ObjectTypes:
+    """
+    获取指定类名称的对象类型 ObjectTypes。
+
+    :param class_name:
+    :return:
+    """
+
     mapping = {
         "slice": ObjectTypes.chart,
         "dashboard": ObjectTypes.dashboard,
@@ -94,7 +110,7 @@ class ObjectUpdater:
     """对象更新者，提供插入、更新和删除后的回调方法，以便处理相应的标签化对象。"""
 
     object_type: Optional[str] = None
-
+    """对象类型，query、chart、dashboard之一"""
     @classmethod
     def get_owners_ids(
         cls, target: Union["Dashboard", "FavStar", "Slice"]
@@ -102,8 +118,8 @@ class ObjectUpdater:
         """
         获取指定目标对象的拥有者标识的列表。
 
-        :param target:
-        :return:
+        :param target: 目标模型对象，可能值："Dashboard", "FavStar", "Slice" 之一
+        :return: 整数标识的列表。
         """
         raise NotImplementedError("Subclass should implement `get_owners_ids`")
 
@@ -114,10 +130,11 @@ class ObjectUpdater:
         """
         添加拥有者。
 
-        :param session:
-        :param target:
+        :param session: 数据库会话。
+        :param target: 目标模型对象，可能值："Dashboard", "FavStar", "Slice" 之一。
         :return:
         """
+
         for owner_id in cls.get_owners_ids(target):
             name = "owner:{0}".format(owner_id)
             tag = get_tag(name, session, TagTypes.owner)
@@ -136,11 +153,12 @@ class ObjectUpdater:
         """
         插入对象到数据库后要调用的方法，添加标签化对象。
 
-        :param _mapper:
-        :param connection:
-        :param target:
+        :param _mapper: 对象关系映射。
+        :param connection: 数据库连接对象。
+        :param target: 目标模型对象，可能值："Dashboard", "FavStar", "Slice" 之一。
         :return:
         """
+
         session = Session(bind=connection)
 
         # add `owner:` tags
@@ -165,11 +183,12 @@ class ObjectUpdater:
         """
         处理对象更新后的操作，更新标签化对象。
 
-        :param _mapper:
-        :param connection:
-        :param target:
+        :param _mapper: 对象关系映射。
+        :param connection: 数据库连接对象。
+        :param target: 目标模型对象，可能值："Dashboard", "FavStar", "Slice" 之一。
         :return:
         """
+
         session = Session(bind=connection)
 
         # delete current `owner:` tags
@@ -202,9 +221,9 @@ class ObjectUpdater:
         """
         删除对象后调用该方法删除相应的标签化对象。
 
-        :param _mapper:
-        :param connection:
-        :param target:
+        :param _mapper: 对象关系映射。
+        :param connection: 数据库连接对象。
+        :param target: 目标模型对象，可能值："Dashboard", "FavStar", "Slice" 之一。
         :return:
         """
         session = Session(bind=connection)
@@ -219,33 +238,51 @@ class ObjectUpdater:
 
 
 class ChartUpdater(ObjectUpdater):
+    """图表对象模型更新器。"""
 
     object_type = "chart"
 
     @classmethod
     def get_owners_ids(cls, target: "Slice") -> List[int]:
+        """获取拥有者标识的列表。"""
         return [owner.id for owner in target.owners]
 
 
 class DashboardUpdater(ObjectUpdater):
+    """仪表盘对象模型更新器。"""
 
     object_type = "dashboard"
-
+    """对象类型"""
     @classmethod
     def get_owners_ids(cls, target: "Dashboard") -> List[int]:
+        """
+        获取指定仪表盘对象关系模型实例的拥有者标识的列表。
+
+        :param target: 仪表盘对象关系模型实例。
+        :return:
+        """
         return [owner.id for owner in target.owners]
 
 
 class QueryUpdater(ObjectUpdater):
+    """查询对象模型更新器。"""
 
     object_type = "query"
 
     @classmethod
     def get_owners_ids(cls, target: "Query") -> List[int]:
+        """
+        获取拥有者标识的列表。
+
+        :param target:
+        :return:
+        """
         return [target.user_id]
 
 
 class FavStarUpdater:
+    """星级对象模型更新器，提供方法：after_insert、after_delete。"""
+
     @classmethod
     def after_insert(
         cls, _mapper: Mapper, connection: Connection, target: "FavStar"

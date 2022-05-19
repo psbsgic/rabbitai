@@ -32,7 +32,13 @@ if TYPE_CHECKING:
 
 
 def collect_request_payload() -> Dict[str, Any]:
-    """从请求上下文中收集可识别的日志有效载荷"""
+    """从请求上下文中收集可识别的有效载荷，包括：
+
+    - path: request.path
+    - request.form.to_dict()
+    - request.args.to_dict()
+    - url_rule: request.url_rule
+    """
 
     if not request:
         return {}
@@ -198,10 +204,12 @@ class AbstractEventLogger(ABC):
     ) -> Iterator[Callable[..., None]]:
         """
         Log an event with additional information from the request context.
+
         :param action: a name to identify the event
         :param object_ref: reference to the Python object that triggered this action
         :param log_to_statsd: whether to update statsd counter for the action
         """
+
         payload_override = {}
         start = datetime.now()
         # yield a helper to add additional payload

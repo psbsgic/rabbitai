@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 import dataclasses
 import json
 import logging
 import re
 from collections import defaultdict, OrderedDict
-from dataclasses import dataclass, field  # pylint: disable=wrong-import-order
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import (
     Any,
@@ -77,20 +79,32 @@ from rabbitai.utils.core import (
 )
 
 config = app.config
-metadata = Model.metadata  # pylint: disable=no-member
+metadata = Model.metadata
 logger = logging.getLogger(__name__)
 
 VIRTUAL_TABLE_ALIAS = "virtual_table"
+"""虚拟数据表别名。"""
 
 
 class SqlaQuery(NamedTuple):
+    """Sqla查询对象，一个命名元组。定义字段：extra_cache_keys、labels_expected、prequeries、sqla_query。"""
+
     extra_cache_keys: List[Any]
+    """额外缓存键列表"""
+
     labels_expected: List[str]
+    """标签列表"""
+
     prequeries: List[str]
+    """预查询字符串列表"""
+
     sqla_query: Select
+    """SELECT 语句。"""
 
 
 class QueryStringExtended(NamedTuple):
+    """扩展的查询字符串，一个命名元组：(labels_expected, prequeries, sql)。"""
+
     labels_expected: List[str]
     prequeries: List[str]
     sql: str
@@ -98,19 +112,20 @@ class QueryStringExtended(NamedTuple):
 
 @dataclass
 class MetadataResult:
+    """元数据结果数据类，定义字段：added、removed、modified。"""
+
     added: List[str] = field(default_factory=list)
     removed: List[str] = field(default_factory=list)
     modified: List[str] = field(default_factory=list)
 
 
 class AnnotationDatasource(BaseDatasource):
-    """Dummy object so we can query annotations using 'Viz' objects just like
-    regular datasources.
-    """
+    """注释数据源数据模型，扩展 BaseDatasource，提供查询和管理 Annotation 实例的功能。"""
 
     cache_timeout = 0
     changed_on = None
     type = "annotation"
+    """数据源类型：annotation"""
     column_names = [
         "created_on",
         "changed_on",
@@ -124,8 +139,16 @@ class AnnotationDatasource(BaseDatasource):
         "created_by_fk",
         "changed_by_fk",
     ]
+    """列名称列表。"""
 
     def query(self, query_obj: QueryObjectDict) -> QueryResult:
+        """
+        执行查询返回查询结果，从数据库查询 Annotation 实例。
+
+        :param query_obj: 字典形式的查询对象。
+        :return:
+        """
+
         error_message = None
         qry = db.session.query(Annotation)
         qry = qry.filter(Annotation.layer_id == query_obj["filter"][0]["val"])
@@ -141,6 +164,7 @@ class AnnotationDatasource(BaseDatasource):
             status = utils.QueryStatus.FAILED
             logger.exception(ex)
             error_message = utils.error_msg_from_exception(ex)
+
         return QueryResult(
             status=status,
             df=df,
@@ -150,18 +174,32 @@ class AnnotationDatasource(BaseDatasource):
         )
 
     def get_query_str(self, query_obj: QueryObjectDict) -> str:
+        """
+        获取查询字符串。
+
+        :param query_obj: 查询对象。
+        :return:
+        """
         raise NotImplementedError()
 
     def values_for_column(self, column_name: str, limit: int = 10000) -> List[Any]:
+        """
+        返回指定列的值列表。
+
+        :param column_name: 列名称。
+        :param limit: 限制。
+        :return:
+        """
+
         raise NotImplementedError()
 
 
 class TableColumn(Model, BaseColumn):
-
-    """ORM object for table columns, each table can have multiple columns"""
+    """数据表的列对象关系模型，每个数据表有多个列，与 tables 为多对一关系。"""
 
     __tablename__ = "table_columns"
     __table_args__ = (UniqueConstraint("table_id", "column_name"),)
+
     table_id = Column(Integer, ForeignKey("tables.id"))
     table = relationship(
         "SqlaTable",
@@ -185,9 +223,11 @@ class TableColumn(Model, BaseColumn):
         "description",
         "python_date_format",
     ]
-
+    """导出字段名称的列表"""
     update_from_object_fields = [s for s in export_fields if s not in ("table_id",)]
+    """可以从对象更新的字段名称列表。"""
     export_parent = "table"
+    """导出父对象：table"""
 
     @property
     def is_boolean(self) -> bool:
@@ -224,16 +264,27 @@ class TableColumn(Model, BaseColumn):
 
     @property
     def db_engine_spec(self) -> Type[BaseEngineSpec]:
+        """获取数据库引擎规范。"""
         return self.table.db_engine_spec
 
     @property
     def type_generic(self) -> Optional[utils.GenericDataType]:
+        """获取该对对象的通用数据类型。"""
+
         if self.is_dttm:
             return GenericDataType.TEMPORAL
         column_spec = self.db_engine_spec.get_column_spec(self.type)
         return column_spec.generic_type if column_spec else None
 
     def get_sqla_col(self, label: Optional[str] = None) -> Column:
+        """
+        获取数据库列对象 Column。
+
+        :param label: 标签文本。
+
+        :return: 数据库列对象 Column。
+        """
+
         label = label or self.column_name
         db_engine_spec = self.db_engine_spec
         column_spec = db_engine_spec.get_column_spec(self.type)
@@ -244,11 +295,15 @@ class TableColumn(Model, BaseColumn):
             col = literal_column(expression, type_=type_)
         else:
             col = column(self.column_name, type_=type_)
+
         col = self.table.make_sqla_column_compatible(col, label)
+
         return col
 
     @property
     def datasource(self) -> RelationshipProperty:
+        """获取数据源对象，即数据表对象关系模型。"""
+
         return self.table
 
     def get_time_filter(
@@ -259,6 +314,15 @@ class TableColumn(Model, BaseColumn):
             Tuple[utils.TimeRangeEndpoint, utils.TimeRangeEndpoint]
         ],
     ) -> ColumnElement:
+        """
+        获取时间过滤器。
+
+        :param start_dttm:
+        :param end_dttm:
+        :param time_range_endpoints:
+        :return:
+        """
+
         col = self.get_sqla_col(label="__time")
         l = []
         if start_dttm:
@@ -287,6 +351,7 @@ class TableColumn(Model, BaseColumn):
         :param label: alias/label that column is expected to have
         :return: A TimeExpression object wrapped in a Label if supported by db
         """
+
         label = label or utils.DTTM_ALIAS
 
         pdf = self.python_date_format
@@ -313,6 +378,7 @@ class TableColumn(Model, BaseColumn):
         ],
     ) -> str:
         """Convert datetime object to a SQL expression string"""
+
         dttm_type = self.type or ("DATETIME" if self.is_dttm else None)
         sql = self.db_engine_spec.convert_dttm(dttm_type, dttm) if dttm_type else None
 
@@ -363,11 +429,11 @@ class TableColumn(Model, BaseColumn):
 
 
 class SqlMetric(Model, BaseMetric):
-
     """ORM object for metrics, each table can have multiple metrics"""
 
     __tablename__ = "sql_metrics"
     __table_args__ = (UniqueConstraint("table_id", "metric_name"),)
+
     table_id = Column(Integer, ForeignKey("tables.id"))
     table = relationship(
         "SqlaTable",
@@ -413,6 +479,7 @@ class SqlMetric(Model, BaseMetric):
         return self.perm
 
     def get_extra_dict(self) -> Dict[str, Any]:
+        """获取额外信息的字典形式。"""
         try:
             return json.loads(self.extra)
         except (TypeError, json.JSONDecodeError):
@@ -455,13 +522,11 @@ sqlatable_user = Table(
     Column("user_id", Integer, ForeignKey("ab_user.id")),
     Column("table_id", Integer, ForeignKey("tables.id")),
 )
+"""数据表和用户多对多关系中间数据表。"""
 
 
-class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-attributes
-    Model, BaseDatasource
-):
-
-    """An ORM object for SqlAlchemy table references"""
+class SqlaTable(Model, BaseDatasource):
+    """SqlAlchemy 数据表对象关系数据模型，用于存储和管理SQL数据表数据源。"""
 
     type = "table"
     query_language = "sql"
@@ -493,6 +558,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         backref=backref("tables", cascade="all, delete-orphan"),
         foreign_keys=[database_id],
     )
+    """数据库对象关系模型实例。"""
     schema = Column(String(255))
     sql = Column(Text)
     is_sqllab_view = Column(Boolean, default=False)
@@ -535,16 +601,19 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
 
     @property
     def db_engine_spec(self) -> Type[BaseEngineSpec]:
+        """获取数据库引擎规范。"""
         return self.database.db_engine_spec
 
     @property
     def changed_by_name(self) -> str:
+        """更改者名称"""
         if not self.changed_by:
             return ""
         return str(self.changed_by)
 
     @property
     def changed_by_url(self) -> str:
+        """更改者访问地址。"""
         if not self.changed_by:
             return ""
         return f"/rabbitai/profile/{self.changed_by.username}"
@@ -744,6 +813,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         return sql
 
     def get_template_processor(self, **kwargs: Any) -> BaseTemplateProcessor:
+        """获取模板处理器。"""
         return get_template_processor(table=self, database=self.database, **kwargs)
 
     def get_query_str_extended(self, query_obj: QueryObjectDict) -> QueryStringExtended:
@@ -825,6 +895,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         :returns: The metric defined as a sqlalchemy column
         :rtype: sqlalchemy.sql.column
         """
+
         expression_type = metric.get("expressionType")
         label = utils.get_metric_name(metric)
 
@@ -849,10 +920,12 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         self, sqla_col: ColumnElement, label: Optional[str] = None
     ) -> ColumnElement:
         """Takes a sqlalchemy column object and adds label info if supported by engine.
+
         :param sqla_col: sqlalchemy column instance
         :param label: alias/label that column is expected to have
         :return: either a sql alchemy column or label instance if supported by engine
         """
+
         label_expected = label or sqla_col.name
         db_engine_spec = self.db_engine_spec
         # add quotes to tables
@@ -874,6 +947,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         the same as a source column. In this case, we update the SELECT alias to
         another name to avoid the conflict.
         """
+
         if self.db_engine_spec.allows_alias_to_source_column:
             return
 
@@ -903,6 +977,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         :returns: A list of SQL clauses to be ANDed together.
         :rtype: List[str]
         """
+
         filters_grouped: Dict[Union[int, str], List[str]] = defaultdict(list)
         try:
             for filter_ in security_manager.get_rls_filters(self):
@@ -916,7 +991,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
                 _("Error in jinja expression in RLS filters: %(msg)s", msg=ex.message,)
             )
 
-    def get_sqla_query(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+    def get_sqla_query(
         self,
         metrics: Optional[List[Metric]] = None,
         granularity: Optional[str] = None,
@@ -941,6 +1016,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         apply_fetch_values_predicate: bool = False,
     ) -> SqlaQuery:
         """Querying any sqla table from this common interface"""
+
         template_kwargs = {
             "from_dttm": from_dttm.isoformat() if from_dttm else None,
             "groupby": groupby,
@@ -1403,7 +1479,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
             )
         return ob
 
-    def _get_top_groups(  # pylint: disable=no-self-use
+    def _get_top_groups(
         self,
         df: pd.DataFrame,
         dimensions: List[str],
@@ -1484,6 +1560,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         :param commit: should the changes be committed or not.
         :return: Tuple with lists of added, removed and modified column names.
         """
+
         new_columns = self.external_metadata()
         metrics = []
         any_date_col = None

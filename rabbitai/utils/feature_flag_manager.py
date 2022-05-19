@@ -7,7 +7,8 @@ from flask import Flask
 
 
 class FeatureFlagManager:
-    """特性（功能）标志管理器，提供从应用配置价值功能标志并进行管理的功能。"""
+    """特性（功能）标志管理器，
+    提供从应用配置 GET_FEATURE_FLAGS_FUNC、DEFAULT_FEATURE_FLAGS、FEATURE_FLAGS 加载功能标志并进行管理的功能。"""
 
     def __init__(self) -> None:
         super().__init__()

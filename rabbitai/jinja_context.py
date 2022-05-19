@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Defines the templating context for SQL Lab"""
+"""定义 SQL Lab 模板上下文"""
 
 import json
 import re
@@ -47,28 +47,29 @@ ALLOWED_TYPES = (
     "tuple",
     "set",
 )
+"""允许的基础类型名称的列表。"""
 COLLECTION_TYPES = ("list", "dict", "tuple", "set")
+"""集合类型名称的列表"""
 
 
 @memoized
 def context_addons() -> Dict[str, Any]:
+    """从应用配置对象中获取 JINJA 模板上下文插件，缓存返回结果。"""
     return current_app.config.get("JINJA_CONTEXT_ADDONS", {})
 
 
 class Filter(TypedDict):
+    """过滤器，类型属性及其类型，col，op，val。"""
+
     op: str  # pylint: disable=C0103
     col: str
     val: Union[None, Any, List[Any]]
 
 
 class ExtraCache:
-    """
-    Dummy class that exposes a method used to store additional values used in
-    calculation of query object cache keys.
-    """
+    """Dummy 类，该类公开用于存储查询对象缓存键计算中使用的附加值的方法。"""
 
-    # Regular expression for detecting the presence of templated methods which could
-    # be added to the cache key.
+    # 用于检测是否存在可添加到缓存键的模板化方法的正则表达式。
     regex = re.compile(
         r"\{\{.*("
         r"current_user_id\(.*\)|"
@@ -88,10 +89,10 @@ class ExtraCache:
 
     def current_user_id(self, add_to_cache_keys: bool = True) -> Optional[int]:
         """
-        Return the user ID of the user who is currently logged in.
+        返回当前已登录用户的唯一标识 ID。
 
-        :param add_to_cache_keys: Whether the value should be included in the cache key
-        :returns: The user ID
+        :param add_to_cache_keys: 是否该值要包括在缓存键中。
+        :returns: 用户的唯一标识 ID。
         """
 
         if hasattr(g, "user") and g.user:
@@ -102,10 +103,10 @@ class ExtraCache:
 
     def current_username(self, add_to_cache_keys: bool = True) -> Optional[str]:
         """
-        Return the username of the user who is currently logged in.
+        返回当前已登录用户的用户名称。
 
-        :param add_to_cache_keys: Whether the value should be included in the cache key
-        :returns: The username
+        :param add_to_cache_keys: 是否该值要包括在缓存键中。
+        :returns: 用户名称
         """
 
         if g.user and hasattr(g.user, "username"):
@@ -116,15 +117,14 @@ class ExtraCache:
 
     def cache_key_wrapper(self, key: Any) -> Any:
         """
-        Adds values to a list that is added to the query object used for calculating a
-        cache key.
+        将值添加到用于计算缓存键的查询对象的列表中。
 
-        This is needed if the following applies:
-            - Caching is enabled
-            - The query is dynamically generated using a jinja template
-            - A `JINJA_CONTEXT_ADDONS` or similar is used as a filter in the query
+        如果以下情况适用，则需要这样做：
+            - 已启用缓存
+            - 查询是使用jinja模板动态生成的
+            - `JINJA_CONTEXT_ADDONS` 或类似的内容用作查询中的过滤器
 
-        :param key: Any value that should be considered when calculating the cache key
+        :param key: 计算缓存键时应考虑的任何值
         :return: the original value ``key`` passed to the function
         """
         if self.extra_cache_keys is not None:
@@ -158,8 +158,11 @@ class ExtraCache:
 
         from rabbitai.views.utils import get_form_data
 
+        # 从Web请求参数中获取参数值
         if request.args.get(param):
             return request.args.get(param, default)
+
+        # 从表单数据中获取参数值
         form_data, _ = get_form_data()
         url_params = form_data.get("url_params") or {}
         result = url_params.get(param, default)
@@ -193,6 +196,7 @@ class ExtraCache:
             only apply to the inner query
         :return: returns a list of filter values
         """
+
         return_val: List[Any] = []
         filters = self.get_filters(column, remove_filter)
         for flt in filters:
@@ -209,17 +213,17 @@ class ExtraCache:
         return return_val
 
     def get_filters(self, column: str, remove_filter: bool = False) -> List[Filter]:
-        """Get the filters applied to the given column. In addition
-           to returning values like the filter_values function
-           the get_filters function returns the operator specified in the explorer UI.
+        """
+        获取应用于指定列的过滤器。
+        处理返回值列表外，类似 filter_values 函数。
+        get_filters 函数返回在浏览UI中的运算符。
 
-        This is useful if:
-            - you want to handle more than the IN operator in your SQL clause
-            - you want to handle generating custom SQL conditions for a filter
-            - you want to have the ability for filter inside the main query for speed
-            purposes
+        非常适合以下情况：
+            - 您想要处理的不仅仅是SQL子句中的IN运算符
+            - 您希望为过滤器生成自定义SQL条件的操作
+            - 为了提高速度，您希望在主查询中具有筛选功能
 
-        Usage example::
+        示例::
 
 
             WITH RECURSIVE
@@ -265,12 +269,11 @@ class ExtraCache:
                 superiors
             order by lineage, level
 
-        :param column: column/filter name to lookup
-        :param remove_filter: When set to true, mark the filter as processed,
-            removing it from the outer query. Useful when a filter should
-            only apply to the inner query
-        :return: returns a list of filters
+        :param column: 要查找的列/过滤器名称
+        :param remove_filter: 设置为true时，将过滤器标记为已处理，将其从外部查询中删除。当过滤器应仅应用于内部查询时，此选项非常有用
+        :return: 过滤器的列表
         """
+
         from rabbitai.utils.core import FilterOperator
         from rabbitai.views.utils import get_form_data
 
@@ -305,6 +308,15 @@ class ExtraCache:
 
 
 def safe_proxy(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """
+    安全调用指定函数。
+
+    :param func: 要调用函数参数。
+    :param args: 列表参数。
+    :param kwargs: 关键字参数。
+    :return:
+    """
+
     return_value = func(*args, **kwargs)
     value_type = type(return_value).__name__
     if value_type not in ALLOWED_TYPES:
@@ -320,13 +332,20 @@ def safe_proxy(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
             return_value = json.loads(json.dumps(return_value))
         except TypeError:
             raise RabbitaiTemplateException(
-                _("Unsupported return value for method %(name)s", name=func.__name__,)
+                _("Unsupported return value for method %(name)s", name=func.__name__, )
             )
 
     return return_value
 
 
 def validate_context_types(context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    验证指定上下文（字符串和任何值的字典）的值类型的有效性。
+
+    :param context: 上下文（字符串和任何值的字典）。
+    :return:
+    """
+
     for key in context:
         arg_type = type(context[key]).__name__
         if arg_type not in ALLOWED_TYPES and key not in context_addons():
@@ -350,9 +369,15 @@ def validate_context_types(context: Dict[str, Any]) -> Dict[str, Any]:
     return context
 
 
-def validate_template_context(
-    engine: Optional[str], context: Dict[str, Any]
-) -> Dict[str, Any]:
+def validate_template_context(engine: Optional[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    验证模板上下文。
+
+    :param engine:
+    :param context:
+    :return:
+    """
+
     if engine and engine in context:
         # validate engine context separately to allow for engine-specific methods
         engine_context = validate_context_types(context.pop(engine))
@@ -363,14 +388,12 @@ def validate_template_context(
     return validate_context_types(context)
 
 
-class BaseTemplateProcessor:  # pylint: disable=too-few-public-methods
-    """
-    Base class for database-specific jinja context
-    """
+class BaseTemplateProcessor:
+    """特定于数据库的 jinja 上下文的基类"""
 
     engine: Optional[str] = None
+    """数据库引擎名称"""
 
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         database: "Database",
@@ -381,10 +404,10 @@ class BaseTemplateProcessor:  # pylint: disable=too-few-public-methods
         **kwargs: Any,
     ) -> None:
         """
-        使用指定数据库对象、查询对象、SQL数据表对象、额外缓存键列表、移除的过滤器列表和其它关键字参数，创建新实例。
+        使用指定数据库模型对象、查询模型对象、SQL数据表对象、额外缓存键列表、移除的过滤器列表和其它关键字参数，创建新实例。
 
-        :param database: 数据库对象。
-        :param query: 查询对象。
+        :param database: 数据库模型对象。
+        :param query: 查询模型对象。
         :param table: SQL数据表对象。
         :param extra_cache_keys: 额外缓存键列表。
         :param removed_filters: 移除的过滤器列表。
@@ -405,16 +428,18 @@ class BaseTemplateProcessor:  # pylint: disable=too-few-public-methods
         self.set_context(**kwargs)
 
     def set_context(self, **kwargs: Any) -> None:
+        """设置上下文，同时添加从配置对象中读取的上下文插件。"""
         self._context.update(kwargs)
         self._context.update(context_addons())
 
     def process_template(self, sql: str, **kwargs: Any) -> str:
-        """Processes a sql template
+        """处理SQL模板，使用上下文参数渲染SQL模板。
 
         >>> sql = "SELECT '{{ datetime(2017, 1, 1).isoformat() }}'"
         >>> process_template(sql)
         "SELECT '2017-01-01T00:00:00'"
         """
+
         template = self._env.from_string(sql)
         kwargs.update(self._context)
 
@@ -423,7 +448,15 @@ class BaseTemplateProcessor:  # pylint: disable=too-few-public-methods
 
 
 class JinjaTemplateProcessor(BaseTemplateProcessor):
+    """
+    Jinja模板处理器，使用上下文参数渲染模板。
+
+    添加参数：url_param、current_user_id、current_username、cache_key_wrapper、filter_values、get_filters
+
+    """
+
     def set_context(self, **kwargs: Any) -> None:
+        """设置上下文，添加参数：url_param、current_user_id、current_username、cache_key_wrapper、filter_values、get_filters"""
         super().set_context(**kwargs)
         extra_cache = ExtraCache(self._extra_cache_keys, self._removed_filters)
         self._context.update(
@@ -438,9 +471,9 @@ class JinjaTemplateProcessor(BaseTemplateProcessor):
         )
 
 
-class NoOpTemplateProcessor(
-    BaseTemplateProcessor
-):  # pylint: disable=too-few-public-methods
+class NoOpTemplateProcessor(BaseTemplateProcessor):
+    """原样返回模板的模板处理器。"""
+
     def process_template(self, sql: str, **kwargs: Any) -> str:
         """
         Makes processing a template a noop
@@ -449,7 +482,7 @@ class NoOpTemplateProcessor(
 
 
 class PrestoTemplateProcessor(JinjaTemplateProcessor):
-    """Presto Jinja context
+    """Presto Jinja 上下文模板处理器。
 
     The methods described here are namespaced under ``presto`` in the
     jinja context as in ``SELECT '{{ presto.some_macro_call() }}'``
@@ -467,9 +500,7 @@ class PrestoTemplateProcessor(JinjaTemplateProcessor):
         }
 
     @staticmethod
-    def _schema_table(
-        table_name: str, schema: Optional[str]
-    ) -> Tuple[str, Optional[str]]:
+    def _schema_table(table_name: str, schema: Optional[str]) -> Tuple[str, Optional[str]]:
         if "." in table_name:
             schema, table_name = table_name.split(".")
         return table_name, schema
@@ -520,10 +551,12 @@ class HiveTemplateProcessor(PrestoTemplateProcessor):
 
 
 DEFAULT_PROCESSORS = {"presto": PrestoTemplateProcessor, "hive": HiveTemplateProcessor}
+"""默认模板处理器字典，支持引擎：presto、hive。"""
 
 
 @memoized
 def get_template_processors() -> Dict[str, Any]:
+    """返回模板处理器（引擎名称和模板处理器的字典）。"""
     processors = current_app.config.get("CUSTOM_TEMPLATE_PROCESSORS", {})
     for engine in DEFAULT_PROCESSORS:
         # do not overwrite engine-specific CUSTOM_TEMPLATE_PROCESSORS
@@ -539,10 +572,21 @@ def get_template_processor(
     query: Optional["Query"] = None,
     **kwargs: Any,
 ) -> BaseTemplateProcessor:
+    """
+    获取模板处理器。
+
+    :param database: 数据库对象。
+    :param table: 数据表对象。
+    :param query: 查询对象。
+    :param kwargs:
+    :return:
+    """
+
     if feature_flag_manager.is_feature_enabled("ENABLE_TEMPLATE_PROCESSING"):
         template_processor = get_template_processors().get(
             database.backend, JinjaTemplateProcessor
         )
     else:
         template_processor = NoOpTemplateProcessor
+
     return template_processor(database=database, table=table, query=query, **kwargs)

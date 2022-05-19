@@ -30,6 +30,8 @@ DEFAULT_CHART_WIDTH = 4
 
 
 def suffix(length: int = 8) -> str:
+    """生成一个后缀。"""
+
     return "".join(
         random.SystemRandom().choice(string.ascii_uppercase + string.digits)
         for _ in range(length)
@@ -37,6 +39,12 @@ def suffix(length: int = 8) -> str:
 
 
 def get_default_position(title: str) -> Dict[str, Any]:
+    """
+    获取默认位置。
+
+    :param title:
+    :return:
+    """
     return {
         "DASHBOARD_VERSION_KEY": "v2",
         "ROOT_ID": {"children": ["GRID_ID"], "id": "ROOT_ID", "type": "ROOT"},
@@ -51,9 +59,17 @@ def get_default_position(title: str) -> Dict[str, Any]:
 
 
 def append_charts(position: Dict[str, Any], charts: Set[Slice]) -> Dict[str, Any]:
+    """
+    添加图表。
+
+    :param position: 图表位置字典。
+    :param charts: 图表（切片）集合。
+    :return:
+    """
+
     chart_hashes = [f"CHART-{suffix()}" for _ in charts]
 
-    # if we have ROOT_ID/GRID_ID, append orphan charts to a new row inside the grid
+    # 如果我们有ROOT_ID/GRID_ID，则将孤立图表附加到网格内的新行
     row_hash = None
     if "ROOT_ID" in position and "GRID_ID" in position["ROOT_ID"]["children"]:
         row_hash = f"ROW-N-{suffix()}"
@@ -86,6 +102,7 @@ def append_charts(position: Dict[str, Any], charts: Set[Slice]) -> Dict[str, Any
 
 
 class ExportDashboardsCommand(ExportModelsCommand):
+    """导出仪表盘命令，依据仪表盘的标题构建文件名称：dashboards/{dashboard_slug}.yaml。"""
 
     dao = DashboardDAO
     not_found = DashboardNotFoundError
@@ -101,8 +118,7 @@ class ExportDashboardsCommand(ExportModelsCommand):
             include_defaults=True,
             export_uuids=True,
         )
-        # TODO (betodealmeida): move this logic to export_to_dict once this
-        #  becomes the default export endpoint
+
         for key, new_name in JSON_KEYS.items():
             value: Optional[str] = payload.pop(key, None)
             if value:
@@ -112,8 +128,7 @@ class ExportDashboardsCommand(ExportModelsCommand):
                     logger.info("Unable to decode `%s` field: %s", key, value)
                     payload[new_name] = {}
 
-        # Extract all native filter datasets and replace native
-        # filter dataset references with uuid
+        # 提取所有原生筛选器数据集，并用uuid替换原生筛选器数据集引用
         for native_filter in payload.get("metadata", {}).get(
             "native_filter_configuration", []
         ):

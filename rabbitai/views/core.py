@@ -152,12 +152,16 @@ DATABASE_KEYS = [
 ]
 """数据库键列表。"""
 
-DATASOURCE_MISSING_ERR = __("The data source seems to have been deleted")
-USER_MISSING_ERR = __("The user seems to have been deleted")
+# DATASOURCE_MISSING_ERR = __("The data source seems to have been deleted")
+# USER_MISSING_ERR = __("The user seems to have been deleted")
+DATASOURCE_MISSING_ERR = (
+    "数据源似乎已被删除"
+)
+USER_MISSING_ERR = (
+    "用户似乎已被删除"
+)
 PARAMETER_MISSING_ERR = (
-    "Please check your template parameters for syntax errors and make sure "
-    "they match across your SQL query and Set Parameters. Then, try running "
-    "your query again."
+    "请检查模板参数是否存在语法错误，并确保它们在SQL查询和设置参数中匹配。然后，再次尝试运行查询。"
 )
 
 
@@ -167,58 +171,58 @@ class Rabbitai(BaseRabbitaiView):
 
     定义终结点（路由）：
 
-    /datasources/
-    /override_role_permissions/
-    /request_access/
-    /approve
-    /slice/<int:slice_id>/
-    /slice_json/<int:slice_id>
-    /annotation_json/<int:layer_id>
-    /explore_json/data/<cache_key>
-    /explore_json/、/explore_json/<datasource_type>/<int:datasource_id>/
-    /import_dashboards/
-    /explore/、/explore/<datasource_type>/<int:datasource_id>/
-    /filter/<datasource_type>/<int:datasource_id>/<column>/
-    /schemas/<int:db_id>/、/schemas/<int:db_id>/<force_refresh>/
-    /tables/<int:db_id>/<schema>/<substr>/、/tables/<int:db_id>/<schema>/<substr>/<force_refresh>/
-    /copy_dash/<int:dashboard_id>/
-    /save_dash/<int:dashboard_id>/
-    /add_slices/<int:dashboard_id>/
-    /testconn
-    /recent_activity/<int:user_id>/
-    /csrf_token/
-    /available_domains/
-    /fave_dashboards_by_username/<username>/
-    /fave_dashboards/<int:user_id>/
-    /created_dashboards/<int:user_id>/
-    /user_slices、/user_slices/<int:user_id>/
-    /created_slices、/created_slices/<int:user_id>/
-    /fave_slices、/fave_slices/<int:user_id>/
-    /warm_up_cache/
-    /favstar/<class_name>/<int:obj_id>/<action>/
-    /dashboard/<int:dashboard_id>/published/
-    /dashboard/<dashboard_id_or_slug>/
-    /log/
-    /sync_druid/
-    /get_or_create_table/
-    /sqllab_viz/
-    /extra_table_metadata/<int:database_id>/<table_name>/<schema>/
-    /select_star/<int:database_id>/<table_name>、/select_star/<int:database_id>/<table_name>/<schema>
-    /estimate_query_cost/<int:database_id>/、/estimate_query_cost/<int:database_id>/<schema>/
-    /theme/
-    /results/<key>/
-    /stop_query/
-    /validate_sql_json/
-    /sql_json/
-    /csv/<client_id>
-    /fetch_datasource_metadata
-    /queries/<float:last_updated_ms>、/queries/<int:last_updated_ms>
-    /search_queries
-    /welcome/
-    /profile/<username>/
-    /sqllab/
-    /sqllab/history/
-    /schemas_access_for_csv_upload
+    - /datasources/
+    - /override_role_permissions/
+    - /request_access/
+    - /approve
+    - /slice/<int:slice_id>/
+    - /slice_json/<int:slice_id>
+    - /annotation_json/<int:layer_id>
+    - /explore_json/data/<cache_key>
+    - /explore_json/、/explore_json/<datasource_type>/<int:datasource_id>/
+    - /import_dashboards/
+    - /explore/、/explore/<datasource_type>/<int:datasource_id>/
+    - /filter/<datasource_type>/<int:datasource_id>/<column>/
+    - /schemas/<int:db_id>/、/schemas/<int:db_id>/<force_refresh>/
+    - /tables/<int:db_id>/<schema>/<substr>/、/tables/<int:db_id>/<schema>/<substr>/<force_refresh>/
+    - /copy_dash/<int:dashboard_id>/
+    - /save_dash/<int:dashboard_id>/
+    - /add_slices/<int:dashboard_id>/
+    - /testconn
+    - /recent_activity/<int:user_id>/
+    - /csrf_token/
+    - /available_domains/
+    - /fave_dashboards_by_username/<username>/
+    - /fave_dashboards/<int:user_id>/
+    - /created_dashboards/<int:user_id>/
+    - /user_slices、/user_slices/<int:user_id>/
+    - /created_slices、/created_slices/<int:user_id>/
+    - /fave_slices、/fave_slices/<int:user_id>/
+    - /warm_up_cache/
+    - /favstar/<class_name>/<int:obj_id>/<action>/
+    - /dashboard/<int:dashboard_id>/published/
+    - /dashboard/<dashboard_id_or_slug>/
+    - /log/
+    - /sync_druid/
+    - /get_or_create_table/
+    - /sqllab_viz/
+    - /extra_table_metadata/<int:database_id>/<table_name>/<schema>/
+    - /select_star/<int:database_id>/<table_name>、/select_star/<int:database_id>/<table_name>/<schema>
+    - /estimate_query_cost/<int:database_id>/、/estimate_query_cost/<int:database_id>/<schema>/
+    - /theme/
+    - /results/<key>/
+    - /stop_query/
+    - /validate_sql_json/
+    - /sql_json/
+    - /csv/<client_id>
+    - /fetch_datasource_metadata
+    - /queries/<float:last_updated_ms>、/queries/<int:last_updated_ms>
+    - /search_queries
+    - /welcome/
+    - /profile/<username>/
+    - /sqllab/
+    - /sqllab/history/
+    - /schemas_access_for_csv_upload
     """
 
     logger = logging.getLogger(__name__)

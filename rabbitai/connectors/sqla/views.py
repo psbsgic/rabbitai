@@ -1,4 +1,5 @@
 """Views used by the SqlAlchemy connector"""
+
 import logging
 import re
 from dataclasses import dataclass, field
@@ -37,11 +38,11 @@ from rabbitai.views.base import (
 logger = logging.getLogger(__name__)
 
 
-class TableColumnInlineView(  # pylint: disable=too-many-ancestors
-    CompactCRUDMixin, RabbitaiModelView
-):
+class TableColumnInlineView(CompactCRUDMixin, RabbitaiModelView):
+    """内联数据表列视图。"""
+
     datamodel = SQLAInterface(models.TableColumn)
-    # TODO TODO, review need for this on related_views
+
     class_permission_name = "Dataset"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
     include_route_methods = RouteMethod.RELATED_VIEW_SET | RouteMethod.API_SET
@@ -92,14 +93,14 @@ class TableColumnInlineView(  # pylint: disable=too-many-ancestors
             "users should not need to alter this."
         ),
         "expression": utils.markdown(
-            "a valid, *non-aggregating* SQL expression as supported by the "
-            "underlying backend. Example: `substr(name, 1, 1)`",
+            "后端数据库支持的有效的，*非聚合* SQL 表达式。"
+            "例如：`substr(name, 1, 1)`",
             True,
         ),
         "python_date_format": utils.markdown(
             Markup(
-                "The pattern of timestamp format. For strings use "
-                '<a href="https://docs.python.org/2/library/'
+                "时间戳的格式字符串。"
+                'For strings use <a href="https://docs.python.org/2/library/'
                 'datetime.html#strftime-strptime-behavior">'
                 "python datetime string pattern</a> expression which needs to "
                 'adhere to the <a href="https://en.wikipedia.org/wiki/ISO_8601">'
@@ -149,7 +150,7 @@ class TableColumnInlineView(  # pylint: disable=too-many-ancestors
 
     add_form_extra_fields = {
         "table": QuerySelectField(
-            "Table",
+            "数据表",
             query_factory=lambda: db.session.query(models.SqlaTable),
             allow_blank=True,
             widget=Select2Widget(extra_classes="readonly"),
@@ -180,9 +181,9 @@ class TableColumnInlineView(  # pylint: disable=too-many-ancestors
             check_ownership(item.table)
 
 
-class SqlMetricInlineView(  # pylint: disable=too-many-ancestors
-    CompactCRUDMixin, RabbitaiModelView
-):
+class SqlMetricInlineView(CompactCRUDMixin, RabbitaiModelView):
+    """内联SQL指标（计算字段）视图。"""
+
     datamodel = SQLAInterface(models.SqlMetric)
     class_permission_name = "Dataset"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
@@ -207,24 +208,22 @@ class SqlMetricInlineView(  # pylint: disable=too-many-ancestors
     ]
     description_columns = {
         "expression": utils.markdown(
-            "a valid, *aggregating* SQL expression as supported by the "
-            "underlying backend. Example: `count(DISTINCT userid)`",
+            "一个有效的、数据库支持的 *统计计算* SQL 表达式。 "
+            "例如：`count(DISTINCT userid)`",
             True,
         ),
         "d3format": utils.markdown(
-            "d3 formatting string as defined [here]"
+            "格式字符串定义，[详见]"
             "(https://github.com/d3/d3-format/blob/master/README.md#format). "
-            "For instance, this default formatting applies in the Table "
-            "visualization and allow for different metric to use different "
-            "formats",
+            "例如，此默认格式适用于表可视化，并允许不同的指标使用不同的格式",
             True,
         ),
         "extra": utils.markdown(
-            "Extra data to specify metric metadata. Currently supports "
-            'metadata of the format: `{ "certification": { "certified_by": '
-            '"Data Platform Team", "details": "This metric is the source of truth." '
-            '}, "warning_markdown": "This is a warning." }`. This should be modified '
-            "from the edit datasource model in Explore to ensure correct formatting.",
+            "用于指定指标元数据的额外数据。当前支持的"
+            '元数据格式：`{ "certification": { "certified_by": '
+            '"数据分析团队", "details": "该指标的详细描述。" '
+            '}, "warning_markdown": "这是警告" }`。'
+            "应该从浏览中的编辑数据源模型中修改，以确保格式正确。",
             True,
         ),
     }
@@ -244,7 +243,7 @@ class SqlMetricInlineView(  # pylint: disable=too-many-ancestors
 
     add_form_extra_fields = {
         "table": QuerySelectField(
-            "Table",
+            "数据表",
             query_factory=lambda: db.session.query(models.SqlaTable),
             allow_blank=True,
             widget=Select2Widget(extra_classes="readonly"),
@@ -275,19 +274,20 @@ class SqlMetricInlineView(  # pylint: disable=too-many-ancestors
             check_ownership(item.table)
 
 
-class RowLevelSecurityListWidget(
-    RabbitaiListWidget
-):  # pylint: disable=too-few-public-methods
+class RowLevelSecurityListWidget(RabbitaiListWidget):
+    """行级安全性列表部件。"""
+
     template = "rabbitai/models/rls/list.html"
+    """呈现列表的模板"""
 
     def __init__(self, **kwargs: Any):
         kwargs["appbuilder"] = current_app.appbuilder
         super().__init__(**kwargs)
 
 
-class RowLevelSecurityFiltersModelView(  # pylint: disable=too-many-ancestors
-    RabbitaiModelView, DeleteMixin
-):
+class RowLevelSecurityFiltersModelView(RabbitaiModelView, DeleteMixin):
+    """行级安全性过滤器模型视图。"""
+
     datamodel = SQLAInterface(models.RowLevelSecurityFilter)
 
     list_widget = cast(RabbitaiListWidget, RowLevelSecurityListWidget)
@@ -365,9 +365,9 @@ class RowLevelSecurityFiltersModelView(  # pylint: disable=too-many-ancestors
             raise NotFound()
 
 
-class TableModelView(  # pylint: disable=too-many-ancestors
-    DatasourceModelView, DeleteMixin, YamlExportMixin
-):
+class TableModelView(DatasourceModelView, DeleteMixin, YamlExportMixin):
+    """数据表模型视图，提供数据表关系关系模型的CRUD操作。"""
+
     datamodel = SQLAInterface(models.SqlaTable)
     class_permission_name = "Dataset"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
@@ -488,7 +488,7 @@ class TableModelView(  # pylint: disable=too-many-ancestors
     }
     edit_form_extra_fields = {
         "database": QuerySelectField(
-            "Database",
+            "数据库",
             query_factory=lambda: db.session.query(models.Database),
             widget=Select2Widget(extra_classes="readonly"),
         )

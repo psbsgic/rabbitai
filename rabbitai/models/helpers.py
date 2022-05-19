@@ -50,6 +50,7 @@ def convert_uuids(obj: Any) -> Any:
     """
     转换 UUID 对象为字符串，以便可以使用 yaml.safe_dump。
     """
+
     if isinstance(obj, uuid.UUID):
         return str(obj)
 
@@ -65,24 +66,23 @@ def convert_uuids(obj: Any) -> Any:
 class ImportExportMixin:
     """导入导出对象关系模型混入类，提供导入导出相关属性和方法。"""
 
-    uuid = sa.Column(
-        UUIDType(binary=True), primary_key=False, unique=True, default=uuid.uuid4
-    )
+    uuid = sa.Column(UUIDType(binary=True), primary_key=False, unique=True, default=uuid.uuid4)
+    """全局唯一标识"""
 
     export_parent: Optional[str] = None
-    """具有SQL Alchemy 反向引用的属性的名称"""
+    """导出父模型名称，SQLAlchemy 反向引用的属性名称"""
 
     export_children: List[str] = []
-    """具有SQL Alchemy正向引用的属性的（str）名称列表"""
+    """具有SQL Alchemy正向引用的属性的（str）名称的列表"""
 
     export_fields: List[str] = []
-    """可用于导入和导出的属性的名称"""
+    """可用于导入和导出的属性（字段）名称的列表"""
 
     extra_import_fields: List[str] = []
     """即使未导出也应导入的其他字段"""
 
     __mapper__: Mapper
-    """对象关系映射"""
+    """对象关系映射，定义对象类属性和数据表列之间的映射关系"""
 
     @classmethod
     def _unique_constrains(cls) -> List[Set[str]]:
@@ -100,7 +100,7 @@ class ImportExportMixin:
 
     @classmethod
     def parent_foreign_key_mappings(cls) -> Dict[str, str]:
-        """获取外键本地名称到外键本地名称的映射"""
+        """获取父外键映射，外键本地名称到外键本地名称的映射"""
 
         parent_rel = cls.__mapper__.relationships.get(cls.export_parent)
         if parent_rel:
@@ -112,8 +112,8 @@ class ImportExportMixin:
         """
         将架构导出为字典。
 
-        :param recursive:
-        :param include_parent_ref:
+        :param recursive: 是否递归，默认True。
+        :param include_parent_ref: 是否包括父引用，默认False。
         :return:
         """
 
@@ -155,13 +155,13 @@ class ImportExportMixin:
         sync: Optional[List[str]] = None,
     ) -> Any:
         """
-        从字典导入。
+        从指定数据字典导入对象关系模型实例到数据库。
 
-        :param session:
-        :param dict_rep:
-        :param parent:
-        :param recursive:
-        :param sync:
+        :param session: 数据库会话对象。
+        :param dict_rep: 数据字典。
+        :param parent: 父对象。
+        :param recursive: 是否递归。
+        :param sync: 要同步对象名称的列表。
         :return:
         """
 
@@ -279,12 +279,13 @@ class ImportExportMixin:
         """
         导出为字典。
 
-        :param recursive:
-        :param include_parent_ref:
-        :param include_defaults:
-        :param export_uuids:
+        :param recursive: 是否递归。
+        :param include_parent_ref: 是否包括父引用。
+        :param include_defaults: 是否包括默认值。
+        :param export_uuids: 是否导出 uuids。
         :return:
         """
+
         export_fields = set(self.export_fields)
         if export_uuids:
             export_fields.add("uuid")
@@ -340,7 +341,7 @@ class ImportExportMixin:
         """
         使用指定对象的属性更新该实例的字段。
 
-        :param obj:
+        :param obj: 对象实例。
         :return:
         """
         for field in obj.__class__.export_fields:
@@ -405,14 +406,28 @@ def _user_link(user: User) -> Union[Markup, str]:
 
 class AuditMixinNullable(AuditMixin):
     """
-    可空类型审计混入类，更改 AuditMixin 以使用可为空的字段，允许在CRUD之外以编程方式创建对象
+    可空类型审计混入类，更改 AuditMixin 以使用可为空的字段，允许在CRUD之外以编程方式创建对象。
+
+    声明字段：
+
+    - created_on：创建时间，默认值为当前系统时间，可空。
+    - changed_on：更改时间，默认值为当前系统时间，可空。
+    - created by: 创建者模型对象。
+    - changed by: 更改者模型对象。
+    - created_by_fk：创建者外键列，默认为当前用户标识，可空。
+    - changed_by_fk：更改者外键列，默认为当前用户标识，可空。
+
     """
 
     created_on = sa.Column(sa.DateTime, default=datetime.now, nullable=True)
+    """创建时间，默认值为当前系统时间，可空"""
     changed_on = sa.Column(sa.DateTime, default=datetime.now, onupdate=datetime.now, nullable=True)
+    """更新时间，默认值为当前系统时间，可空"""
 
     @declared_attr
     def created_by_fk(self) -> sa.Column:
+        """一个存储创建者的列对象，外键为：ab_user.id，默认值为当前用户对象标识。"""
+
         return sa.Column(
             sa.Integer,
             sa.ForeignKey("ab_user.id"),
@@ -422,6 +437,8 @@ class AuditMixinNullable(AuditMixin):
 
     @declared_attr
     def changed_by_fk(self) -> sa.Column:
+        """一个存储更改者的列对象。"""
+
         return sa.Column(
             sa.Integer,
             sa.ForeignKey("ab_user.id"),
@@ -432,17 +449,24 @@ class AuditMixinNullable(AuditMixin):
 
     @property
     def changed_by_name(self) -> str:
+        """更改者名称。"""
         if self.changed_by:
             return escape("{}".format(self.changed_by))
         return ""
 
-    @renders("created_by")
-    def creator(self) -> Union[Markup, str]:
-        return _user_link(self.created_by)
+    @property
+    def changed_on_humanized(self) -> str:
+        return humanize.naturaltime(datetime.now() - self.changed_on)
 
     @property
     def changed_by_(self) -> Union[Markup, str]:
+        """更改者，更改者的用户连接。"""
         return _user_link(self.changed_by)
+
+    @renders("created_by")
+    def creator(self) -> Union[Markup, str]:
+        """获取创建者，Union[Markup, str]，将渲染为：用户连接"""
+        return _user_link(self.created_by)
 
     @renders("changed_on")
     def changed_on_(self) -> Markup:
@@ -457,17 +481,24 @@ class AuditMixinNullable(AuditMixin):
         # Convert naive datetime to UTC
         return self.changed_on.astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%S.%f%z")
 
-    @property
-    def changed_on_humanized(self) -> str:
-        return humanize.naturaltime(datetime.now() - self.changed_on)
-
     @renders("changed_on")
     def modified(self) -> Markup:
         return Markup(f'<span class="no-wrap">{self.changed_on_humanized}</span>')
 
 
 class QueryResult:
-    """查询结果对象，存储查询操作的返回结果。"""
+    """
+    查询结果对象，存储查询操作的返回结果。
+
+    包括：
+
+    - df: pd.DataFrame, 数据帧。
+    - query: str, 查询字符串。
+    - duration: timedelta, 持续时间。
+    - status: str = QueryStatus.SUCCESS, 状态。
+    - error_message: Optional[str] = None, 错误信息。
+    - errors: Optional[List[Dict[str, Any]]] = None, 错误。
+    """
 
     def __init__(
         self,
@@ -487,7 +518,7 @@ class QueryResult:
 
 
 class ExtraJSONMixin:
-    """额外Json混入，添加 `extra` 列(JSON)和相应的方法。"""
+    """额外Json混入，添加 `extra` 列(JSON，用于存储自定义信息)和相应的方法。"""
 
     extra_json = sa.Column(sa.Text, default="{}")
 

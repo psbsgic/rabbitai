@@ -35,6 +35,8 @@ class DashboardStandaloneMode(Enum):
 
 
 class WebDriverProxy:
+    """Web驱动器代理，依据驱动器类型（firefox、chrome）创建相应Web驱动器。"""
+
     def __init__(
         self, driver_type: str, window: Optional[WindowSize] = None,
     ):
@@ -44,6 +46,8 @@ class WebDriverProxy:
         self._screenshot_load_wait = current_app.config["SCREENSHOT_LOAD_WAIT"]
 
     def create(self) -> WebDriver:
+        """依据驱动器类型（firefox、chrome）创建相应Web驱动器。"""
+
         if self._driver_type == "firefox":
             driver_class = firefox.webdriver.WebDriver
             options = firefox.options.Options()
@@ -88,6 +92,14 @@ class WebDriverProxy:
     def get_screenshot(
         self, url: str, element_name: str, user: "User",
     ) -> Optional[bytes]:
+        """
+        获取屏幕快照。
+
+        :param url: 地址。
+        :param element_name: 元素名称。
+        :param user: 用户模型。
+        :return:
+        """
 
         from requests.models import PreparedRequest
 
